@@ -1,0 +1,85 @@
+import { TUser } from "shared/src/types"
+import { create } from "zustand"
+
+type Action = {
+  setName: (name: TUser["name"]) => void
+}
+
+type UserStore = {
+  user: TUser
+} & Action
+
+export const useUser = create<UserStore>((set) => ({
+  user: {
+    name: "Account",
+    id: "0x1234567890abcdef",
+    avatar: "",
+    email: "example@gmail.com",
+    wallet: [
+      {
+        address: "0x1234567890abc2def",
+        name: "Wallet 1",
+        balanceUSDT: 100,
+        tokens: [
+          {
+            symbol: "ETH",
+            name: "Ethereum",
+            logoURI:
+              "https://assets.coingecko.com/coins/images/279/standard/ethereum.png?1696506040",
+            amount: 1,
+            usdValue: 100,
+          },
+          {
+            symbol: "USDT",
+            name: "Tether",
+            logoURI:
+              "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0x55d398326f99059fF775485246999027B3197955/logo.png",
+            amount: 100,
+            usdValue: 100,
+          },
+          {
+            symbol: "BTC",
+            name: "Bitcoin",
+            logoURI:
+              "https://assets.coingecko.com/coins/images/1/standard/bitcoin.png?1696506040",
+            amount: 1,
+            usdValue: 100,
+          },
+        ],
+      },
+      {
+        address: "0x1234567890abcedef",
+        name: "Wallet 2",
+        balanceUSDT: 100,
+        tokens: [
+          {
+            symbol: "ETH",
+            name: "Ethereum",
+            logoURI:
+              "https://assets.coingecko.com/coins/images/279/standard/ethereum.png?1696506040",
+            amount: 44,
+            usdValue: 100,
+          },
+          {
+            symbol: "USDT",
+            name: "Tether",
+            logoURI:
+              "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0x55d398326f99059fF775485246999027B3197955/logo.png",
+            amount: 32,
+            usdValue: 100,
+          },
+          {
+            symbol: "BTC",
+            name: "Bitcoin",
+            logoURI:
+              "https://assets.coingecko.com/coins/images/1/standard/bitcoin.png?1696506040",
+            amount: 11,
+            usdValue: 100,
+          },
+        ],
+      },
+    ],
+  },
+  setName: (name: TUser["name"]) =>
+    set((state: { user: TUser }) => ({ user: { ...state.user, name } })),
+}))
