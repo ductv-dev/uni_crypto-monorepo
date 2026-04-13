@@ -3,6 +3,7 @@
 import { CardToken1 } from "@/components/custom/cards/card-token-1"
 import { LIST_TOKEN } from "@/data/mock-data-list-token"
 import { cn } from "@/lib/utils/utils"
+import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
   Drawer,
@@ -12,7 +13,7 @@ import {
   DrawerTrigger,
 } from "@workspace/ui/components/drawer"
 import { toast } from "@workspace/ui/index"
-import { ArrowDownUp, Badge } from "lucide-react"
+import { ArrowDownUp } from "lucide-react"
 import { useState } from "react"
 import { TToken } from "shared/src/types"
 
