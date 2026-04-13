@@ -1,10 +1,9 @@
-export type { TUser } from "./type-user"
-export type { TWallet, TTokenBalance } from "./type-wallet"
+export type { TNavItem } from "./type-nav"
+export type { TToken } from "./type-token"
 export type {
   TTransaction,
-  TTransactionType,
   TTransactionStatus,
+  TTransactionType,
 } from "./type-transaction"
-export type { TToken } from "./type-token"
-export type { TNavItem } from "./type-nav"
-export type { TTypeChart } from "./type-type-chart"
+export type { TUser } from "./type-user"
+export type { TTokenBalance, TWallet } from "./type-wallet"
