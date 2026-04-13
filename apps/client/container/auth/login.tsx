@@ -19,7 +19,7 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { toast } from "@workspace/ui/index"
 import { Bitcoin } from "lucide-react"
-import { useRouter } from "next/router"
+import { useRouter } from "next/navigation"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { LoginSchema, LoginSchemaType } from "shared/src/schemas/index"
 

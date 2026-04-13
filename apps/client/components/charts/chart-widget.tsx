@@ -22,10 +22,15 @@ export const MiniChart: React.FC<MiniChartProps> = ({
   height = 40,
   strokeWidth = 2,
 }) => {
-  if (!data || data.length < 2) return
+  if (!data || data.length < 2) return null
 
-  const firstValue = data[0].value
-  const lastValue = data[data.length - 1].value
+  const firstPoint = data[0]
+  const lastPoint = data[data.length - 1]
+
+  if (!firstPoint || !lastPoint) return null
+
+  const firstValue = firstPoint.value
+  const lastValue = lastPoint.value
   const isPositive = lastValue >= firstValue
   const strokeColor = isPositive ? "#4caf50" : "#d32f2f"
 

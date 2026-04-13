@@ -3,6 +3,7 @@
 import { CardToken1 } from "@/components/custom/cards/card-token-1"
 import { LIST_TOKEN } from "@/data/mock-data-list-token"
 import { cn } from "@/lib/utils/utils"
+import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
   Drawer,
@@ -12,34 +13,39 @@ import {
   DrawerTrigger,
 } from "@workspace/ui/components/drawer"
 import { toast } from "@workspace/ui/index"
-import { ArrowDownUp, Badge } from "lucide-react"
+import { ArrowDownUp } from "lucide-react"
 import { useState } from "react"
 import { TToken } from "shared/src/types"
 
 export const DesktopSwapCard = () => {
-  const [tokenFrom, setTokenFrom] = useState(
-    LIST_TOKEN[0].symbol as TToken["symbol"]
+  if (!LIST_TOKEN) return null
+
+  const [tokenFrom, setTokenFrom] = useState<TToken["symbol"]>(
+    LIST_TOKEN?.[0]?.symbol ?? ""
   )
-  const [tokenTo, setTokenTo] = useState(
-    LIST_TOKEN[2].symbol as TToken["symbol"]
+
+  const [tokenTo, setTokenTo] = useState<TToken["symbol"]>(
+    LIST_TOKEN?.[2]?.symbol ?? ""
   )
   const [isFromOpen, setIsFromOpen] = useState(false)
   const [isToOpen, setIsToOpen] = useState(false)
-  const [valueFrom, setValueFrom] = useState<number | null>(null)
+
+  // [FIX 2] Đổi state từ number sang string để xử lý được dấu thập phân (VD: 0.5)
+  const [valueFrom, setValueFrom] = useState<string>("")
   const [isLoading, setIsLoading] = useState(false)
 
   let valueTo: number | null = 0
   let valueInUSDT = 0
 
-  if (tokenFrom && tokenTo && valueFrom) {
+  // [FIX 2] Parse ra số ở đây để tính toán
+  const numericValueFrom = Number(valueFrom)
+
+  if (tokenFrom && tokenTo && numericValueFrom > 0) {
     const fromData = LIST_TOKEN.find((t) => t.symbol === tokenFrom)
     const toData = LIST_TOKEN.find((t) => t.symbol === tokenTo)
     if (fromData && toData) {
-      const v = Number(valueFrom)
-      if (v > 0) {
-        valueInUSDT = v * fromData.usdt
-        valueTo = valueInUSDT / toData.usdt
-      }
+      valueInUSDT = numericValueFrom * fromData.usdt
+      valueTo = valueInUSDT / toData.usdt
     }
   }
 
@@ -52,7 +58,8 @@ export const DesktopSwapCard = () => {
       toast.error("Token đi và token đến phải khác nhau")
       return
     }
-    if (!valueFrom || Number(valueFrom) <= 0 || valueFrom > 9999999) {
+
+    if (!valueFrom || numericValueFrom <= 0 || numericValueFrom > 9999999) {
       const el = document.getElementById(
         "desktop-valueFrom"
       ) as HTMLInputElement
@@ -60,13 +67,15 @@ export const DesktopSwapCard = () => {
       toast.error("Vui lòng nhập số lượng hợp lệ")
       return
     }
+
     setIsLoading(true)
     await new Promise((r) => setTimeout(r, 1500))
     toast.success(
       `Đã đổi ${valueFrom} ${tokenFrom} (${valueInUSDT.toFixed(2)} USDT) sang ${valueTo?.toFixed(6)} ${tokenTo}`
     )
-    setValueFrom(null)
-    setTokenTo("")
+
+    // [FIX 3] Chỉ reset valueFrom thành rỗng, giữ nguyên tokenTo để user tiện swap tiếp
+    setValueFrom("")
     setIsLoading(false)
   }
 
@@ -77,7 +86,7 @@ export const DesktopSwapCard = () => {
     }
     setTokenFrom(tokenTo)
     setTokenTo(tokenFrom)
-    setValueFrom(null)
+    setValueFrom("")
   }
 
   return (
@@ -120,11 +129,20 @@ export const DesktopSwapCard = () => {
               </div>
             </DrawerContent>
           </Drawer>
+
+          {/* [FIX 2] Xử lý regex ở input để người dùng gõ được số 0 và dấu chấm (VD: 0.05) */}
           <input
             id="desktop-valueFrom"
-            type="number"
-            value={valueFrom?.toString() || ""}
-            onChange={(e) => setValueFrom(parseFloat(e.target.value) || 0)}
+            type="text"
+            inputMode="decimal"
+            value={valueFrom}
+            onChange={(e) => {
+              const val = e.target.value
+              // Regex: Chỉ cho phép rỗng hoặc chuỗi số có tối đa 1 dấu chấm thập phân
+              if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                setValueFrom(val)
+              }
+            }}
             placeholder="0"
             className="w-full bg-transparent text-end text-xl font-bold [-moz-appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
