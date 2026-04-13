@@ -23,11 +23,12 @@ type Props = {
 
 export const FormSwap: React.FC<Props> = ({ onSuccess }) => {
   const inputId = useId()
-  const [tokenFrom, setTokenFrom] = useState(
-    LIST_TOKEN[0].symbol as TToken["symbol"]
+  const [tokenFrom, setTokenFrom] = useState<TToken["symbol"]>(
+    LIST_TOKEN?.[0]?.symbol ?? ""
   )
-  const [tokenTo, setTokenTo] = useState(
-    LIST_TOKEN[2].symbol as TToken["symbol"]
+
+  const [tokenTo, setTokenTo] = useState<TToken["symbol"]>(
+    LIST_TOKEN?.[2]?.symbol ?? ""
   )
   const [isFromOpen, setIsFromOpen] = useState(false)
   const [isToOpen, setIsToOpen] = useState(false)

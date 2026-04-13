@@ -1,11 +1,11 @@
 import {
-  ChartNoAxesCombined,
   ChartLine,
+  ChartNoAxesCombined,
   ChartPie,
-  TrendingUp,
   TrendingDown,
+  TrendingUp,
 } from "lucide-react"
-import { TToken } from "@/types/type-token"
+import { TToken } from "shared/src/types"
 
 type Props = {
   data: TToken

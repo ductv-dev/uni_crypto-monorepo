@@ -1,5 +1,6 @@
 import { useBinanceKline } from "@/lib/hooks/use-market-data"
 import { Timeframe } from "@/lib/utils/utils"
+import { TTypeChart } from "@/types/type-type-chart"
 import {
   CandlestickSeries,
   ColorType,
@@ -10,7 +11,6 @@ import {
 } from "lightweight-charts"
 import { Loader2 } from "lucide-react"
 import React, { useEffect, useRef } from "react"
-import { TTypeChart } from "shared/src/types"
 
 export type ChartProps = {
   type: TTypeChart

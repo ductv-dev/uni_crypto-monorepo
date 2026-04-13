@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { LIST_TOKEN } from "@/data/mock-data-list-token"
-import { TToken } from "@/types/type-token"
+import { useQuery } from "@tanstack/react-query"
+import { useEffect, useState } from "react"
+import { TToken } from "shared/src/types"
 
 const fakeApiDelay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms))

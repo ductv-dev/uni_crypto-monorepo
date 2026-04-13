@@ -1,5 +1,6 @@
 import { CandlestickChart } from "@/components/charts/charts-candle"
 import { Timeframe } from "@/lib/utils/utils"
+import { TTypeChart } from "@/types/type-type-chart"
 import {
   Select,
   SelectContent,
@@ -12,7 +13,6 @@ import {
 import { ChartCandlestick, ChartLine } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useMemo, useState } from "react"
-import { TTypeChart } from "shared/src/types"
 
 const TIMEFRAMES: { label: string; value: Timeframe }[] = [
   { label: "Giây", value: "1S" },
@@ -40,7 +40,7 @@ export const SectionChart: React.FC<Props> = ({
   onTimeframeChange,
 }) => {
   const { resolvedTheme } = useTheme()
-  const [typeChart, setTypeChart] = useState<TTypeChart>(TYPE_CHART[0])
+  const [typeChart, setTypeChart] = useState<TTypeChart>(TYPE_CHART[0]!)
 
   const colors = useMemo(
     () => ({
@@ -80,7 +80,7 @@ export const SectionChart: React.FC<Props> = ({
           value={typeChart.value}
           onValueChange={(value) =>
             setTypeChart(
-              TYPE_CHART.find((t) => t.value === value) || TYPE_CHART[0]
+              TYPE_CHART.find((t) => t.value === value) || TYPE_CHART[0]!
             )
           }
         >

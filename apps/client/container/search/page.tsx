@@ -54,7 +54,7 @@ const OPTION_SELECT = [
 ]
 
 export const SearchPage = () => {
-  const [sortBy, setSortBy] = useState(OPTION_SELECT[0].value)
+  const [sortBy, setSortBy] = useState(OPTION_SELECT?.[0]?.value)
   const [quantityFavorite, setQuantityFavorite] = useState(4)
   const route = useRouter()
 
