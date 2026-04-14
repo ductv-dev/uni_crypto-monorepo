@@ -1,6 +1,5 @@
 "use client"
 
-import { usePwaInstall } from "@/lib/hooks/use-pwa-install"
 import { Iphone } from "@workspace/ui/components/iphone"
 import { OrbitingCircles } from "@workspace/ui/components/orbiting-circles"
 import {
@@ -8,7 +7,6 @@ import {
   ChartNoAxesCombined,
   ChartPie,
   Coins,
-  Download,
   HandCoins,
   Send,
   ShieldCheck,
@@ -30,8 +28,6 @@ const FEATURES = [
 ]
 
 export const Wellcome = () => {
-  const { isInstallable, install } = usePwaInstall()
-
   return (
     <div className="min-h-screen overflow-hidden bg-background">
       {/* ── MOBILE ── */}
@@ -122,18 +118,6 @@ export const Wellcome = () => {
                     Đăng nhập
                   </p>
                 </a>
-                {isInstallable && (
-                  <div
-                    onClick={install}
-                    className="flex size-13 items-center justify-center rounded-2xl bg-primary"
-                  >
-                    <Download
-                      size={16}
-                      strokeWidth={2}
-                      className="text-accent"
-                    />
-                  </div>
-                )}
               </div>
               <a
                 href="/register"

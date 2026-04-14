@@ -19,7 +19,7 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { toast } from "@workspace/ui/index"
 import { Bitcoin } from "lucide-react"
-import { useRouter } from "next/router"
+import { useRouter } from "next/navigation"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { LoginSchema, LoginSchemaType } from "shared/src/schemas/index"
 
@@ -35,7 +35,7 @@ export const Login = () => {
     toast.success(
       `Login successfully. Email: ${data.email} Password: ${data.password}`
     )
-    route.push("/user/home")
+    route.push("dashboard")
   }
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">

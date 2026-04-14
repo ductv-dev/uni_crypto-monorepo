@@ -9,8 +9,8 @@ import Providers from "@/provider/query-provider"
 import { Toaster } from "@workspace/ui/index"
 
 export const metadata: Metadata = {
-  title: "Uni",
-  description: "Unified Crypto Wallet & Exchange",
+  title: "Admin Uni Crypto",
+  description: "Admin Uni Crypto Wallet & Exchange",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
