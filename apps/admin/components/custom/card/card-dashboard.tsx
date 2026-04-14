@@ -6,8 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
-import { useTheme } from "next-themes"
-import { useEffect, useState } from "react"
 
 type Props = {
   data: TCardDashboardProps
@@ -18,14 +16,6 @@ type TCardDashboardProps = {
   items: { title: string; value: string; unit?: string }[]
 }
 export const CardDashboard: React.FC<Props> = ({ data }) => {
-  const { theme, systemTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-  const isDark = mounted
-    ? (theme === "system" ? systemTheme : theme) === "dark"
-    : true
   return (
     <Card className="w-full max-w-sm border-none p-0 shadow-none">
       <CardHeader className="pt-4">

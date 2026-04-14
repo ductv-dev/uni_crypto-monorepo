@@ -1,6 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider } from "@/components/layout/sidebar"
-import { TooltipProvider } from "@workspace/ui/components/tooltip"
 
 export default function DashboardLayout({
   children,
@@ -9,10 +8,8 @@ export default function DashboardLayout({
 }) {
   return (
     <SidebarProvider>
-      <TooltipProvider>
-        <AppSidebar />
-        {children}
-      </TooltipProvider>
+      <AppSidebar />
+      {children}
     </SidebarProvider>
   )
 }

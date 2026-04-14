@@ -6,6 +6,7 @@ import "@workspace/ui/globals.css"
 
 import { cn } from "@/lib/utils/utils"
 import Providers from "@/provider/query-provider"
+import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { Toaster } from "@workspace/ui/index"
 
 export const metadata: Metadata = {
@@ -57,11 +58,9 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider>
-          <Providers>
-            <div className="max-w-screen">
-              <div className="mx-auto max-w-7xl">{children}</div>
-            </div>
-          </Providers>
+          <TooltipProvider>
+            <Providers>{children}</Providers>
+          </TooltipProvider>
         </ThemeProvider>
         <Toaster position="top-center" />
       </body>
