@@ -1,11 +1,13 @@
-import { Badge } from "@workspace/ui/components/badge"
+"use client"
+
 import {
   Card,
-  CardFooter,
+  CardContent,
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
-import { MoveDownRight, TrendingUp } from "lucide-react"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 
 type Props = {
   data: TCardDashboardProps
@@ -13,40 +15,55 @@ type Props = {
 type TCardDashboardProps = {
   title: string
   icon: React.ReactNode
-  items: { title: string; value: string; trend: number }[]
+  items: { title: string; value: string; unit?: string }[]
 }
 export const CardDashboard: React.FC<Props> = ({ data }) => {
+  const { theme, systemTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  const isDark = mounted
+    ? (theme === "system" ? systemTheme : theme) === "dark"
+    : true
   return (
-    <Card className="@container/card">
-      <CardHeader>
-        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-          <div className="flex items-center gap-2">
-            <div>{data.icon}</div>
-            <div>{data.title}</div>
+    <Card className="w-full max-w-sm border-none p-0 shadow-none">
+      <CardHeader className="pt-4">
+        <CardTitle>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col">
+              <span className="text-lg font-bold tracking-tight text-foreground/90">
+                {data.title}
+              </span>
+              <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
+                Overview
+              </span>
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-primary/20 to-primary/5 text-primary shadow-inner">
+              {data.icon}
+            </div>
           </div>
         </CardTitle>
       </CardHeader>
-      <CardFooter className="flex-col items-start gap-1.5 text-sm">
+      <CardContent className="space-y-2 p-4">
         {data.items?.map((subItem, index) => (
-          <div key={index} className="flex items-center gap-2">
-            <div className="flex flex-1 items-center gap-2">
-              <div>{subItem.title}</div>
-              <div>{subItem.value}</div>
+          <div key={index} className="flex flex-col items-end gap-1.5">
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-medium text-muted-foreground/80">
+                {subItem.title}
+              </span>
+              {subItem.unit && (
+                <span className="text-xs font-medium text-muted-foreground/80">
+                  ({subItem.unit})
+                </span>
+              )}
             </div>
-            {subItem.trend > 0 ? (
-              <Badge variant="outline" className="bg-green-500">
-                <TrendingUp className="size-2" />
-                {subItem.trend}
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="bg-red-500">
-                <MoveDownRight className="size-2" />
-                {subItem.trend}
-              </Badge>
-            )}
+            <span className="text-2xl font-bold tracking-tight text-foreground tabular-nums">
+              {subItem.value}
+            </span>
           </div>
         ))}
-      </CardFooter>
+      </CardContent>
     </Card>
   )
 }

@@ -9,7 +9,7 @@ import {
   BreadcrumbSeparator,
 } from "@workspace/ui/components/breadcrumb"
 import { Separator } from "@workspace/ui/components/separator"
-import { Coins, User } from "lucide-react"
+import { ArrowLeftRight, Coins, User } from "lucide-react"
 
 export default function Page() {
   const data = [
@@ -17,32 +17,32 @@ export default function Page() {
       title: "Token",
       icon: <Coins />,
       items: [
-        { title: "Overview", value: "100", trend: 10 },
-        { title: "Real-time Stats", value: "200", trend: 20 },
+        { title: "Total Tokens", value: "14" },
+        { title: "Active Tokens", value: "10" },
       ],
     },
     {
-      title: "User",
+      title: "Users",
       icon: <User />,
       items: [
-        { title: "Total", value: "100", trend: -12 },
-        { title: "New", value: "200", trend: 20 },
+        { title: "Total Users", value: "321413223", unit: "Users" },
+        { title: "New Users", value: "200", unit: "Users" },
       ],
     },
     {
       title: "Transaction",
-      icon: <Coins />,
+      icon: <ArrowLeftRight />,
       items: [
-        { title: "Total", value: "100", trend: -12 },
-        { title: "New", value: "200", trend: 20 },
+        { title: "Deposit", value: "2301243", unit: "USDT" },
+        { title: "Withdraw", value: "9283109", unit: "USDT" },
       ],
     },
     {
-      title: "Trading",
+      title: "Assets",
       icon: <Coins />,
       items: [
-        { title: "Total", value: "100", trend: -12 },
-        { title: "New", value: "200", trend: 20 },
+        { title: "Total", value: "100" },
+        { title: "New", value: "200" },
       ],
     },
   ]
