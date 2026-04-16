@@ -10,7 +10,8 @@ import {
 } from "@workspace/ui/components/breadcrumb"
 import { Separator } from "@workspace/ui/components/separator"
 import { ArrowLeftRight, Coins, User } from "lucide-react"
-import { SectionChart } from "./sections/section-chart"
+import { Revenue } from "./sections/revenue"
+import { TopToken } from "./sections/top-token"
 
 export const OverviewPage: React.FC = () => {
   const data = [
@@ -18,32 +19,32 @@ export const OverviewPage: React.FC = () => {
       title: "Token",
       icon: <Coins />,
       items: [
-        { title: "Total Tokens", value: "14" },
-        { title: "Active Tokens", value: "10" },
+        { title: "Total Tokens", value: 14 },
+        { title: "Active Tokens", value: 10 },
       ],
     },
     {
       title: "Users",
       icon: <User />,
       items: [
-        { title: "Total Users", value: "321413223", unit: "Users" },
-        { title: "New Users", value: "200", unit: "Users" },
+        { title: "Total Users", value: 321413223, unit: "Users" },
+        { title: "New Users", value: 200, unit: "Users" },
       ],
     },
     {
       title: "Transaction",
       icon: <ArrowLeftRight />,
       items: [
-        { title: "Deposit", value: "2301243", unit: "USDT" },
-        { title: "Withdraw", value: "9283109", unit: "USDT" },
+        { title: "Deposit", value: 2301243, unit: "USDT" },
+        { title: "Withdraw", value: 9283109, unit: "USDT" },
       ],
     },
     {
       title: "Assets",
       icon: <Coins />,
       items: [
-        { title: "Total", value: "100" },
-        { title: "New", value: "200" },
+        { title: "Total", value: 100 },
+        { title: "New", value: 200 },
       ],
     },
   ]
@@ -69,13 +70,16 @@ export const OverviewPage: React.FC = () => {
           </Breadcrumb>
         </div>
       </header>
-      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-        <div className="grid grid-cols-1 gap-4 px-4 lg:grid-cols-2 xl:grid-cols-4">
+      <div className="flex flex-col gap-4 px-4 py-4 md:gap-6 md:py-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {data.map((item, index) => (
             <CardDashboard key={index} data={item} />
           ))}
         </div>
-        <SectionChart />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <TopToken />
+          <Revenue />
+        </div>
         <div className="min-h-screen flex-1 rounded-xl bg-muted/50 md:min-h-min" />
       </div>
     </SidebarInset>

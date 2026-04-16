@@ -13,11 +13,11 @@ type Props = {
 type TCardDashboardProps = {
   title: string
   icon: React.ReactNode
-  items: { title: string; value: string; unit?: string }[]
+  items: { title: string; value: number; unit?: string }[]
 }
 export const CardDashboard: React.FC<Props> = ({ data }) => {
   return (
-    <Card className="w-full max-w-sm border-none p-0 shadow-none">
+    <Card className="w-full max-w-xl border-none p-0 shadow-none">
       <CardHeader className="pt-4">
         <CardTitle>
           <div className="flex items-center justify-between gap-3">
@@ -49,7 +49,7 @@ export const CardDashboard: React.FC<Props> = ({ data }) => {
               )}
             </div>
             <span className="text-2xl font-bold tracking-tight text-foreground tabular-nums">
-              {subItem.value}
+              {subItem.value.toLocaleString()}
             </span>
           </div>
         ))}

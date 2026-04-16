@@ -1,3 +1,4 @@
+"use client"
 import { ButtonSetting } from "@/components/custom/buttons/card-setting-admin"
 import { TAdmin } from "@/types"
 import {
@@ -7,11 +8,13 @@ import {
 } from "@workspace/ui/components/avatar"
 import { Card, CardContent, CardHeader } from "@workspace/ui/components/card"
 import { LockKeyholeIcon, Mail, Phone, UserKey } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 type Props = {
   admin: TAdmin
 }
 export const Information: React.FC<Props> = ({ admin }) => {
+  const route = useRouter()
   return (
     <Card className="">
       <CardHeader className="relative flex flex-row justify-center">
@@ -40,6 +43,7 @@ export const Information: React.FC<Props> = ({ admin }) => {
           description={admin.phone}
         />
         <ButtonSetting
+          onClick={() => route.push("/account/password")}
           icon={<LockKeyholeIcon size={20} />}
           title="Mật khẩu đăng nhập"
           description="Thay đổi mật khẩu đăng nhập của bạn"

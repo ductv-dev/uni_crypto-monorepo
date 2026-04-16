@@ -30,8 +30,7 @@ export const Register = () => {
     handleSubmit,
     formState: { errors },
   } = useForm<RegisterSchemaType>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(RegisterSchema as any),
+    resolver: zodResolver(RegisterSchema),
   })
   const onSubmit: SubmitHandler<RegisterSchemaType> = (data) => {
     toast.success(

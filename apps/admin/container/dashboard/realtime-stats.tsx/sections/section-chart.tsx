@@ -79,12 +79,13 @@ export const SectionChart: React.FC = () => {
   )
 
   return (
-    <div className="px-4">
+    <div className="shrink-0">
       <Card className="">
         <CardContent>
-          <div className="grid grid-cols-1 px-4 lg:grid-cols-3">
-            <div className="scol-span-1">
-              <div className="mt-16 flex flex-col gap-2.5 p-2.5 md:mt-0">
+          <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-2.5 lg:flex-row lg:items-end">
+              {/* Khối thông tin token */}
+              <div className="flex gap-2.5 p-2.5 md:mt-0">
                 <div className="flex gap-2.5">
                   <Avatar className="h-12 w-12">
                     <AvatarImage
@@ -176,16 +177,15 @@ export const SectionChart: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="col-span-2 flex flex-col gap-2.5">
-              <div className="flex items-center justify-between">
+              {/* Khối chọn khung thời gian và loại biểu đồ */}
+              <div className="flex flex-1 items-center justify-between gap-2.5 p-2.5 lg:justify-end">
                 <Select
                   value={activeTimeframe}
                   onValueChange={(value) =>
                     setActiveTimeframe(value as Timeframe)
                   }
                 >
-                  <SelectTrigger className="w-full max-w-48">
+                  <SelectTrigger className="">
                     <SelectValue placeholder="Chọn khung thời gian" />
                   </SelectTrigger>
                   <SelectContent position="popper">
@@ -224,7 +224,9 @@ export const SectionChart: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="max-w-[800px] overflow-hidden border">
+            </div>
+            <div className="col-span-2 flex flex-col gap-2.5">
+              <div className="h-[600px] w-full overflow-hidden border">
                 <CandlestickChart
                   type={typeChart}
                   symbol={symbol.symbol}

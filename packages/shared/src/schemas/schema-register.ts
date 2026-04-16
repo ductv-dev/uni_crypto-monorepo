@@ -4,18 +4,18 @@ export const RegisterSchema = z
   .object({
     email: z
       .string({
-        message: "Name must be a string",
+        message: "Email không được để trống",
       })
       .email({
-        message: "Invalid email address",
+        message: "Email không hợp lệ",
       }),
     password: z
       .string()
-      .min(8, "Ít nhất 8 ký tự")
-      .regex(/[a-z]/, "Phải có chữ thường")
-      .regex(/[A-Z]/, "Phải có chữ hoa")
-      .regex(/\d/, "Phải có số")
-      .regex(/[^A-Za-z\d]/, "Phải có ký tự đặc biệt"),
+      .min(8, "Mật khẩu phải ít nhất 8 ký tự")
+      .regex(/[A-Z]/, "Phải có ít nhất 1 chữ cái viết hoa")
+      .regex(/[a-z]/, "Phải có ít nhất 1 chữ cái viết thường")
+      .regex(/[0-9]/, "Phải có ít nhất 1 chữ số")
+      .regex(/[^a-zA-Z0-9]/, "Phải có ít nhất 1 ký tự đặc biệt"),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
