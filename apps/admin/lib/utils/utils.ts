@@ -15,3 +15,5 @@ export function shortenHex(str: string, start = 6, end = 4) {
 
   return `${s.slice(0, start)}...${s.slice(-end)}`
 }
+
+export type Timeframe = "1S" | "1H" | "1D" | "1W" | "1M" | "1Y"

@@ -7,7 +7,6 @@ import {
 } from "@workspace/ui/components/avatar"
 import { Badge } from "@workspace/ui/components/badge"
 import { ChevronDown, ChevronUp, ShieldCheck } from "lucide-react"
-import { useState } from "react"
 import { TToken } from "shared/src/types"
 
 type Props = {
@@ -22,8 +21,6 @@ export const SectionMain: React.FC<Props> = ({
   priceChange,
   percentageChange,
 }) => {
-  const [isFavorite, setIsFavorite] = useState(false)
-
   return (
     <div className="flex gap-2.5">
       <div className="flex-1">

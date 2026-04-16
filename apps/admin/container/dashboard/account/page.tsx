@@ -2,7 +2,6 @@
 import { SidebarInset, SidebarTrigger } from "@/components/layout/sidebar"
 import { useAdmin } from "@/store/admin-store"
 
-import { roleLabel } from "@/lib/config/role-config"
 import { TRole } from "@/types/admin.type"
 import {
   Breadcrumb,
@@ -12,9 +11,8 @@ import {
 } from "@workspace/ui/components/breadcrumb"
 import { Separator } from "@workspace/ui/components/separator"
 import { Crown, Shield } from "lucide-react"
-import { History } from "./components/history"
+import { DeviceManagement } from "./components/device-management"
 import { Information } from "./components/information"
-import { Permission } from "./components/permission"
 const permissions = [
   {
     id: 1,
@@ -97,18 +95,9 @@ export const Account = () => {
           <h1 className="text-2xl font-bold tracking-tight">Account</h1>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="flex flex-col gap-4">
           <Information admin={admin} />
-          <History data={data} />
-        </div>
-
-        <div>
-          <Permission
-            permissions={permissions}
-            roleIcon={roleIcon}
-            roleLabel={roleLabel}
-            admin={admin}
-          />
+          <DeviceManagement />
         </div>
       </div>
     </SidebarInset>
