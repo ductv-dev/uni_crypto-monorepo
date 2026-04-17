@@ -59,7 +59,9 @@ import {
 import { debounce } from "lodash"
 import { Dot, Filter, MoreHorizontal, Search } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-import { FormUpdateUser } from "./components/form-update-user"
+import { UserDetailView } from "./components/user-detail-view"
+import { UserQuickEdit } from "./components/user-quick-edit"
+import { FormCreateUser } from "./components/form-create-user"
 
 type TPagination = {
   limit: number
@@ -202,8 +204,11 @@ export const User = () => {
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <FormUpdateUser user={row.original} />
+              <DropdownMenuContent align="end" className="w-48">
+                <div className="space-y-2 p-2">
+                  <UserDetailView user={row.original} />
+                  <UserQuickEdit user={row.original} />
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           )
@@ -300,7 +305,7 @@ export const User = () => {
               </DrawerContent>
             </Drawer>
 
-            <Button size="sm">Add User</Button>
+            <FormCreateUser onSuccess={() => {}} />
           </div>
         </div>
 

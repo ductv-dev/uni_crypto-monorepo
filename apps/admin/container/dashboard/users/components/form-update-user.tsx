@@ -3,11 +3,13 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "@workspace/ui/index"
 import { useForm } from "react-hook-form"
+import { useState } from "react"
 
 import {
   UpdateUserSchema,
   type UpdateUserSchemaType,
 } from "@/schema/update-user.schema"
+import { useUpdateUser } from "@/hooks/users/use-update-user"
 import { TUser } from "@/types/user.type"
 import {
   Avatar,
@@ -37,19 +39,21 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import { Eye } from "lucide-react"
-import { useState } from "react"
 
 type TFormUpdateUserProps = {
   user: TUser
 }
 
 export const FormUpdateUser: React.FC<TFormUpdateUserProps> = ({ user }) => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const { mutate: updateUser, isPending } = useUpdateUser(user.id)
+
   const {
     register,
     handleSubmit,
     setValue,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<UpdateUserSchemaType>({
     resolver: zodResolver(UpdateUserSchema),
     defaultValues: {
@@ -61,17 +65,17 @@ export const FormUpdateUser: React.FC<TFormUpdateUserProps> = ({ user }) => {
     },
   })
 
-  const onSubmit = async (data: UpdateUserSchemaType) => {
-    try {
-      console.log("Updating user:", data)
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      toast.success("Cập nhật thông tin người dùng thành công")
-      setIsDialogOpen(false)
-    } catch (error) {
-      toast.error("Có lỗi xảy ra khi cập nhật thông tin")
-    }
+  const onSubmit = (data: UpdateUserSchemaType) => {
+    updateUser(data, {
+      onSuccess: () => {
+        toast.success("Cập nhật thông tin người dùng thành công")
+        setIsDialogOpen(false)
+      },
+      onError: () => {
+        toast.error("Có lỗi xảy ra khi cập nhật thông tin")
+      },
+    })
   }
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
@@ -180,8 +184,8 @@ export const FormUpdateUser: React.FC<TFormUpdateUserProps> = ({ user }) => {
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button type="submit">
-                {isSubmitting ? "Đang cập nhật..." : "Cập nhật thông tin"}
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Đang cập nhật..." : "Cập nhật thông tin"}
               </Button>
             </div>
           </form>
