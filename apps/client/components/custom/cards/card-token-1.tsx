@@ -1,3 +1,4 @@
+"use client"
 import { MiniChart } from "@/components/charts/chart-widget"
 import { use24hData } from "@/lib/hooks/use-24h-data"
 import { cn } from "@/lib/utils/utils"
@@ -7,10 +8,9 @@ import {
   AvatarImage,
 } from "@workspace/ui/components/avatar"
 import { Skeleton } from "@workspace/ui/components/skeleton"
-
 import { ChevronDown, ChevronUp } from "lucide-react"
 
-type TcardToken1Props = {
+type TCardToken1Props = {
   rank?: number
   name: string
   symbol?: string
@@ -21,7 +21,31 @@ type TcardToken1Props = {
   className?: string
 }
 
-export const CardToken1: React.FC<TcardToken1Props> = ({
+const PriceChange = ({ value }: { value: number }) => {
+  if (value > 0) {
+    return (
+      <div className="flex items-center gap-0.5">
+        <ChevronUp className="h-3.5 w-3.5 text-green-500" />
+        <span className="text-xs font-medium text-green-500">
+          {value.toFixed(2)}%
+        </span>
+      </div>
+    )
+  }
+  if (value < 0) {
+    return (
+      <div className="flex items-center gap-0.5">
+        <ChevronDown className="h-3.5 w-3.5 text-red-500" />
+        <span className="text-xs font-medium text-red-500">
+          {Math.abs(value).toFixed(2)}%
+        </span>
+      </div>
+    )
+  }
+  return <span className="text-xs font-medium text-foreground/40">0.00%</span>
+}
+
+export const CardToken1: React.FC<TCardToken1Props> = ({
   rank,
   name,
   symbol,
@@ -31,80 +55,84 @@ export const CardToken1: React.FC<TcardToken1Props> = ({
   className,
 }) => {
   const symbolUsdt = symbol ? `${symbol}USDT` : ""
-  const {
-    currentPrice,
-    data: data24h,
-    percentPriceChange: percentageChange,
-    isLoading,
-  } = use24hData(symbolUsdt)
+  const { data, isLoading } = use24hData(symbolUsdt)
+
+  const currentPrice = data?.currentPrice ?? 0
+  const percentageChange = data?.percentPriceChange ?? 0
+
   return (
     <div
       onClick={onClick}
-      className={
-        cn(className) +
-        " flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-4 py-2 hover:bg-accent"
-      }
+      className={cn(
+        "grid w-full cursor-pointer grid-cols-5 items-center gap-2.5 rounded-lg px-4 py-2 hover:bg-accent",
+        className
+      )}
     >
-      <div className="flex w-6/10 items-center gap-2.5">
-        {rank && <span className="font-medium text-foreground/60">{rank}</span>}
-
-        <Avatar className="h-12 w-12">
-          <AvatarImage src={image} alt="token image" className="" />
-          <AvatarFallback>{name?.charAt(0) || "U"}</AvatarFallback>
-        </Avatar>
-
-        <div className="flex flex-col">
-          <span className="text-sm font-medium">{name}</span>
-          {symbol && (
-            <span className="text-xs text-foreground/60">{symbol}</span>
-          )}
-        </div>
-      </div>
-      <div className="flex w-2/10 justify-start">
-        {isLoading ? (
-          <Skeleton className="h-[12px] w-[50px] rounded-full" />
-        ) : (
-          <MiniChart data={data24h} width={50} height={12} strokeWidth={2} />
-        )}
-      </div>
-      <div className="flex w-2/10 flex-col items-end">
-        {isLoading ? (
-          <Skeleton className="mb-1 h-5 w-16" />
-        ) : (
-          <span className="text-sm font-medium">
-            {(currentPrice || 0).toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-            })}{" "}
-            US$
+      {/* Tên token */}
+      <div className="col-span-3 flex min-w-0 flex-1 items-center gap-2.5">
+        {rank !== undefined && (
+          <span className="w-5 shrink-0 text-center text-xs font-medium text-foreground/40">
+            {rank}
           </span>
         )}
-        {description && (
-          <span className="text-xs text-foreground/60">{description}</span>
-        )}
-        <div className="flex items-center justify-end">
-          {isLoading ? (
-            <Skeleton className="mt-1 h-4 w-10" />
-          ) : (percentageChange !== 0 ? percentageChange : 0) > 0 ? (
-            <div className="flex">
-              <ChevronUp className="h-4 w-4 text-green-500" />
-              <span className="text-xs font-medium text-green-500">
-                {(percentageChange !== 0 ? percentageChange : 0).toFixed(2)}%
-              </span>
-            </div>
-          ) : (percentageChange !== 0 ? percentageChange : 0) < 0 ? (
-            <div className="flex">
-              <ChevronDown className="h-4 w-4 text-red-500" />
-              <span className="text-xs font-medium text-red-500">
-                {Math.abs(
-                  percentageChange !== 0 ? percentageChange : 0
-                ).toFixed(2)}
-                %
-              </span>
-            </div>
-          ) : (
-            <span className="text-xs font-medium text-foreground/60">0%</span>
+
+        <Avatar className="h-9 w-9 shrink-0">
+          <AvatarImage src={image} alt={`${name} logo`} />
+          <AvatarFallback className="text-xs">
+            {name?.charAt(0) ?? "?"}
+          </AvatarFallback>
+        </Avatar>
+
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate text-sm font-semibold">{name}</span>
+          {symbol && (
+            <span className="text-xs text-foreground/50">{symbol}</span>
+          )}
+          {description && (
+            <span className="truncate text-xs text-foreground/40">
+              {description}
+            </span>
           )}
         </div>
+      </div>
+
+      {/* Mini chart */}
+      <div className="col-span-1 w-14 items-center justify-center">
+        {isLoading ? (
+          <Skeleton className="h-3 w-12 rounded-full" />
+        ) : (
+          data?.data && (
+            <MiniChart
+              data={data.data}
+              width={50}
+              height={14}
+              strokeWidth={1.5}
+            />
+          )
+        )}
+      </div>
+
+      {/* Giá & % thay đổi */}
+      <div className="col-span-1 flex shrink-0 flex-col items-end gap-0.5">
+        {isLoading ? (
+          <>
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-3 w-10" />
+          </>
+        ) : (
+          <>
+            <span className="text-sm font-semibold tabular-nums">
+              {currentPrice > 0
+                ? currentPrice.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })
+                : "—"}{" "}
+              <span className="text-xs font-normal text-foreground/40">$</span>
+            </span>
+            <PriceChange value={percentageChange} />
+          </>
+        )}
       </div>
     </div>
   )

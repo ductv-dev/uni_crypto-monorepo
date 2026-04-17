@@ -1,3 +1,4 @@
+"use client"
 import { CandlestickData, HistogramData, Time } from "lightweight-charts"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Timeframe } from "../utils/utils"
@@ -114,7 +115,7 @@ export function useBinanceKline(symbol: string, timeframe: Timeframe) {
         }
 
         ws.onerror = (e) => {
-          console.error("WebSocket Kline Error:", e)
+          console.error("Lỗi WebSocket Kline:", e)
         }
       } catch (err) {
         if (!ignore) {
@@ -175,7 +176,7 @@ export function useBinanceTicker(symbol: string) {
           setPercentageChange(parseFloat(data.priceChangePercent))
         }
 
-        // Fetch 24h historical data for mini chart
+        // Lấy dữ liệu lịch sử 24h cho mini chart
         const klineRes = await fetch(
           `https://api.binance.com/api/v3/klines?symbol=${symbol.toUpperCase()}&interval=1h&limit=24`
         )

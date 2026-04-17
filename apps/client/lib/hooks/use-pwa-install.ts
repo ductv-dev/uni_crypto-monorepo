@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 
-// Extend Window interface for the beforeinstallprompt event
-interface BeforeInstallPromptEvent extends Event {
+//Khai báo type cho beforeinstallprompt event
+type BeforeInstallPromptEvent = Event & {
   readonly platforms: string[]
   readonly userChoice: Promise<{
     outcome: "accepted" | "dismissed"
@@ -18,14 +18,14 @@ export function usePwaInstall() {
   const [isInstallable, setIsInstallable] = useState(false)
 
   useEffect(() => {
-    // To avoid synchronous setState warning, we use a timeout or requestAnimationFrame
-    // Default to true so the button shows up even on iOS or Dev mode
+    // Để tránh lỗi setState đồng bộ, sử dụng timeout hoặc requestAnimationFrame
+    // Mặc định là true để nút hiển thị ngay cả trên iOS hoặc Dev mode
     let initialInstallable = true
     if (window.matchMedia("(display-mode: standalone)").matches) {
       initialInstallable = false
     }
 
-    // schedule state update after layout
+    // Cập nhật state sau khi layout đã render xong
     setTimeout(() => {
       setIsInstallable(initialInstallable)
     }, 0)
@@ -62,10 +62,10 @@ export function usePwaInstall() {
       return
     }
 
-    // Show the install prompt
+    // Hiển thị prompt cài đặt
     await deferredPrompt.prompt()
 
-    // Wait for the user to respond to the prompt
+    // Chờ người dùng phản hồi prompt
     const { outcome } = await deferredPrompt.userChoice
 
     if (outcome === "accepted") {

@@ -1,5 +1,7 @@
+"use client"
+
 import { CardToken1 } from "@/components/custom/card/card-token-1"
-import { LIST_TOKEN } from "@/data/mock-data-list-token"
+import { useDataToken } from "@/hooks/use-data-token"
 import {
   Card,
   CardContent,
@@ -8,7 +10,9 @@ import {
 } from "@workspace/ui/components/card"
 
 export const TopToken: React.FC = () => {
-  const data = LIST_TOKEN.slice(0, 5)
+  const { data: tokenList = [] } = useDataToken()
+  const data = tokenList.slice(0, 5)
+
   return (
     <Card>
       <CardContent>

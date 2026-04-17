@@ -21,7 +21,7 @@ import {
   TrendingUp,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { TToken } from "shared/src/types"
 import { BottomSheetSearch } from "./bottom-sheet/bottom-sheet-search"
 
@@ -58,22 +58,28 @@ export const SearchPage = () => {
   const [quantityFavorite, setQuantityFavorite] = useState(4)
   const route = useRouter()
 
-  const sortedTokens = [...LIST_TOKEN].sort((a: TToken, b: TToken) => {
-    switch (sortBy) {
-      case "khoi_luong":
-        return b.usdt - a.usdt
-      case "tvl_uni":
-        return b.decimals - a.decimals
-      case "von_hoa_thi_truong":
-        return b.usdt * 1_000_000 - a.usdt * 1_000_000
-      case "gia_tang_24h":
-        return (b.number_changes ?? 0) - (a.number_changes ?? 0)
-      case "gia_giam_24h":
-        return (a.number_changes ?? 0) - (b.number_changes ?? 0)
-      default:
-        return 0
-    }
-  })
+  const sortedTokens = useMemo(() => {
+    return [...LIST_TOKEN].sort((a: TToken, b: TToken) => {
+      switch (sortBy) {
+        case "khoi_luong":
+          return b.usdt - a.usdt
+        case "tvl_uni":
+          return b.decimals - a.decimals
+        case "von_hoa_thi_truong":
+          return b.usdt * 1_000_000 - a.usdt * 1_000_000
+        case "gia_tang_24h":
+          return (b.number_changes ?? 0) - (a.number_changes ?? 0)
+        case "gia_giam_24h":
+          return (a.number_changes ?? 0) - (b.number_changes ?? 0)
+        default:
+          return 0
+      }
+    })
+  }, [sortBy])
+
+  const favoriteTokens = useMemo(() => {
+    return LIST_TOKEN.slice(0, quantityFavorite)
+  }, [quantityFavorite])
 
   return (
     <div className="h-full w-full">
@@ -89,7 +95,7 @@ export const SearchPage = () => {
             <p className="font-semibold text-foreground/60">Token yêu thích</p>
 
             <div className="grid grid-cols-2 gap-2.5">
-              {LIST_TOKEN.slice(0, quantityFavorite).map((token) => (
+              {favoriteTokens.map((token) => (
                 <CardToken2
                   onClick={() => route.push(`/token/${token.symbol}`)}
                   key={token.address}

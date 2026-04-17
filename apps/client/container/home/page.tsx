@@ -1,5 +1,5 @@
 "use client"
-import { LIST_TOKEN } from "@/data/mock-data-list-token"
+import { useTokens } from "@/lib/hooks"
 import { useUser } from "@/store/user-store"
 import { Wallet } from "lucide-react"
 import { useState } from "react"
@@ -13,8 +13,8 @@ import { SectionNotifications } from "./sections/section-notifications"
 
 export const Home = () => {
   const user = useUser((state: { user: TUser }) => state.user)
-  const dataToken = LIST_TOKEN.slice(0, 8)
-
+  const { data: tokens, isLoading, isError } = useTokens()
+  const displayTokens = (tokens ?? []).slice(0, 8)
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -56,7 +56,11 @@ export const Home = () => {
             )
           }
         />
-        <SectionListToken data={dataToken} />
+        <SectionListToken
+          isLoading={isLoading}
+          isError={isError}
+          data={displayTokens}
+        />
       </div>
 
       {/* ── Desktop ── */}
@@ -76,7 +80,12 @@ export const Home = () => {
             }
           />
 
-          <SectionListToken data={dataToken} isDesktop />
+          <SectionListToken
+            isLoading={isLoading}
+            isError={isError}
+            data={displayTokens}
+            isDesktop
+          />
         </div>
 
         <div className="w-[380px] shrink-0">

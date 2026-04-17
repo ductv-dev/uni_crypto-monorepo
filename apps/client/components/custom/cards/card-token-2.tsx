@@ -18,11 +18,10 @@ export const CardToken2: React.FC<TCardToken2> = ({
   onClick,
 }) => {
   const symbolUsdt = symbol ? `${symbol}USDT` : ""
-  const {
-    currentPrice,
-    percentPriceChange: percentageChange,
-    isLoading,
-  } = use24hData(symbolUsdt)
+  const { data, isLoading } = use24hData(symbolUsdt)
+  const currentPrice = data?.currentPrice || 0
+  const percentageChange = data?.percentPriceChange || 0
+
   return (
     <div
       onClick={onClick}

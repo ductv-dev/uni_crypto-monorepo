@@ -1,3 +1,4 @@
+"use client"
 import { useBinanceKline } from "@/lib/hooks/use-market-data"
 import { Timeframe } from "@/lib/utils/utils"
 import { TTypeChart } from "@/types/type-type-chart"

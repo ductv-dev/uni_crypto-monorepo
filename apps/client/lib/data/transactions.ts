@@ -1,0 +1,83 @@
+import { TTransaction } from "shared/src/types"
+
+// Mock data
+const MOCK_TRANSACTIONS: TTransaction[] = [
+  {
+    id: "txn_001",
+    type: "buy",
+    status: "success",
+    fromSymbol: "USDT",
+    toSymbol: "BTC",
+    fromAmount: 500,
+    toAmount: 0.00845,
+    usdtValue: 500,
+    fee: 0.5,
+    walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
+    createdAt: "2026-04-07T10:23:00Z",
+    txHash: "0xabc123def456abc123def456abc123def456abc1",
+  },
+  {
+    id: "txn_002",
+    type: "swap",
+    status: "success",
+    fromSymbol: "ETH",
+    toSymbol: "BNB",
+    fromAmount: 0.5,
+    toAmount: 1.72,
+    usdtValue: 887.5,
+    fee: 0.88,
+    walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
+    createdAt: "2026-04-06T15:40:00Z",
+    txHash: "0xdef456abc123def456abc123def456abc123def4",
+  },
+  {
+    id: "txn_003",
+    type: "sell",
+    status: "success",
+    fromSymbol: "BNB",
+    toSymbol: "USDT",
+    fromAmount: 1.0,
+    toAmount: 290.0,
+    usdtValue: 290,
+    fee: 0.29,
+    walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
+    createdAt: "2026-04-05T08:11:00Z",
+    txHash: "0x789abc123def789abc123def789abc123def789a",
+  },
+  {
+    id: "txn_004",
+    type: "receive",
+    status: "success",
+    fromSymbol: "USDT",
+    fromAmount: 1000,
+    usdtValue: 1000,
+    fee: 0,
+    walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
+    createdAt: "2026-04-04T20:00:00Z",
+    txHash: "0x321def456abc321def456abc321def456abc321d",
+  },
+  {
+    id: "txn_005",
+    type: "send",
+    status: "pending",
+    fromSymbol: "ETH",
+    fromAmount: 0.1,
+    usdtValue: 177.5,
+    fee: 0.18,
+    walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
+    createdAt: "2026-04-08T00:01:00Z",
+    txHash: "0x654abc789def654abc789def654abc789def654a",
+  },
+]
+
+export async function fetchTransactions(): Promise<TTransaction[]> {
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  return MOCK_TRANSACTIONS
+}
+
+export async function fetchTransaction(
+  id: string
+): Promise<TTransaction | null> {
+  const transactions = await fetchTransactions()
+  return transactions.find((tx) => tx.id === id) || null
+}
