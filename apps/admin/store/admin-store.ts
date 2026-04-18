@@ -3,6 +3,7 @@ import { create } from "zustand"
 
 type Action = {
   setName: (name: TAdmin["name"]) => void
+  setAdmin: (admin: TAdmin) => void
 }
 
 type AdminStore = {
@@ -18,6 +19,7 @@ export const useAdmin = create<AdminStore>((set) => ({
     role: "admin",
     status: "active",
   },
+  setAdmin: (admin: TAdmin) => set({ admin }),
   setName: (name: TAdmin["name"]) =>
     set((state: { admin: TAdmin }) => ({ admin: { ...state.admin, name } })),
 }))

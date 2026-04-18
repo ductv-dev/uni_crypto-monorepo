@@ -7,7 +7,7 @@ import {
 } from "@workspace/ui/components/avatar"
 import { Badge } from "@workspace/ui/components/badge"
 import { ChevronDown, ChevronUp, ShieldCheck } from "lucide-react"
-import { TToken } from "shared/src/types"
+import { TToken } from "@workspace/shared/types"
 
 type Props = {
   data: TToken

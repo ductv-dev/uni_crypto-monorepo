@@ -1,6 +1,6 @@
 import { fetchTokens } from "@/lib/data/tokens"
 import { useQuery, type UseQueryResult } from "@tanstack/react-query"
-import { TToken } from "shared/src/types"
+import { TToken } from "@workspace/shared/types"
 
 //
 const TOKEN_LIST_QUERY_KEY = ["tokens"]

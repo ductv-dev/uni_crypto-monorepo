@@ -2,7 +2,7 @@
 
 import { BottomSheetSwap } from "@/container/home/bottom-sheet/bottom-sheet-swap"
 import { usePathname } from "next/navigation"
-import { TNavItem } from "shared/src/types"
+import { TNavItem } from "@workspace/shared/types"
 
 type Props = { data: TNavItem[] }
 

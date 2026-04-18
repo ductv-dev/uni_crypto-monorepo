@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { LoginSchema } from "shared/src/schemas"
+import { LoginSchema } from "@workspace/shared/schemas"
 
 export async function POST(req: Request) {
   try {

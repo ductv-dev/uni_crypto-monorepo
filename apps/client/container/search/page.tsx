@@ -22,7 +22,7 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
-import { TToken } from "shared/src/types"
+import { TToken } from "@workspace/shared/types"
 import { BottomSheetSearch } from "./bottom-sheet/bottom-sheet-search"
 
 const OPTION_SELECT = [

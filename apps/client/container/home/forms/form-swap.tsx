@@ -17,7 +17,7 @@ import { toast } from "@workspace/ui/index"
 import { ArrowDownUp } from "lucide-react"
 import { useId, useState } from "react"
 
-import { TToken } from "shared/src/types"
+import { TToken } from "@workspace/shared/types"
 
 type Props = {
   onSuccess?: () => void

@@ -15,7 +15,7 @@ import {
 import { toast } from "@workspace/ui/index"
 import { ArrowDownUp } from "lucide-react"
 import { useState } from "react"
-import { TToken } from "shared/src/types"
+import { TToken } from "@workspace/shared/types"
 
 export const DesktopSwapCard = () => {
   if (!LIST_TOKEN) return null

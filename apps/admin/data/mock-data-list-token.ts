@@ -1,4 +1,4 @@
-import { TToken } from "shared/src/types"
+import { TToken } from "@workspace/shared/types"
 
 export const LIST_TOKEN: TToken[] = [
   {

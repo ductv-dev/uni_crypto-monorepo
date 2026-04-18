@@ -3,7 +3,7 @@
  * This function can be replaced with API call without changing the hook
  */
 
-import { TToken } from "shared/src/types"
+import { TToken } from "@workspace/shared/types"
 
 // Mock data - will be replaced with actual API call
 const MOCK_TOKENS: TToken[] = [

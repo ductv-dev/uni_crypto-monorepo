@@ -12,7 +12,7 @@ import {
   DrawerTrigger,
 } from "@workspace/ui/components/drawer"
 import { useState } from "react"
-import { TToken } from "shared/src/types"
+import { TToken } from "@workspace/shared/types"
 import { FormBuySell } from "../forms/form-buy-sell"
 
 type Props = {

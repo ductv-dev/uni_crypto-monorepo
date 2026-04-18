@@ -3,7 +3,7 @@
  * This function can be replaced with API call without changing the hook
  */
 
-import { TUser } from "shared/src/types"
+import { TUser } from "@workspace/shared/types"
 
 // Mock data
 const MOCK_USER: TUser = {

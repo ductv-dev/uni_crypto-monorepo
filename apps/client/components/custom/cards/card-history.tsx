@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils/utils"
 import { Badge } from "@workspace/ui/components/badge"
 import { ArrowDown, ArrowDownUp, ArrowUp, Download, Upload } from "lucide-react"
-import { TTransaction } from "shared/src/types"
+import { TTransaction } from "@workspace/shared/types"
 
 type TCardHistory = {
   transaction: TTransaction

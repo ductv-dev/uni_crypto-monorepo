@@ -2,7 +2,7 @@
 import { LIST_TOKEN } from "@/data/mock-data-list-token"
 import { useQuery } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
-import { TToken } from "shared/src/types"
+import { TToken } from "@workspace/shared/types"
 
 // Tạo độ trễ giả lập API
 const fakeApiDelay = (ms: number) =>

@@ -37,7 +37,7 @@ import {
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useEffect, useMemo, useState } from "react"
-import { TToken } from "shared/src/types"
+import { TToken } from "@workspace/shared/types"
 
 const TIMEFRAMES: { label: string; value: Timeframe }[] = [
   { label: "Giây", value: "1S" },

@@ -1,6 +1,6 @@
 import { LIST_TOKEN } from "@/data/mock-data-list-token"
 import { useQuery, type UseQueryResult } from "@tanstack/react-query"
-import { TToken } from "shared/src/types"
+import { TToken } from "@workspace/shared/types"
 
 const TOKEN_LIST_QUERY_KEY = ["token-list"]
 

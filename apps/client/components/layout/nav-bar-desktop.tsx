@@ -14,7 +14,7 @@ import { toast } from "@workspace/ui/index"
 import { ArrowLeftRight, Copy, Settings, User2, Wallet } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { TNavItem, TUser } from "shared/src/types"
+import { TNavItem, TUser } from "@workspace/shared/types"
 
 type Props = { data: TNavItem[] }
 export const NavbarDesktop: React.FC<Props> = ({ data }) => {

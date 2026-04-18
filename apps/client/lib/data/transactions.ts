@@ -1,4 +1,4 @@
-import { TTransaction } from "shared/src/types"
+import { TTransaction } from "@workspace/shared/types"
 
 // Mock data
 const MOCK_TRANSACTIONS: TTransaction[] = [

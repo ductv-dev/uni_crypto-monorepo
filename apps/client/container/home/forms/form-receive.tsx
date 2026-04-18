@@ -4,7 +4,7 @@ import { shortenHex } from "@/lib/utils/utils"
 import { useUser } from "@/store/user-store"
 import { toast } from "@workspace/ui/index"
 import { Coins, Copy } from "lucide-react"
-import { TUser } from "shared/src/types"
+import { TUser } from "@workspace/shared/types"
 
 export const FormReceive: React.FC = () => {
   const user = useUser((state: { user: TUser }) => state.user)

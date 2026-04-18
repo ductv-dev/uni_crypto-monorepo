@@ -18,7 +18,7 @@ import {
 import { ChevronLeft, Search, SearchIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { TToken } from "shared/src/types"
+import { TToken } from "@workspace/shared/types"
 
 export const BottomSheetSearch = () => {
   const [searchQuery, setSearchQuery] = useState("")

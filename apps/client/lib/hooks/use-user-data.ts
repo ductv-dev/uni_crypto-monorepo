@@ -6,7 +6,7 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from "@tanstack/react-query"
-import { TUser } from "shared/src/types"
+import { TUser } from "@workspace/shared/types"
 
 const USER_QUERY_KEY = ["user", "current"]
 

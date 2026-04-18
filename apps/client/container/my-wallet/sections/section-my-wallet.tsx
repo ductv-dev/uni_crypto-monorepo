@@ -17,7 +17,7 @@ import {
   Wallet2,
 } from "lucide-react"
 import { useState } from "react"
-import { TWallet } from "shared/src/types"
+import { TWallet } from "@workspace/shared/types"
 
 type Props = {
   data: TWallet

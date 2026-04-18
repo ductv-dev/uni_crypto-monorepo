@@ -6,7 +6,7 @@ import {
   AvatarImage,
 } from "@workspace/ui/components/avatar"
 import { ChevronsDown, ChevronsUp } from "lucide-react"
-import { TToken } from "shared/src/types"
+import { TToken } from "@workspace/shared/types"
 
 type Props = {
   data: TToken

@@ -1,5 +1,5 @@
 import { MOCK_USER } from "@/data/mock-user"
-import { TUser } from "shared/src/types"
+import { TUser } from "@workspace/shared/types"
 import { create } from "zustand"
 
 export type UserStoreAction = {

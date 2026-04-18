@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import { useState } from "react"
-import { TUser } from "shared/src/types"
+import { TUser } from "@workspace/shared/types"
 import { AddNewWallet } from "./sections/add-new-wallet"
 import { HeaderMyWallet } from "./sections/header-my-wallet"
 import { SectionMyWallet } from "./sections/section-my-wallet"

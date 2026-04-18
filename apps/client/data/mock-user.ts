@@ -1,4 +1,4 @@
-import { TUser } from "shared/src/types"
+import { TUser } from "@workspace/shared/types"
 
 export const MOCK_USER: TUser = {
   name: "Account",

@@ -1,5 +1,5 @@
 import { History, Home, Search } from "lucide-react"
-import { TNavItem } from "shared/src/types"
+import { TNavItem } from "@workspace/shared/types"
 
 export const NAVBAR_ITEMS: TNavItem[] = [
   { label: "Home", href: "/user/home", icon: <Home /> },

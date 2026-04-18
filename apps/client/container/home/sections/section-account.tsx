@@ -12,7 +12,7 @@ import {
 import { toast } from "@workspace/ui/index"
 import { Copy, Settings, User2, Wallet } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { TUser } from "shared/src/types"
+import { TUser } from "@workspace/shared/types"
 
 type Props = {
   data: TUser

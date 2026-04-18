@@ -1,6 +1,6 @@
 import { fetchTransaction, fetchTransactions } from "@/lib/data/transactions"
 import { useQuery, type UseQueryResult } from "@tanstack/react-query"
-import { TTransaction } from "shared/src/types"
+import { TTransaction } from "@workspace/shared/types"
 
 const TRANSACTIONS_QUERY_KEY = ["transactions"]
 

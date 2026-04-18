@@ -21,7 +21,7 @@ import { toast } from "@workspace/ui/index"
 import { Bitcoin } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { SubmitHandler, useForm } from "react-hook-form"
-import { LoginSchema, LoginSchemaType } from "shared/src/schemas/index"
+import { LoginSchema, LoginSchemaType } from "@workspace/shared/schemas"
 
 export const Login = () => {
   const route = useRouter()

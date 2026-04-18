@@ -11,7 +11,7 @@ import { toast } from "@workspace/ui/index"
 import { ChevronLeft, Info, User } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { TUser } from "shared/src/types"
+import { TUser } from "@workspace/shared/types"
 
 export const CreateWallet = () => {
   const route = useRouter()

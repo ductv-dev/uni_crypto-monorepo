@@ -3,7 +3,7 @@ import { CardToken1 } from "@/components/custom/cards/card-token-1"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { TToken } from "shared/src/types"
+import { TToken } from "@workspace/shared/types"
 
 type Props = {
   data: TToken[]
