@@ -6,6 +6,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/layout/sidebar"
+import { useLogout } from "@/hooks/auth/use-logout"
 import { roleLabel } from "@/lib/config/role-config"
 import { useAdmin } from "@/store/admin-store"
 import {
@@ -36,6 +37,7 @@ export function NavUser() {
   const router = useRouter()
   const { isMobile } = useSidebar()
   const admin = useAdmin((state) => state.admin)
+  const { mutate: logout, isPending } = useLogout()
 
   return (
     <SidebarMenu>
@@ -104,9 +106,9 @@ export function NavUser() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push("/login")}>
+            <DropdownMenuItem onClick={() => logout()} disabled={isPending}>
               <LogOutIcon />
-              Log out
+              {isPending ? "Logging out..." : "Log out"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
