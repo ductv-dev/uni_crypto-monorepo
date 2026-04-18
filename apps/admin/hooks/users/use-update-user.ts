@@ -1,6 +1,6 @@
-import { useMutation, type UseMutationResult } from "@tanstack/react-query"
 import { UpdateUserSchemaType } from "@/schema/update-user.schema"
 import { TUser } from "@/types/user.type"
+import { useMutation, type UseMutationResult } from "@tanstack/react-query"
 
 const updateUser = async (
   userId: string,

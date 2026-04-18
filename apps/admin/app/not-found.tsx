@@ -1,5 +1,5 @@
+import { AlertCircle, Home } from "lucide-react"
 import Link from "next/link"
-import { Home, AlertCircle } from "lucide-react"
 
 export default function NotFound() {
   return (
@@ -16,7 +16,7 @@ export default function NotFound() {
         </p>
       </div>
       <Link
-        href="/user/home"
+        href="/dashboard"
         className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:bg-primary/90"
       >
         <Home size={14} />
