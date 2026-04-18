@@ -59,9 +59,9 @@ import {
 import { debounce } from "lodash"
 import { Dot, Filter, MoreHorizontal, Search } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
+import { FormCreateUser } from "./components/form-create-user"
 import { UserDetailView } from "./components/user-detail-view"
 import { UserQuickEdit } from "./components/user-quick-edit"
-import { FormCreateUser } from "./components/form-create-user"
 
 type TPagination = {
   limit: number
@@ -180,15 +180,15 @@ export const User = () => {
           const status = row.getValue("status") as string
           return (
             <span
-              className={`flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+              className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
                 status === "active"
-                  ? "bg-green-100 text-green-800"
+                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                   : status === "inactive"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-yellow-100 text-yellow-800"
+                    ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                    : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
               }`}
             >
-              <Dot /> {status}
+              <Dot className="mr-1 h-3 w-3" /> {status}
             </span>
           )
         },
