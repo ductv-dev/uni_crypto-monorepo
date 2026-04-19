@@ -1,5 +1,6 @@
 "use client"
 
+import { useLogin } from "@/lib/hooks/use-login"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -17,24 +18,20 @@ import {
   FieldSeparator,
 } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
-import { toast } from "@workspace/ui/index"
 import { Bitcoin } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { LoginSchema, LoginSchemaType } from "@workspace/shared/schemas"
 
 export const Login = () => {
-  const route = useRouter()
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginSchemaType>({ resolver: zodResolver(LoginSchema) })
-  const onSubmit: SubmitHandler<LoginSchemaType> = (data) => {
-    toast.success(
-      `Login successfully. Email: ${data.email} Password: ${data.password}`
-    )
-    route.push("/user/home")
+
+  const { mutate, isPending } = useLogin()
+  const onSubmit: SubmitHandler<LoginSchemaType> = async (data) => {
+    mutate(data)
   }
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
@@ -125,7 +122,9 @@ export const Login = () => {
                     )}
                   </Field>
                   <Field>
-                    <Button type="submit">Login</Button>
+                    <Button type="submit" disabled={isPending}>
+                      {isPending ? "Logging in..." : "Login"}
+                    </Button>
                     <FieldDescription className="text-center">
                       Don&apos;t have an account? <a href="register">Sign up</a>
                     </FieldDescription>

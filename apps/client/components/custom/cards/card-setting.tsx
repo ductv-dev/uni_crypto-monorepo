@@ -7,6 +7,7 @@ type TCardSetting = {
   icon: React.ReactNode
   className?: string
   onClick?: () => void
+  disabled?: boolean
 }
 
 export const CardSetting: React.FC<TCardSetting> = ({
@@ -15,12 +16,14 @@ export const CardSetting: React.FC<TCardSetting> = ({
   icon,
   className,
   onClick,
+  disabled,
 }) => {
   return (
     <div
-      onClick={onClick}
+      onClick={() => !disabled && onClick?.()}
       className={cn(
         "flex w-full cursor-pointer items-center gap-2.5 p-2.5 text-foreground/60 hover:bg-accent",
+        disabled && "cursor-not-allowed opacity-50",
         className
       )}
     >

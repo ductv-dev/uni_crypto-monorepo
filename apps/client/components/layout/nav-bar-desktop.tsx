@@ -1,6 +1,7 @@
 "use client"
 import { CardSetting } from "@/components/custom/cards/card-setting"
 import { shortenHex } from "@/lib/utils/utils"
+import { useLogout } from "@/lib/hooks/use-logout"
 import { useUser } from "@/store/user-store"
 import { AnimatedThemeToggler } from "@workspace/ui/components/animated-theme-toggler"
 import {
@@ -11,7 +12,14 @@ import {
 import { UserAvatar } from "@workspace/ui/components/user-avatar"
 import { toast } from "@workspace/ui/index"
 
-import { ArrowLeftRight, Copy, Settings, User2, Wallet } from "lucide-react"
+import {
+  ArrowLeftRight,
+  Copy,
+  LogOut,
+  Settings,
+  User2,
+  Wallet,
+} from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
 import { TNavItem, TUser } from "@workspace/shared/types"
@@ -23,6 +31,7 @@ export const NavbarDesktop: React.FC<Props> = ({ data }) => {
   const user = useUser((state: { user: TUser }) => state.user)
   const shortID = user?.id ? shortenHex(user.id) : ""
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const { mutate: logout, isPending: isLoggingOut } = useLogout()
 
   const handleCopy = async () => {
     try {
@@ -125,10 +134,11 @@ export const NavbarDesktop: React.FC<Props> = ({ data }) => {
               <CardSetting
                 onClick={() => {
                   setIsDrawerOpen(false)
-                  router.push("/user/setting")
+                  logout()
                 }}
-                title="Settings"
-                icon={<Settings strokeWidth={3} size={20} />}
+                title="Logout"
+                icon={<LogOut strokeWidth={3} size={20} />}
+                disabled={isLoggingOut}
               />
             </DrawerContent>
           </Drawer>
