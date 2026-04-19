@@ -135,9 +135,59 @@ Import with: `import { Button } from "@workspace/ui/components/button"`
 - Dev tasks (`dev`) are not cached and run persistently
 - The `build` task depends on dependencies being built first (`^build`)
 
+## Authentication System
+
+Both **client** and **admin** apps implement httpOnly cookie-based authentication:
+
+### How It Works
+
+1. User submits email/password via login form
+2. Frontend validates with Zod schema
+3. POST to `/api/auth/login` (Next.js API route)
+4. Backend validates and returns user data + sets httpOnly cookies
+5. `useLogin` hook stores user in Zustand
+6. User redirected to authenticated page
+7. Logout clears cookies and store, redirects to login
+
+### Protected Routes (via `proxy.ts`)
+
+**Client:**
+
+- `/user/*` - All user dashboard pages
+- `/add-wallet`, `/create-wallet`, `/token` - Wallet/trading pages
+
+**Admin:**
+
+- `/dashboard` - Main dashboard
+- All management pages (`/users`, `/transactions`, `/kyc`, etc.)
+
+### Default Credentials
+
+- **Client**: user@gmail.com / 12345678
+- **Admin**: admin@gmail.com / 12345678
+
+### Key Files
+
+**Client:**
+
+- `app/api/auth/login/route.ts` - Login endpoint
+- `app/api/auth/logout/route.ts` - Logout endpoint
+- `lib/api/api.ts` - API client (login, logout, getMe)
+- `lib/hooks/use-login.ts` - Login mutation hook
+- `lib/hooks/use-logout.ts` - Logout mutation hook
+- `store/user-store.ts` - User state (Zustand)
+- `proxy.ts` - Route protection middleware
+- `container/auth/login.tsx` - Login page component
+
+**Admin:**
+
+- Same structure as client, but for admin routes
+
 ## Workflow Notes
 
 1. Always run tasks from the **root** using `pnpm <task>` and `--filter=<app>` to scope
 2. Changes to the **shared** package require rebuilding dependent apps
 3. Changes to **@workspace/ui** components require rebuild of apps that use them
 4. Use `pnpm format` before committing—Husky hooks will auto-format anyway
+5. Protected routes are enforced by `proxy.ts` middleware—check route config when adding new protected pages
+6. User state persists in Zustand store but is lost on page refresh (stored in httpOnly cookies server-side)
