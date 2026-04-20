@@ -1,7 +1,7 @@
 "use client"
 
 import { CardToken1 } from "@/components/custom/card/card-token-1"
-import { useDataToken } from "@/hooks/use-data-token"
+import { useDataToken } from "@/hooks/token/use-data-token"
 import {
   Card,
   CardContent,

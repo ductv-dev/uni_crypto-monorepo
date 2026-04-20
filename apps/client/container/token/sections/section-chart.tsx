@@ -40,6 +40,7 @@ export const SectionChart: React.FC<Props> = ({
   onTimeframeChange,
 }) => {
   const { resolvedTheme } = useTheme()
+  console.log(resolvedTheme, "resolvedTheme")
   const [typeChart, setTypeChart] = useState<TTypeChart>(TYPE_CHART[0]!)
 
   const colors = useMemo(

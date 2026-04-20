@@ -1,5 +1,5 @@
 import { LIST_TOKEN } from "@/data/mock-data-list-token"
-import { TOKEN_LIST_QUERY_KEY } from "@/hooks/use-data-token"
+import { TOKEN_LIST_QUERY_KEY } from "@/hooks/token/use-data-token"
 import {
   useMutation,
   useQueryClient,

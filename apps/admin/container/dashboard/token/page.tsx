@@ -1,6 +1,6 @@
 "use client"
 import { SidebarInset, SidebarTrigger } from "@/components/layout/sidebar"
-import { useDataToken } from "@/hooks/use-data-token"
+import { useDataToken } from "@/hooks/token/use-data-token"
 import {
   ColumnDef,
   flexRender,
@@ -23,6 +23,12 @@ import {
 } from "@workspace/ui/components/breadcrumb"
 import { Button } from "@workspace/ui/components/button"
 import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -39,17 +45,20 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table"
-import { Dot, MoreHorizontal, Plus, Search } from "lucide-react"
-import { useMemo, useState } from "react"
+import { debounce } from "lodash"
+import {
+  Activity,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Coins,
+  Dot,
+  MoreHorizontal,
+  Plus,
+  Search,
+} from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 import { DialogCreateToken } from "./components/dialog-create-token"
 import { DrawerTokenStatus } from "./components/drawer-token-status"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card"
-import { ArrowDownToLine, ArrowUpFromLine, Activity, Coins } from "lucide-react"
 
 const TokenActions = ({ token }: { token: TToken }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -91,8 +100,29 @@ const TokenActions = ({ token }: { token: TToken }) => {
 }
 
 export const TokenManagement = () => {
-  const { data: dataToken, isLoading } = useDataToken()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQueryDebounced, setSearchQueryDebounced] = useState("")
+  const { data: dataToken, isLoading } = useDataToken(searchQueryDebounced)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((value: string) => {
+        setSearchQueryDebounced(value)
+      }, 500),
+    []
+  )
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel()
+    }
+  }, [debouncedSearch])
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    debouncedSearch(value)
+  }
 
   const stats = useMemo(() => {
     if (!dataToken) return { total: 0, deposit: 0, withdraw: 0, trading: 0 }
@@ -298,6 +328,8 @@ export const TokenManagement = () => {
           <div className="relative max-w-sm flex-1">
             <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
             <Input
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search by Symbol or Contract..."
               className="pl-8"
             />

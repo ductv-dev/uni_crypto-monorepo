@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server"
 import { LoginSchema } from "@workspace/shared/schemas"
+import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
   try {
@@ -15,7 +15,6 @@ export async function POST(req: Request) {
 
     const { email, password } = parsedBody.data
 
-    // 🔥 mock login
     if (email !== "admin@gmail.com" || password !== "12345678") {
       return NextResponse.json(
         { message: "Sai tài khoản hoặc mật khẩu" },
@@ -23,7 +22,6 @@ export async function POST(req: Request) {
       )
     }
 
-    // 🔥 mock response từ BE
     const mockData = {
       accessToken: "mock_access_token_123",
       refreshToken: "mock_refresh_token_123",
