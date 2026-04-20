@@ -5,5 +5,8 @@ export type TToken = {
   decimals: number
   logoURI: string
   usdt: number
+  isTradingEnabled?: boolean
+  isWithdrawEnabled?: boolean
+  isDepositEnabled?: boolean
   number_changes?: number
 }

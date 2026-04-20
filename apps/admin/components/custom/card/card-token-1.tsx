@@ -1,12 +1,12 @@
 "use client"
 import { useBinanceTicker } from "@/lib/hooks/use-market-data"
+import { TToken } from "@workspace/shared/types"
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@workspace/ui/components/avatar"
 import { ChevronsDown, ChevronsUp } from "lucide-react"
-import { TToken } from "@workspace/shared/types"
 
 type Props = {
   data: TToken

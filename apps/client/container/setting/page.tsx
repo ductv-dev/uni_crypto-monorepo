@@ -1,7 +1,7 @@
 "use client"
 
 import { CardSetting } from "@/components/custom/cards/card-setting"
-import { usePwaInstall } from "@/lib/hooks/use-pwa-install"
+import { usePwaInstall } from "@/hooks/use-pwa-install"
 import { AnimatedThemeToggler } from "@workspace/ui/components/animated-theme-toggler"
 import { toast } from "@workspace/ui/index"
 

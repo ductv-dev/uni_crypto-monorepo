@@ -1,7 +1,8 @@
 "use client"
 
-import { useLogin } from "@/lib/hooks/use-login"
+import { useLogin } from "@/hooks/use-login"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { LoginSchema, LoginSchemaType } from "@workspace/shared/schemas"
 import { Button } from "@workspace/ui/components/button"
 import {
   Card,
@@ -20,7 +21,6 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { Bitcoin } from "lucide-react"
 import { SubmitHandler, useForm } from "react-hook-form"
-import { LoginSchema, LoginSchemaType } from "@workspace/shared/schemas"
 
 export const Login = () => {
   const {

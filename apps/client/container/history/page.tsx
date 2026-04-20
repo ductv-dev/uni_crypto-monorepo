@@ -1,6 +1,6 @@
 "use client"
 import { CardHistory } from "@/components/custom/cards/card-history"
-import { useTransactions } from "@/lib/hooks"
+import { useTransactions } from "@/hooks"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { AlertCircle, BookAlert } from "lucide-react"
 

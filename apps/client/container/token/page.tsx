@@ -2,7 +2,7 @@ import { ButtonNav } from "@/components/custom/button/button-navigation"
 import { NavbarDesktop } from "@/components/layout/nav-bar-desktop"
 import { LIST_TOKEN } from "@/data/mock-data-list-token"
 
-import { useBinanceTicker } from "@/lib/hooks/use-market-data"
+import { useBinanceTicker } from "@/hooks/use-market-data"
 import { NAVBAR_ITEMS } from "@/lib/utils/nav-config"
 import { Timeframe } from "@/lib/utils/utils"
 import { Button } from "@workspace/ui/components/button"

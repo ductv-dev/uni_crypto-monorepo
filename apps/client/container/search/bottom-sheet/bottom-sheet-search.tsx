@@ -2,7 +2,7 @@
 
 import { CardToken1 } from "@/components/custom/cards/card-token-1"
 import { SkeletonCardToken1 } from "@/components/custom/skeleton/skeleton-card-token-1"
-import { useSearchTokens } from "@/lib/hooks/use-search"
+import { useSearchTokens } from "@/hooks/use-search"
 import {
   Drawer,
   DrawerClose,
@@ -15,10 +15,10 @@ import {
   InputGroupInput,
 } from "@workspace/ui/components/input-group"
 
+import { TToken } from "@workspace/shared/types"
 import { ChevronLeft, Search, SearchIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { TToken } from "@workspace/shared/types"
 
 export const BottomSheetSearch = () => {
   const [searchQuery, setSearchQuery] = useState("")

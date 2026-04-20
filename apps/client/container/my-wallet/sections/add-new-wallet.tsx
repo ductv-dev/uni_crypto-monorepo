@@ -1,4 +1,4 @@
-import { useIsMobile } from "@/lib/hooks/use-is-mobile"
+import { useIsMobile } from "@/hooks/use-is-mobile"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import {

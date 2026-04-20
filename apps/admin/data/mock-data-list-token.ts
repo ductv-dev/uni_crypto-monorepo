@@ -9,6 +9,10 @@ export const LIST_TOKEN: TToken[] = [
     logoURI:
       "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/info/logo.png",
     usdt: 300,
+    isTradingEnabled: true,
+    isWithdrawEnabled: true,
+    isDepositEnabled: true,
+
     number_changes: -0.01,
   },
   {
@@ -19,6 +23,9 @@ export const LIST_TOKEN: TToken[] = [
     logoURI:
       "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82/logo.png",
     usdt: 20,
+    isTradingEnabled: true,
+    isWithdrawEnabled: true,
+    isDepositEnabled: true,
     number_changes: 0.04,
   },
   {
@@ -29,6 +36,9 @@ export const LIST_TOKEN: TToken[] = [
     logoURI:
       "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c/logo.png",
     usdt: 65000,
+    isTradingEnabled: true,
+    isWithdrawEnabled: true,
+    isDepositEnabled: true,
     number_changes: -0.06,
   },
   {
@@ -39,6 +49,9 @@ export const LIST_TOKEN: TToken[] = [
     logoURI:
       "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0x2170Ed0880ac9A755fd29B2688956BD959F933F8/logo.png",
     usdt: 3500,
+    isTradingEnabled: true,
+    isWithdrawEnabled: true,
+    isDepositEnabled: true,
     number_changes: 0.02,
   },
   {
@@ -49,6 +62,9 @@ export const LIST_TOKEN: TToken[] = [
     logoURI:
       "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56/logo.png",
     usdt: 1,
+    isTradingEnabled: true,
+    isWithdrawEnabled: true,
+    isDepositEnabled: true,
     number_changes: 0.09,
   },
   {
@@ -59,6 +75,9 @@ export const LIST_TOKEN: TToken[] = [
     logoURI:
       "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0x3EE2200Efb3400fAbB9AacF31297cBdD1d435D47/logo.png",
     usdt: 0.6,
+    isTradingEnabled: true,
+    isWithdrawEnabled: true,
+    isDepositEnabled: true,
     number_changes: -0.02,
   },
   {
@@ -69,6 +88,9 @@ export const LIST_TOKEN: TToken[] = [
     logoURI:
       "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0x7083609fCE4d1d8Dc0C979AAb8c869Ea2C873402/logo.png",
     usdt: 8.5,
+    isTradingEnabled: false,
+    isWithdrawEnabled: true,
+    isDepositEnabled: true,
     number_changes: 0.01,
   },
   {
@@ -79,6 +101,9 @@ export const LIST_TOKEN: TToken[] = [
     logoURI:
       "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0xF8A0BF9cF54Bb92F17374d9e9A321E6a111a51bD/logo.png",
     usdt: 18,
+    isTradingEnabled: true,
+    isWithdrawEnabled: true,
+    isDepositEnabled: true,
     number_changes: -0.03,
   },
   {
@@ -89,6 +114,9 @@ export const LIST_TOKEN: TToken[] = [
     logoURI:
       "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0xbA2aE424d960c26247Dd6c32edC70B295c744C43/logo.png",
     usdt: 0.15,
+    isTradingEnabled: true,
+    isWithdrawEnabled: true,
+    isDepositEnabled: true,
     number_changes: 0.02,
   },
 ]

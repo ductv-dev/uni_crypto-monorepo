@@ -1,6 +1,6 @@
 "use client"
 
-import { usePwaInstall } from "@/lib/hooks/use-pwa-install"
+import { usePwaInstall } from "@/hooks/use-pwa-install"
 import { Iphone } from "@workspace/ui/components/iphone"
 import { OrbitingCircles } from "@workspace/ui/components/orbiting-circles"
 import {

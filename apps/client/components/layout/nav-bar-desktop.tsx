@@ -1,7 +1,7 @@
 "use client"
 import { CardSetting } from "@/components/custom/cards/card-setting"
+import { useLogout } from "@/hooks/use-logout"
 import { shortenHex } from "@/lib/utils/utils"
-import { useLogout } from "@/lib/hooks/use-logout"
 import { useUser } from "@/store/user-store"
 import { AnimatedThemeToggler } from "@workspace/ui/components/animated-theme-toggler"
 import {
@@ -12,17 +12,10 @@ import {
 import { UserAvatar } from "@workspace/ui/components/user-avatar"
 import { toast } from "@workspace/ui/index"
 
-import {
-  ArrowLeftRight,
-  Copy,
-  LogOut,
-  Settings,
-  User2,
-  Wallet,
-} from "lucide-react"
+import { TNavItem, TUser } from "@workspace/shared/types"
+import { ArrowLeftRight, Copy, LogOut, User2, Wallet } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { TNavItem, TUser } from "@workspace/shared/types"
 
 type Props = { data: TNavItem[] }
 export const NavbarDesktop: React.FC<Props> = ({ data }) => {

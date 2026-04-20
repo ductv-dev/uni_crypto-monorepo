@@ -1,4 +1,4 @@
-import { useBinanceKline } from "@/lib/hooks/use-market-data"
+import { useBinanceKline } from "@/hooks/use-market-data"
 import { Timeframe } from "@/lib/utils/utils"
 import { TTypeChart } from "@/types/type-type-chart"
 import {

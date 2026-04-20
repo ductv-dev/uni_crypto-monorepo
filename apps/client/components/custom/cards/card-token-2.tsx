@@ -1,4 +1,4 @@
-import { use24hData } from "@/lib/hooks/use-24h-data"
+import { use24hData } from "@/hooks/use-24h-data"
 import { cn } from "@/lib/utils/utils"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { ChevronDown, ChevronUp } from "lucide-react"
