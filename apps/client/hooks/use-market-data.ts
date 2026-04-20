@@ -1,7 +1,7 @@
 "use client"
+import { Timeframe } from "@/lib/utils/utils"
 import { CandlestickData, HistogramData, Time } from "lightweight-charts"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Timeframe } from "../utils/utils"
 
 const INTERVAL_MAP: Record<string, string> = {
   "1S": "1s",
