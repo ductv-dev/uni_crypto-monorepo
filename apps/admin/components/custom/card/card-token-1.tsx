@@ -1,5 +1,5 @@
 "use client"
-import { useBinanceTicker } from "@/lib/hooks/use-market-data"
+import { useBinanceTicker } from "@/hooks/use-market-data"
 import { TToken } from "@workspace/shared/types"
 import {
   Avatar,

@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       sameSite: "lax",
       secure: isProduction,
       path: "/",
-      maxAge: 60 * 15,
+      maxAge: 60 * 15 * 15,
     })
 
     response.cookies.set("refresh_token", mockData.refreshToken, {

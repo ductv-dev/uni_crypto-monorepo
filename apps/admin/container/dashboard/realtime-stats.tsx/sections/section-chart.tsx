@@ -1,7 +1,7 @@
 "use client"
 import { CandlestickChart } from "@/components/custom/charts/charts-candle"
 import { useDataToken } from "@/hooks/token/use-data-token"
-import { useBinanceTicker } from "@/lib/hooks/use-market-data"
+import { useBinanceTicker } from "@/hooks/use-market-data"
 import { Timeframe } from "@/lib/utils/utils"
 import { TTypeChart } from "@/types/type-chart.type"
 import {
