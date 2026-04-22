@@ -16,14 +16,16 @@ import {
   ArrowLeftRight,
   ClipboardClock,
   Coins,
+  Download,
   FileText,
   LayoutDashboard,
+  NotebookText,
+  Send,
   Settings2,
   UserPlus,
   Users,
   Wallet,
 } from "lucide-react"
-import { NavSub } from "./nav-sub"
 
 // This is the data for the sidebar.
 const data = {
@@ -36,143 +38,146 @@ const data = {
     name: "UniCrypto Admin",
     logo: "/icons/icon-192x192.png",
   },
-  navMain: [
+  navGroups: [
     {
       title: "Dashboard",
-      url: "/dashboard",
-      icon: <LayoutDashboard />,
-      isActive: true,
       items: [
         {
           title: "Overview",
           url: "/dashboard",
+          icon: <LayoutDashboard />,
         },
         {
           title: "Real-time Stats",
           url: "/dashboard/stats",
+          icon: <LayoutDashboard />,
         },
       ],
     },
     {
       title: "User Management",
-      url: "/users",
-      icon: <Users />,
       items: [
         {
           title: "All Users",
           url: "/users",
+          icon: <Users />,
         },
         {
           title: "Security & 2FA",
           url: "/users/security",
+          icon: <Users />,
         },
       ],
     },
-
     {
       title: "Transactions",
-      url: "/transactions",
-      icon: <ArrowLeftRight />,
       items: [
+        {
+          title: "Order Book",
+          url: "/transactions/orderbook",
+          icon: <NotebookText />,
+        },
         {
           title: "Deposits",
           url: "/transactions/deposit",
+          icon: <Send />,
         },
         {
           title: "Withdrawals",
           url: "/transactions/withdrawal",
+          icon: <Download />,
         },
         {
           title: "Trade History",
           url: "/transactions/trade",
+          icon: <ArrowLeftRight />,
         },
       ],
     },
     {
       title: "Assets & Markets",
-      url: "/assets",
-      icon: <Coins />,
       items: [
         {
           title: "Token Management",
           url: "/assets/tokens",
+          icon: <Coins />,
         },
         {
           title: "Trading Pairs",
           url: "/assets/pairs",
+          icon: <Coins />,
         },
       ],
     },
     {
       title: "Wallet & Treasury",
-      url: "/wallet",
-      icon: <Wallet />,
       items: [
         {
           title: "System Overview",
           url: "/wallet",
+          icon: <Wallet />,
         },
         {
           title: "Hot Wallets",
           url: "/wallet/hot-wallets",
+          icon: <Wallet />,
         },
       ],
     },
     {
       title: "System Settings",
-      url: "/settings",
-      icon: <Settings2 />,
       items: [
         {
           title: "Fees & Commissions",
           url: "/settings/fees",
+          icon: <Settings2 />,
         },
         {
           title: "Withdrawal Limits",
           url: "/settings/limits",
+          icon: <Settings2 />,
         },
       ],
     },
     {
       title: "Content Management",
-      url: "/content",
-      icon: <FileText />,
       items: [
         {
           title: "Banners",
           url: "/content/banners",
+          icon: <FileText />,
         },
         {
           title: "Notifications",
           url: "/content/notifications",
+          icon: <FileText />,
         },
         {
           title: "FAQs",
           url: "/content/faqs",
+          icon: <FileText />,
         },
       ],
     },
     {
-      title: "Personnel",
-      url: "/personnel",
-      icon: <UserPlus />,
+      title: "Administration",
       items: [
         {
           title: "Admin List",
           url: "/personnel",
+          icon: <UserPlus />,
         },
         {
           title: "Roles & Permissions",
           url: "/personnel/roles",
+          icon: <UserPlus />,
+        },
+        {
+          title: "Audit Logs",
+          url: "/audit-logs",
+          icon: <ClipboardClock />,
         },
       ],
-    },
-  ],
-  navSub: [
-    {
-      title: "Audit Logs",
-      url: "/audit-logs",
-      icon: <ClipboardClock />,
     },
   ],
 }
@@ -184,9 +189,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <LogoUniCrypto data={data.logo} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavSub items={data.navSub} />
-        {/* <NavProjects projects={data.projects} /> */}
+        <NavMain groups={data.navGroups} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

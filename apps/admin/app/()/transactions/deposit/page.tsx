@@ -1,5 +1,5 @@
-import { Transaction } from "@/container/dashboard/transactions/page"
+import { Deposits } from "@/container/dashboard/deposits/page"
 
 export default function DepositPage() {
-  return <Transaction />
+  return <Deposits />
 }

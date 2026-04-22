@@ -2,6 +2,7 @@
 
 import { useLogin } from "@/hooks/auth/use-login"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { LoginSchema, LoginSchemaType } from "@workspace/shared/schemas"
 import { Button } from "@workspace/ui/components/button"
 import {
   Card,
@@ -21,7 +22,6 @@ import { Input } from "@workspace/ui/components/input"
 import { Bitcoin } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { SubmitHandler, useForm } from "react-hook-form"
-import { LoginSchema, LoginSchemaType } from "@workspace/shared/schemas"
 
 export const Login = () => {
   const route = useRouter()
@@ -53,7 +53,7 @@ export const Login = () => {
         <div className="absolute top-1/2 left-1/2 flex w-full -translate-x-1/2 -translate-y-1/2 flex-col gap-6">
           <Card>
             <CardHeader className="text-center">
-              <CardTitle className="text-xl">Welcome back</CardTitle>
+              <CardTitle className="text-xl">Admin </CardTitle>
               <CardDescription>
                 Login with your Apple or Google account
               </CardDescription>
