@@ -19,7 +19,6 @@ import {
   FileText,
   LayoutDashboard,
   Settings2,
-  ShieldCheck,
   UserPlus,
   Users,
   Wallet,
@@ -69,21 +68,7 @@ const data = {
         },
       ],
     },
-    {
-      title: "KYC Management",
-      url: "/kyc",
-      icon: <ShieldCheck />,
-      items: [
-        {
-          title: "Verification Requests",
-          url: "/kyc",
-        },
-        {
-          title: "KYC Settings",
-          url: "/kyc/settings",
-        },
-      ],
-    },
+
     {
       title: "Transactions",
       url: "/transactions",
