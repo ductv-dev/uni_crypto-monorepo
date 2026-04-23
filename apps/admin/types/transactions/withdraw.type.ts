@@ -17,3 +17,7 @@ export enum EWithdrawStatus {
   REJECTED = "rejected",
   COMPLETED = "completed",
 }
+
+export type TWithdrawFilter = {
+  status?: EWithdrawStatus
+}

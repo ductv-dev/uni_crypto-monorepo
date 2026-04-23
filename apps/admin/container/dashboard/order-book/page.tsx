@@ -22,7 +22,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@workspace/ui/components/breadcrumb"
-import { Card, CardContent } from "@workspace/ui/components/card"
 import {
   Pagination,
   PaginationContent,
@@ -41,10 +40,15 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table"
-import { useMemo, useState } from "react"
+import { debounce } from "lodash"
+import { useEffect, useMemo, useState } from "react"
+import { OrderBookToolbar } from "./components/order-book-toolbar"
+import { OverviewOrderOverview } from "./components/order-overview"
+import { OrderRowActions } from "./components/order-row-actions"
 
 export const OrderBook = () => {
-  const [search, setSearch] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQueryDebounced, setSearchQueryDebounced] = useState("")
   const [pagination, setPagination] = useState<TPagination>({
     limit: 10,
     offset: 0,
@@ -54,12 +58,40 @@ export const OrderBook = () => {
     type: undefined,
     side: undefined,
   })
-  const {
-    data: orders,
-    isLoading,
-    error,
-  } = useOrderBook(pagination.limit, pagination.offset, search, filter)
-  const { data: orderOverview } = useOrderBookOverview()
+  const { data: orders, isLoading } = useOrderBook(
+    pagination.limit,
+    pagination.offset,
+    searchQuery,
+    filter
+  )
+  const { data: orderOverview, isLoading: isLoadingOverview } =
+    useOrderBookOverview()
+
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((value: string) => {
+        setSearchQuery(value)
+        setPagination((prev) => ({ ...prev, offset: 0 }))
+      }, 500),
+    []
+  )
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel()
+    }
+  }, [debouncedSearch])
+
+  const handleSearchChange = (value: string) => {
+    setSearchQueryDebounced(value)
+    debouncedSearch(value)
+  }
+
+  const handleFilterChange = (newFilter: TFilterOrderBook) => {
+    setFilter(newFilter)
+    setPagination((prev) => ({ ...prev, offset: 0 }))
+  }
+
   const columns = useMemo<ColumnDef<TOrderBook>[]>(
     () => [
       {
@@ -101,30 +133,8 @@ export const OrderBook = () => {
 
       {
         id: "actions",
-        header: "Thao tác",
-        // cell: ({ row }) => {
-        //   return (
-        //     <DropdownMenu>
-        //       <DropdownMenuTrigger asChild>
-        //         <Button variant="ghost" size="icon">
-        //           <MoreHorizontal className="h-4 w-4" />
-        //         </Button>
-        //       </DropdownMenuTrigger>
-        //       <DropdownMenuContent align="end" className="w-48">
-        //         <div className="flex flex-col space-y-1 p-1">
-        //           <PersonnelDetailView personnel={row.original} />
-        //           <FormUpdatePersonnel personnel={row.original} />
-        //           <DropdownMenuItem
-        //             className="cursor-pointer text-destructive"
-        //             onClick={() => setSelectedPersonnel(row.original)}
-        //           >
-        //             Xóa Admin
-        //           </DropdownMenuItem>
-        //         </div>
-        //       </DropdownMenuContent>
-        //     </DropdownMenu>
-        //   )
-        // },
+        header: "Actions",
+        cell: ({ row }) => <OrderRowActions order={row.original} />,
       },
     ],
     []
@@ -166,18 +176,18 @@ export const OrderBook = () => {
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <h1 className="text-2xl font-bold tracking-tight">Orders Book</h1>
-        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 lg:grid-cols-4">
-          {orderOverview?.map((item) => {
-            return (
-              <Card key={item.title}>
-                <CardContent>
-                  <p>{item.title}</p>
-                  <p>{item.total}</p>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
+        <OverviewOrderOverview
+          overview={orderOverview}
+          isLoading={isLoadingOverview}
+        />
+
+        <OrderBookToolbar
+          searchValue={searchQueryDebounced}
+          onSearchChange={handleSearchChange}
+          filter={filter}
+          onFilterApply={handleFilterChange}
+        />
+
         <div className="overflow-hidden rounded-md border">
           <div className="w-full overflow-x-auto">
             <Table>

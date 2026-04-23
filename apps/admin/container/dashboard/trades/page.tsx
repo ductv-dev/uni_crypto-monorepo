@@ -1,9 +1,10 @@
 "use client"
 
 import { SidebarInset, SidebarTrigger } from "@/components/layout/sidebar"
-import { useDepositOverview } from "@/hooks/transactions/deposits/use-deposit-overview"
-import { useDeposits } from "@/hooks/transactions/deposits/use-deposits"
-import { TDepositFilter, TDeposits } from "@/types/transactions/deposits.type"
+import { MOCK_TRADES } from "@/data/transactions/mock-data-trade"
+import { useTradeOverview } from "@/hooks/transactions/trades/use-trade-overview"
+import { useTrades } from "@/hooks/transactions/trades/use-trades"
+import { TTradeFilter, Trade } from "@/types/transactions/trades.type"
 import {
   ColumnDef,
   getCoreRowModel,
@@ -22,102 +23,86 @@ import { format } from "date-fns"
 import { debounce } from "lodash"
 import { ClockIcon } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-import { DepositRowActions } from "./components/deposit-row-actions"
-import { DepositsOverview } from "./components/deposits-overview"
-import { DepositsPagination } from "./components/deposits-pagination"
-import { DepositsTable } from "./components/deposits-table"
-import { DepositsToolbar } from "./components/deposits-toolbar"
-import { DEFAULT_DEPOSIT_FILTER, TDepositPagination } from "./types"
+import { TradeRowActions } from "./components/trade-row-actions"
+import { TradesOverview } from "./components/trades-overview"
+import { TradesPagination } from "./components/trades-pagination"
+import { TradesTable } from "./components/trades-table"
+import { TradesToolbar } from "./components/trades-toolbar"
+import { DEFAULT_TRADE_FILTER, TTradePagination } from "./types"
 
-export const Deposits = () => {
-  const [pagination, setPagination] = useState<TDepositPagination>({
+export const TradesPage = () => {
+  const [pagination, setPagination] = useState<TTradePagination>({
     limit: 10,
     offset: 0,
   })
   const [searchQuery, setSearchQuery] = useState("")
   const [searchQueryDebounced, setSearchQueryDebounced] = useState("")
-  const [filter, setFilter] = useState<TDepositFilter>(DEFAULT_DEPOSIT_FILTER)
+  const [filter, setFilter] = useState<TTradeFilter>(DEFAULT_TRADE_FILTER)
 
-  const { data: overview, isLoading: isLoadingOverview } = useDepositOverview()
-  const { data: deposits, isLoading } = useDeposits(
+  const { data: overview, isLoading: isLoadingOverview } = useTradeOverview()
+  const { data: trades, isLoading } = useTrades(
     pagination.limit,
     pagination.offset,
     searchQuery,
     filter
   )
-  const totalPages = deposits?.pagination.totalPages || 0
+  const totalPages = trades?.pagination.totalPages || 0
 
-  const columns = useMemo<ColumnDef<TDeposits>[]>(
+  const columns = useMemo<ColumnDef<Trade>[]>(
     () => [
       {
         accessorKey: "id",
-        header: "ID",
+        header: "Trade ID",
       },
       {
-        accessorKey: "user_id",
-        header: "User ID",
+        accessorKey: "buy_order_id",
+        header: "Buy Order",
       },
       {
-        accessorKey: "asset",
-        header: "Asset",
+        accessorKey: "sell_order_id",
+        header: "Sell Order",
+      },
+      {
+        accessorKey: "pair",
+        header: "Pair",
+      },
+      {
+        accessorKey: "price",
+        header: "Price",
       },
       {
         accessorKey: "amount",
         header: "Amount",
       },
       {
-        accessorKey: "network",
-        header: "Network",
-      },
-      {
-        accessorKey: "tx_hash",
-        header: "Tx Hash",
-        cell: ({ row }) => {
-          const hash = row.original.tx_hash
-          return (
-            <span className="font-mono text-xs">
-              {hash.slice(0, 10)}...{hash.slice(-10)}
-            </span>
-          )
-        },
-      },
-      {
-        accessorKey: "confirmations",
-        header: "Confirmations",
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => {
-          const status = row.original.status
-          return (
-            <span
-              className={`rounded-full px-2 py-1 text-xs font-medium ${
-                status === "confirmed"
-                  ? "bg-green-100 text-green-700"
-                  : status === "pending"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-red-100 text-red-700"
-              }`}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </span>
-          )
-        },
+        accessorKey: "total",
+        header: "Total",
       },
       {
         accessorKey: "created_at",
-        header: "Time",
+        header: "Created At",
         cell: ({ row }) => {
-          const transaction = row.original
+          const trade = row.original
           return (
             <div className="flex items-center gap-2">
               <ClockIcon className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">
-                {format(
-                  new Date(transaction.created_at),
-                  "MMM dd, yyyy hh:mm a"
-                )}
+                {format(new Date(trade.created_at), "MMM dd, yyyy hh:mm a")}
+              </span>
+            </div>
+          )
+        },
+      },
+      {
+        accessorKey: "updated_at",
+        header: "Updated At",
+        cell: ({ row }) => {
+          const trade = row.original
+          return (
+            <div className="flex items-center gap-2">
+              <ClockIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                {format(new Date(trade.updated_at), "MMM dd, yyyy hh:mm a")}
               </span>
             </div>
           )
@@ -126,11 +111,16 @@ export const Deposits = () => {
       {
         id: "actions",
         header: "Actions",
-        cell: ({ row }) => <DepositRowActions deposit={row.original} />,
+        cell: ({ row }) => <TradeRowActions trade={row.original} />,
       },
     ],
     []
   )
+
+  const pairOptions = useMemo(() => {
+    const allPairs = new Set(MOCK_TRADES.map((trade) => trade.pair))
+    return Array.from(allPairs)
+  }, [])
 
   const debouncedSearch = useMemo(
     () =>
@@ -152,13 +142,13 @@ export const Deposits = () => {
     debouncedSearch(value)
   }
 
-  const handleFilterChange = (newFilter: TDepositFilter) => {
+  const handleFilterChange = (newFilter: TTradeFilter) => {
     setFilter(newFilter)
     setPagination((prev) => ({ ...prev, offset: 0 }))
   }
 
-  const table = useReactTable<TDeposits>({
-    data: deposits?.data || [],
+  const table = useReactTable<Trade>({
+    data: trades?.data || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
   })
@@ -185,7 +175,7 @@ export const Deposits = () => {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Deposits</BreadcrumbPage>
+                <BreadcrumbPage>Trade History</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -194,26 +184,27 @@ export const Deposits = () => {
 
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Deposits</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Trade History</h1>
         </div>
 
-        <DepositsOverview overview={overview} isLoading={isLoadingOverview} />
+        <TradesOverview overview={overview} isLoading={isLoadingOverview} />
 
-        <DepositsToolbar
+        <TradesToolbar
           searchValue={searchQueryDebounced}
           onSearchChange={handleSearchChange}
           filter={filter}
           onFilterApply={handleFilterChange}
+          pairOptions={pairOptions}
         />
 
-        <DepositsTable
+        <TradesTable
           table={table}
           columns={columns}
           isLoading={isLoading}
           loadingRowCount={pagination.limit}
         />
 
-        <DepositsPagination
+        <TradesPagination
           pagination={pagination}
           totalPages={totalPages}
           onChange={setPagination}

@@ -24,7 +24,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import { Input } from "@workspace/ui/components/input"
 import {
   Pagination,
   PaginationContent,
@@ -45,13 +44,13 @@ import {
 } from "@workspace/ui/components/table"
 import { format } from "date-fns"
 import { debounce } from "lodash"
-import { ClockIcon, MoreHorizontal, Search } from "lucide-react"
+import { ClockIcon, MoreHorizontal } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { DeleteConfirm } from "./components/delete-transactions"
 import { TransactionDetailView } from "./components/detail-view-transaxtion"
-import { FilterTransactions } from "./components/filter-transactions"
 import { RiskLevel } from "./components/risk-level-transactions"
 import { Status } from "./components/status-transactions"
+import { TransactionsToolbar } from "./components/transactions-toolbar"
 import { TypeTransaction } from "./components/type"
 
 export const Transaction = () => {
@@ -217,20 +216,12 @@ export const Transaction = () => {
                 <CardTransactions key={item.title} data={item} />
               ))}
         </div>
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative flex-1">
-            <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchQueryDebounced}
-              onChange={(event) => {
-                handleSearchChange(event.target.value)
-              }}
-              placeholder="Search by Hash, User ID..."
-              className="pl-8"
-            />
-          </div>
-          <FilterTransactions filter={filter} setFilter={setFilter} />
-        </div>
+        <TransactionsToolbar
+          searchValue={searchQueryDebounced}
+          onSearchChange={handleSearchChange}
+          filter={filter}
+          onFilterChange={setFilter}
+        />
         <div className="overflow-hidden rounded-md border">
           <div className="w-full">
             <Table>

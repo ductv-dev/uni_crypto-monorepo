@@ -1,5 +1,9 @@
 "use client"
 
+import {
+  EDepositStatus,
+  TDepositFilter,
+} from "@/types/transactions/deposits.type"
 import { Button } from "@workspace/ui/components/button"
 import {
   Drawer,
@@ -11,7 +15,6 @@ import {
   DrawerTrigger,
 } from "@workspace/ui/components/drawer"
 import { Field, FieldLabel } from "@workspace/ui/components/field"
-import { Input } from "@workspace/ui/components/input"
 import {
   Select,
   SelectContent,
@@ -21,43 +24,32 @@ import {
 } from "@workspace/ui/components/select"
 import { Filter, RotateCcw } from "lucide-react"
 import { useEffect, useState } from "react"
-import { DEFAULT_USER_FILTER, TUserFilter } from "../types"
 
-type TFilterUsersProps = {
-  filter: TUserFilter
-  onApply: (filter: TUserFilter) => void
+type TFilterDepositsProps = {
+  filter: TDepositFilter
+  onApply: (filter: TDepositFilter) => void
 }
 
-const USER_STATUS_OPTIONS = [
-  { label: "All Status", value: "ALL" },
-  { label: "Active", value: "active" },
-  { label: "Inactive", value: "inactive" },
-  { label: "Pending", value: "pending" },
-  { label: "Block", value: "block" },
-]
+const DEFAULT_DEPOSIT_FILTER: TDepositFilter = {
+  status: undefined,
+}
 
-export const FilterUsers: React.FC<TFilterUsersProps> = ({
+export const FilterDeposits: React.FC<TFilterDepositsProps> = ({
   filter,
   onApply,
 }) => {
-  const [filterState, setFilterState] = useState<TUserFilter>(filter)
+  const [filterState, setFilterState] = useState<TDepositFilter>(filter)
 
   useEffect(() => {
     setFilterState(filter)
   }, [filter])
 
   const handleReset = () => {
-    setFilterState(DEFAULT_USER_FILTER)
+    setFilterState(DEFAULT_DEPOSIT_FILTER)
   }
-  const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <Drawer
-      onClose={() => onApply(filterState)}
-      direction="right"
-      open={isOpen}
-      onOpenChange={setIsOpen}
-    >
+    <Drawer direction="right">
       <DrawerTrigger asChild>
         <Button variant="outline" size="sm">
           <Filter className="mr-2 h-4 w-4" />
@@ -66,17 +58,18 @@ export const FilterUsers: React.FC<TFilterUsersProps> = ({
       </DrawerTrigger>
       <DrawerContent className="data-[vaul-drawer-direction=bottom]:max-h-[50vh] data-[vaul-drawer-direction=top]:max-h-[50vh]">
         <DrawerHeader>
-          <DrawerTitle>Advanced Filters</DrawerTitle>
+          <DrawerTitle>Deposits Filters</DrawerTitle>
         </DrawerHeader>
         <div className="no-scrollbar space-y-4 overflow-y-auto px-4 pb-2">
           <Field>
             <FieldLabel>Status</FieldLabel>
             <Select
-              value={filterState.status || "ALL"}
+              value={filterState.status ?? "ALL"}
               onValueChange={(value) =>
                 setFilterState((prev) => ({
                   ...prev,
-                  status: value === "ALL" ? "" : value,
+                  status:
+                    value === "ALL" ? undefined : (value as EDepositStatus),
                 }))
               }
             >
@@ -84,27 +77,14 @@ export const FilterUsers: React.FC<TFilterUsersProps> = ({
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                {USER_STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="ALL">All Status</SelectItem>
+                <SelectItem value={EDepositStatus.PENDING}>Pending</SelectItem>
+                <SelectItem value={EDepositStatus.CONFIRMED}>
+                  Confirmed
+                </SelectItem>
+                <SelectItem value={EDepositStatus.FAILED}>Failed</SelectItem>
               </SelectContent>
             </Select>
-          </Field>
-
-          <Field>
-            <FieldLabel>Country</FieldLabel>
-            <Input
-              placeholder="Vietnam, Singapore..."
-              value={filterState.country}
-              onChange={(event) =>
-                setFilterState((prev) => ({
-                  ...prev,
-                  country: event.target.value,
-                }))
-              }
-            />
           </Field>
         </div>
         <DrawerFooter className="flex-row justify-end gap-2 border-t pt-4">
@@ -113,7 +93,9 @@ export const FilterUsers: React.FC<TFilterUsersProps> = ({
             Reset
           </Button>
           <DrawerClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button onClick={() => onApply(filter)} variant="outline">
+              Cancel
+            </Button>
           </DrawerClose>
           <DrawerClose asChild>
             <Button onClick={() => onApply(filterState)}>Apply Filters</Button>

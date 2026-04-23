@@ -1,6 +1,6 @@
 "use client"
 
-import { TDepositOverView } from "@/hooks/transactions/deposits/use-deposit-overview"
+import { TTradeOverview } from "@/hooks/transactions/trades/use-trade-overview"
 import {
   Card,
   CardContent,
@@ -9,55 +9,56 @@ import {
 } from "@workspace/ui/components/card"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
-  CheckCircle2Icon,
-  ClockIcon,
-  HelpCircleIcon,
-  XCircleIcon,
+  ArrowLeftRight,
+  ChartCandlestick,
+  DollarSign,
+  Shapes,
 } from "lucide-react"
 
-type TDepositsOverviewProps = {
-  overview?: TDepositOverView[]
+type TTradesOverviewProps = {
+  overview?: TTradeOverview[]
   isLoading: boolean
+}
+const getIcon = (title: string) => {
+  switch (title) {
+    case "Total Trades":
+      return <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+    case "Unique Pairs":
+      return <Shapes className="h-4 w-4 text-blue-500" />
+    case "Total Volume":
+      return <DollarSign className="h-4 w-4 text-green-500" />
+    case "Average Trade Size":
+      return <ChartCandlestick className="h-4 w-4 text-orange-500" />
+    default:
+      return null
+  }
 }
 const getColors = (title: string) => {
   switch (title) {
-    case "Total Deposits":
+    case "Total Trades":
       return "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-    case "Pending Deposits":
-      return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
-    case "Confirmed Deposits":
+    case "Unique Pairs":
       return "bg-green-500/10 text-green-600 dark:text-green-400"
-    case "Failed Deposits":
+    case "Total Volume":
+      return "bg-orange-500/10 text-orange-600 dark:text-orange-400"
+    case "Average Trade Size":
       return "bg-red-500/10 text-red-600 dark:text-red-400"
     default:
       return "bg-gray-500/10 text-gray-600 dark:text-gray-400"
   }
 }
-const getIcon = (title: string) => {
-  switch (title) {
-    case "Total Deposits":
-      return <HelpCircleIcon className="h-4 w-4 text-muted-foreground" />
-    case "Pending Deposits":
-      return <ClockIcon className="h-4 w-4 text-yellow-500" />
-    case "Confirmed Deposits":
-      return <CheckCircle2Icon className="h-4 w-4 text-green-500" />
-    case "Failed Deposits":
-      return <XCircleIcon className="h-4 w-4 text-red-500" />
-    default:
-      return null
-  }
-}
-export const DepositsOverview: React.FC<TDepositsOverviewProps> = ({
+
+export const TradesOverview: React.FC<TTradesOverviewProps> = ({
   overview,
   isLoading,
 }) => {
-  if (isLoading)
+  if (isLoading) {
     return (
-      <div className="md:gap-cols-2 grid gap-4 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index} className="h-30">
+          <Card key={index}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <Skeleton className="h-4 w-[100px]" />
+              <Skeleton className="h-4 w-[110px]" />
               <Skeleton className="h-4 w-4" />
             </CardHeader>
             <CardContent>
@@ -67,6 +68,8 @@ export const DepositsOverview: React.FC<TDepositsOverviewProps> = ({
         ))}
       </div>
     )
+  }
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {overview?.map((item) => (

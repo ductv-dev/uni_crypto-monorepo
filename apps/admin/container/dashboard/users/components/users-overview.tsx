@@ -5,7 +5,7 @@ import { Card, CardContent } from "@workspace/ui/components/card"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { UserCheck, UserMinus, UserPlus, Users, UserX } from "lucide-react"
 
-type TUsersOverviewProps = {
+type Props = {
   overview?: TUserOverView[]
   isLoading?: boolean
 }
@@ -44,7 +44,7 @@ const getColors = (title: string) => {
   }
 }
 
-export const UsersOverview: React.FC<TUsersOverviewProps> = ({
+export const UsersOverview: React.FC<Props> = ({
   overview,
   isLoading = false,
 }) => {
@@ -52,7 +52,7 @@ export const UsersOverview: React.FC<TUsersOverviewProps> = ({
     return (
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Skeleton key={index} className="h-24 w-full" />
+          <Skeleton key={index} className="h-30 w-full" />
         ))}
       </div>
     )
@@ -61,8 +61,11 @@ export const UsersOverview: React.FC<TUsersOverviewProps> = ({
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
       {overview?.map((item, index) => (
-        <Card key={`${item.title}-${index}`} className="overflow-hidden">
-          <CardContent className="p-6">
+        <Card
+          key={`${item.title}-${index}`}
+          className="flex h-30 justify-center overflow-hidden"
+        >
+          <CardContent>
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">

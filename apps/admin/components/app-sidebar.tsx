@@ -62,11 +62,6 @@ const data = {
           url: "/users",
           icon: <Users />,
         },
-        {
-          title: "Security & 2FA",
-          url: "/users/security",
-          icon: <Users />,
-        },
       ],
     },
     {

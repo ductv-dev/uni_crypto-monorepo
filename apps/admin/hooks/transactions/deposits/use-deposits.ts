@@ -1,7 +1,7 @@
 import { MOCK_DEPOSITS } from "@/data/transactions/mock-data-deposit"
 import { TDepositFilter, TDeposits } from "@/types/transactions/deposits.type"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
-const DEPOSITS_LIST_QUERY_KEY = "deposits-list"
+export const DEPOSITS_LIST_QUERY_KEY = "deposits-list"
 
 type TDepositResponse = {
   data: TDeposits[]

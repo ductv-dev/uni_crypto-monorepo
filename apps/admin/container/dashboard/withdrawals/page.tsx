@@ -1,9 +1,12 @@
 "use client"
 
 import { SidebarInset, SidebarTrigger } from "@/components/layout/sidebar"
-import { useDepositOverview } from "@/hooks/transactions/deposits/use-deposit-overview"
-import { useDeposits } from "@/hooks/transactions/deposits/use-deposits"
-import { TDepositFilter, TDeposits } from "@/types/transactions/deposits.type"
+import { useWithdrawals } from "@/hooks/transactions/withdrawals/use-withdrawals"
+import { useWithdrawalOverview } from "@/hooks/transactions/withdrawals/use-withdrawal-overview"
+import {
+  TWithdrawFilter,
+  Withdrawals,
+} from "@/types/transactions/withdraw.type"
 import {
   ColumnDef,
   getCoreRowModel,
@@ -22,32 +25,35 @@ import { format } from "date-fns"
 import { debounce } from "lodash"
 import { ClockIcon } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-import { DepositRowActions } from "./components/deposit-row-actions"
-import { DepositsOverview } from "./components/deposits-overview"
-import { DepositsPagination } from "./components/deposits-pagination"
-import { DepositsTable } from "./components/deposits-table"
-import { DepositsToolbar } from "./components/deposits-toolbar"
-import { DEFAULT_DEPOSIT_FILTER, TDepositPagination } from "./types"
+import { WithdrawalRowActions } from "./components/withdrawal-row-actions"
+import { WithdrawalsOverview } from "./components/withdrawals-overview"
+import { WithdrawalsPagination } from "./components/withdrawals-pagination"
+import { WithdrawalsTable } from "./components/withdrawals-table"
+import { WithdrawalsToolbar } from "./components/withdrawals-toolbar"
+import { DEFAULT_WITHDRAWAL_FILTER, TWithdrawalPagination } from "./types"
 
-export const Deposits = () => {
-  const [pagination, setPagination] = useState<TDepositPagination>({
+export const WithdrawalsPage = () => {
+  const [pagination, setPagination] = useState<TWithdrawalPagination>({
     limit: 10,
     offset: 0,
   })
   const [searchQuery, setSearchQuery] = useState("")
   const [searchQueryDebounced, setSearchQueryDebounced] = useState("")
-  const [filter, setFilter] = useState<TDepositFilter>(DEFAULT_DEPOSIT_FILTER)
+  const [filter, setFilter] = useState<TWithdrawFilter>(
+    DEFAULT_WITHDRAWAL_FILTER
+  )
 
-  const { data: overview, isLoading: isLoadingOverview } = useDepositOverview()
-  const { data: deposits, isLoading } = useDeposits(
+  const { data: overview, isLoading: isLoadingOverview } =
+    useWithdrawalOverview()
+  const { data: withdrawals, isLoading } = useWithdrawals(
     pagination.limit,
     pagination.offset,
     searchQuery,
     filter
   )
-  const totalPages = deposits?.pagination.totalPages || 0
+  const totalPages = withdrawals?.pagination.totalPages || 0
 
-  const columns = useMemo<ColumnDef<TDeposits>[]>(
+  const columns = useMemo<ColumnDef<Withdrawals>[]>(
     () => [
       {
         accessorKey: "id",
@@ -66,8 +72,24 @@ export const Deposits = () => {
         header: "Amount",
       },
       {
+        accessorKey: "fee",
+        header: "Fee",
+      },
+      {
         accessorKey: "network",
         header: "Network",
+      },
+      {
+        accessorKey: "to_address",
+        header: "To Address",
+        cell: ({ row }) => {
+          const address = row.original.to_address
+          return (
+            <span className="font-mono text-xs">
+              {address.slice(0, 8)}...{address.slice(-8)}
+            </span>
+          )
+        },
       },
       {
         accessorKey: "tx_hash",
@@ -82,8 +104,9 @@ export const Deposits = () => {
         },
       },
       {
-        accessorKey: "confirmations",
-        header: "Confirmations",
+        accessorKey: "approved_by",
+        header: "Approved By",
+        cell: ({ row }) => row.original.approved_by || "-",
       },
       {
         accessorKey: "status",
@@ -93,11 +116,13 @@ export const Deposits = () => {
           return (
             <span
               className={`rounded-full px-2 py-1 text-xs font-medium ${
-                status === "confirmed"
+                status === "completed"
                   ? "bg-green-100 text-green-700"
                   : status === "pending"
                     ? "bg-yellow-100 text-yellow-700"
-                    : "bg-red-100 text-red-700"
+                    : status === "approved"
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-red-100 text-red-700"
               }`}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -126,7 +151,7 @@ export const Deposits = () => {
       {
         id: "actions",
         header: "Actions",
-        cell: ({ row }) => <DepositRowActions deposit={row.original} />,
+        cell: ({ row }) => <WithdrawalRowActions withdrawal={row.original} />,
       },
     ],
     []
@@ -152,13 +177,13 @@ export const Deposits = () => {
     debouncedSearch(value)
   }
 
-  const handleFilterChange = (newFilter: TDepositFilter) => {
+  const handleFilterChange = (newFilter: TWithdrawFilter) => {
     setFilter(newFilter)
     setPagination((prev) => ({ ...prev, offset: 0 }))
   }
 
-  const table = useReactTable<TDeposits>({
-    data: deposits?.data || [],
+  const table = useReactTable<Withdrawals>({
+    data: withdrawals?.data || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
   })
@@ -185,7 +210,7 @@ export const Deposits = () => {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Deposits</BreadcrumbPage>
+                <BreadcrumbPage>Withdrawals</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -194,26 +219,29 @@ export const Deposits = () => {
 
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Deposits</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Withdrawals</h1>
         </div>
 
-        <DepositsOverview overview={overview} isLoading={isLoadingOverview} />
+        <WithdrawalsOverview
+          overview={overview}
+          isLoading={isLoadingOverview}
+        />
 
-        <DepositsToolbar
+        <WithdrawalsToolbar
           searchValue={searchQueryDebounced}
           onSearchChange={handleSearchChange}
           filter={filter}
           onFilterApply={handleFilterChange}
         />
 
-        <DepositsTable
+        <WithdrawalsTable
           table={table}
           columns={columns}
           isLoading={isLoading}
           loadingRowCount={pagination.limit}
         />
 
-        <DepositsPagination
+        <WithdrawalsPagination
           pagination={pagination}
           totalPages={totalPages}
           onChange={setPagination}

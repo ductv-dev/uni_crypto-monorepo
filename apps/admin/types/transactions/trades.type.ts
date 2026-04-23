@@ -9,3 +9,7 @@ export type Trade = {
   created_at: string
   updated_at: string
 }
+
+export type TTradeFilter = {
+  pair?: string
+}

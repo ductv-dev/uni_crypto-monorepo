@@ -2,14 +2,14 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "@workspace/ui/index"
-import { useForm } from "react-hook-form"
 import { useState } from "react"
+import { useForm } from "react-hook-form"
 
+import { useUpdateUserProfile } from "@/hooks/users/use-update-user-profile"
 import {
   UpdateUserProfileSchema,
   type UpdateUserProfileSchemaType,
 } from "@/schema/update-user-profile.schema"
-import { useUpdateUserProfile } from "@/hooks/users/use-update-user-profile"
 import { TUser } from "@/types/user.type"
 import {
   Avatar,
@@ -31,14 +31,14 @@ import {
   FieldLabel,
 } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
+import { Separator } from "@workspace/ui/components/separator"
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@workspace/ui/components/tabs"
-import { Eye, Mail, Phone, MapPin, Calendar, User } from "lucide-react"
-import { Separator } from "@workspace/ui/components/separator"
+import { Calendar, Eye, Mail, MapPin, Phone, User } from "lucide-react"
 
 type TUserDetailViewProps = {
   user: TUser
@@ -69,8 +69,6 @@ export const UserDetailView: React.FC<TUserDetailViewProps> = ({ user }) => {
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
     formState: { errors },
   } = useForm<UpdateUserProfileSchemaType>({
     resolver: zodResolver(UpdateUserProfileSchema),

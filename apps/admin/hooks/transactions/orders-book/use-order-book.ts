@@ -4,7 +4,7 @@ import {
   TOrderBook,
 } from "@/types/transactions/orders-book.type"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
-const ORDER_LIST_QUERY_KEY = "order-list"
+export const ORDER_LIST_QUERY_KEY = "order-list"
 
 type TOrderBookResponse = {
   data: TOrderBook[]
@@ -42,6 +42,18 @@ const getOrderBook = async (
   if (filter.status) {
     filterOrderBook = filterOrderBook.filter(
       (order) => order.status === filter.status
+    )
+  }
+
+  if (filter.type) {
+    filterOrderBook = filterOrderBook.filter(
+      (order) => order.type === filter.type
+    )
+  }
+
+  if (filter.side) {
+    filterOrderBook = filterOrderBook.filter(
+      (order) => order.side === filter.side
     )
   }
 

@@ -1,18 +1,18 @@
 "use client"
 
-import { TDepositFilter } from "@/types/transactions/deposits.type"
+import { TWithdrawFilter } from "@/types/transactions/withdraw.type"
 import { Input } from "@workspace/ui/components/input"
 import { SearchIcon } from "lucide-react"
-import { FilterDeposits } from "./filter-deposits"
+import { FilterWithdrawals } from "./filter-withdrawals"
 
-type TDepositsToolbarProps = {
+type TWithdrawalsToolbarProps = {
   searchValue: string
   onSearchChange: (value: string) => void
-  filter: TDepositFilter
-  onFilterApply: (newFilter: TDepositFilter) => void
+  filter: TWithdrawFilter
+  onFilterApply: (newFilter: TWithdrawFilter) => void
 }
 
-export const DepositsToolbar: React.FC<TDepositsToolbarProps> = ({
+export const WithdrawalsToolbar: React.FC<TWithdrawalsToolbarProps> = ({
   searchValue,
   onSearchChange,
   filter,
@@ -20,7 +20,7 @@ export const DepositsToolbar: React.FC<TDepositsToolbarProps> = ({
 }) => {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
-      <div className="flex w-full flex-1 items-center gap-2 md:w-auto">
+      <div className="flex min-w-[300px] flex-1 items-center gap-2">
         <div className="relative flex-1">
           <SearchIcon className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -31,7 +31,7 @@ export const DepositsToolbar: React.FC<TDepositsToolbarProps> = ({
           />
         </div>
       </div>
-      <FilterDeposits filter={filter} onApply={onFilterApply} />
+      <FilterWithdrawals filter={filter} onApply={onFilterApply} />
     </div>
   )
 }
