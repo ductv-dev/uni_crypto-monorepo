@@ -4,7 +4,7 @@ import { SidebarInset, SidebarTrigger } from "@/components/layout/sidebar"
 import { MOCK_TRADES } from "@/data/transactions/mock-data-trade"
 import { useTradeOverview } from "@/hooks/transactions/trades/use-trade-overview"
 import { useTrades } from "@/hooks/transactions/trades/use-trades"
-import { TTradeFilter, Trade } from "@/types/transactions/trades.type"
+import { TTrade, TTradeFilter } from "@/types/transactions/trades.type"
 import {
   ColumnDef,
   getCoreRowModel,
@@ -48,7 +48,7 @@ export const TradesPage = () => {
   )
   const totalPages = trades?.pagination.totalPages || 0
 
-  const columns = useMemo<ColumnDef<Trade>[]>(
+  const columns = useMemo<ColumnDef<TTrade>[]>(
     () => [
       {
         accessorKey: "id",
@@ -147,7 +147,7 @@ export const TradesPage = () => {
     setPagination((prev) => ({ ...prev, offset: 0 }))
   }
 
-  const table = useReactTable<Trade>({
+  const table = useReactTable<TTrade>({
     data: trades?.data || [],
     columns,
     getCoreRowModel: getCoreRowModel(),

@@ -1,4 +1,4 @@
-export type Trade = {
+export type TTrade = {
   id: string
   buy_order_id: string
   sell_order_id: string

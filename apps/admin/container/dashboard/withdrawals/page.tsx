@@ -5,7 +5,7 @@ import { useWithdrawalOverview } from "@/hooks/transactions/withdrawals/use-with
 import { useWithdrawals } from "@/hooks/transactions/withdrawals/use-withdrawals"
 import {
   TWithdrawFilter,
-  Withdrawals,
+  TWithdrawals,
 } from "@/types/transactions/withdraw.type"
 import {
   ColumnDef,
@@ -53,7 +53,7 @@ export const WithdrawalsPage = () => {
   )
   const totalPages = withdrawals?.pagination.totalPages || 0
 
-  const columns = useMemo<ColumnDef<Withdrawals>[]>(
+  const columns = useMemo<ColumnDef<TWithdrawals>[]>(
     () => [
       {
         accessorKey: "id",
@@ -182,7 +182,7 @@ export const WithdrawalsPage = () => {
     setPagination((prev) => ({ ...prev, offset: 0 }))
   }
 
-  const table = useReactTable<Withdrawals>({
+  const table = useReactTable<TWithdrawals>({
     data: withdrawals?.data || [],
     columns,
     getCoreRowModel: getCoreRowModel(),

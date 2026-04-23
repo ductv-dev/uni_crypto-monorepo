@@ -4,7 +4,7 @@ import { useDeleteWithdrawal } from "@/hooks/transactions/withdrawals/use-delete
 import { useUpdateWithdrawal } from "@/hooks/transactions/withdrawals/use-update-withdrawal"
 import {
   EWithdrawStatus,
-  Withdrawals,
+  TWithdrawals,
 } from "@/types/transactions/withdraw.type"
 import {
   AlertDialog,
@@ -42,7 +42,7 @@ import { Edit3, MoreHorizontal, Trash2, Trash2Icon } from "lucide-react"
 import { useState } from "react"
 
 type TWithdrawalRowActionsProps = {
-  withdrawal: Withdrawals
+  withdrawal: TWithdrawals
 }
 
 export const WithdrawalRowActions: React.FC<TWithdrawalRowActionsProps> = ({
@@ -51,7 +51,7 @@ export const WithdrawalRowActions: React.FC<TWithdrawalRowActionsProps> = ({
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [draft, setDraft] = useState<Withdrawals>(withdrawal)
+  const [draft, setDraft] = useState<TWithdrawals>(withdrawal)
   const { mutateAsync: updateWithdrawal, isPending } = useUpdateWithdrawal()
   const { mutateAsync: deleteWithdrawal, isPending: isDeleting } =
     useDeleteWithdrawal()

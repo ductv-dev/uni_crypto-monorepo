@@ -9,7 +9,7 @@ export const MOCK_ORDERS: TOrderBook[] = [
   // Pair BTC/USDT Matches
   {
     id: 1,
-    user_id: 1001,
+    user_id: 1,
     pair: "BTC/USDT",
     type: EOrderType.BUY,
     side: EOrderSide.LIMIT,
@@ -21,7 +21,7 @@ export const MOCK_ORDERS: TOrderBook[] = [
   },
   {
     id: 2,
-    user_id: 2001,
+    user_id: 11,
     pair: "BTC/USDT",
     type: EOrderType.SELL,
     side: EOrderSide.LIMIT,
@@ -35,7 +35,7 @@ export const MOCK_ORDERS: TOrderBook[] = [
   // Pair ETH/BTC Matches
   {
     id: 3,
-    user_id: 1002,
+    user_id: 2,
     pair: "ETH/BTC",
     type: EOrderType.BUY,
     side: EOrderSide.LIMIT,
@@ -47,7 +47,7 @@ export const MOCK_ORDERS: TOrderBook[] = [
   },
   {
     id: 4,
-    user_id: 2002,
+    user_id: 12,
     pair: "ETH/BTC",
     type: EOrderType.SELL,
     side: EOrderSide.LIMIT,
@@ -61,7 +61,7 @@ export const MOCK_ORDERS: TOrderBook[] = [
   // Pair ETH/USDT Matches
   {
     id: 5,
-    user_id: 1003,
+    user_id: 3,
     pair: "ETH/USDT",
     type: EOrderType.BUY,
     side: EOrderSide.LIMIT,
@@ -73,7 +73,7 @@ export const MOCK_ORDERS: TOrderBook[] = [
   },
   {
     id: 6,
-    user_id: 2003,
+    user_id: 13,
     pair: "ETH/USDT",
     type: EOrderType.SELL,
     side: EOrderSide.LIMIT,
@@ -87,7 +87,7 @@ export const MOCK_ORDERS: TOrderBook[] = [
   // Pair SOL/USDC Matches
   {
     id: 7,
-    user_id: 1004,
+    user_id: 4,
     pair: "SOL/USDC",
     type: EOrderType.BUY,
     side: EOrderSide.MARKET,
@@ -99,7 +99,7 @@ export const MOCK_ORDERS: TOrderBook[] = [
   },
   {
     id: 8,
-    user_id: 2004,
+    user_id: 14,
     pair: "SOL/USDC",
     type: EOrderType.SELL,
     side: EOrderSide.LIMIT,
@@ -113,7 +113,7 @@ export const MOCK_ORDERS: TOrderBook[] = [
   // Pair BNB/SOL Matches
   {
     id: 9,
-    user_id: 1005,
+    user_id: 5,
     pair: "BNB/SOL",
     type: EOrderType.BUY,
     side: EOrderSide.LIMIT,
@@ -125,7 +125,7 @@ export const MOCK_ORDERS: TOrderBook[] = [
   },
   {
     id: 10,
-    user_id: 2005,
+    user_id: 15,
     pair: "BNB/SOL",
     type: EOrderType.SELL,
     side: EOrderSide.LIMIT,
@@ -139,7 +139,7 @@ export const MOCK_ORDERS: TOrderBook[] = [
   // Some Pending/Partial Orders
   {
     id: 11,
-    user_id: 1006,
+    user_id: 6,
     pair: "BTC/USDT",
     type: EOrderType.BUY,
     side: EOrderSide.LIMIT,
@@ -151,7 +151,7 @@ export const MOCK_ORDERS: TOrderBook[] = [
   },
   {
     id: 12,
-    user_id: 1007,
+    user_id: 7,
     pair: "ETH/USDT",
     type: EOrderType.SELL,
     side: EOrderSide.LIMIT,
@@ -163,7 +163,7 @@ export const MOCK_ORDERS: TOrderBook[] = [
   },
   {
     id: 13,
-    user_id: 1008,
+    user_id: 8,
     pair: "ADA/USDT",
     type: EOrderType.BUY,
     side: EOrderSide.LIMIT,

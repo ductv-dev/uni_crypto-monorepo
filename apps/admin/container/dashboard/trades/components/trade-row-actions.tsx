@@ -2,7 +2,7 @@
 
 import { useDeleteTrade } from "@/hooks/transactions/trades/use-delete-trade"
 import { useUpdateTrade } from "@/hooks/transactions/trades/use-update-trade"
-import { Trade } from "@/types/transactions/trades.type"
+import { TTrade } from "@/types/transactions/trades.type"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -32,14 +32,14 @@ import { Edit3, MoreHorizontal, Trash2, Trash2Icon } from "lucide-react"
 import { useState } from "react"
 
 type TTradeRowActionsProps = {
-  trade: Trade
+  trade: TTrade
 }
 
 export const TradeRowActions: React.FC<TTradeRowActionsProps> = ({ trade }) => {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [draft, setDraft] = useState<Trade>(trade)
+  const [draft, setDraft] = useState<TTrade>(trade)
   const { mutateAsync: updateTrade, isPending } = useUpdateTrade()
   const { mutateAsync: deleteTrade, isPending: isDeleting } = useDeleteTrade()
 

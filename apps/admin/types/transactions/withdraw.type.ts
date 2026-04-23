@@ -1,4 +1,4 @@
-export type Withdrawals = {
+export type TWithdrawals = {
   id: number
   user_id: number
   asset: string

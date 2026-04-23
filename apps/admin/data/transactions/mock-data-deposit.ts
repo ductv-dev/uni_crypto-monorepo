@@ -3,7 +3,7 @@ import { EDepositStatus, TDeposits } from "@/types/transactions/deposits.type"
 export const MOCK_DEPOSITS: TDeposits[] = [
   {
     id: 1,
-    user_id: 1001,
+    user_id: 1,
     asset: "BTC",
     amount: 0.15,
     network: "Bitcoin",
@@ -15,7 +15,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 2,
-    user_id: 1002,
+    user_id: 2,
     asset: "ETH",
     amount: 2.5,
     network: "Ethereum",
@@ -28,7 +28,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 3,
-    user_id: 1003,
+    user_id: 3,
     asset: "USDT",
     amount: 1500,
     network: "TRC20",
@@ -40,7 +40,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 4,
-    user_id: 1004,
+    user_id: 4,
     asset: "SOL",
     amount: 50,
     network: "Solana",
@@ -52,7 +52,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 5,
-    user_id: 1005,
+    user_id: 5,
     asset: "BNB",
     amount: 10,
     network: "BSC",
@@ -64,7 +64,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 6,
-    user_id: 1006,
+    user_id: 6,
     asset: "USDC",
     amount: 2500.5,
     network: "ERC20",
@@ -76,7 +76,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 7,
-    user_id: 1001,
+    user_id: 1,
     asset: "BTC",
     amount: 0.05,
     network: "Bitcoin",
@@ -88,7 +88,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 8,
-    user_id: 1007,
+    user_id: 7,
     asset: "ETH",
     amount: 1.2,
     network: "Ethereum",
@@ -100,7 +100,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 9,
-    user_id: 1008,
+    user_id: 8,
     asset: "ADA",
     amount: 5000,
     network: "Cardano",
@@ -113,7 +113,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 10,
-    user_id: 1002,
+    user_id: 2,
     asset: "DOT",
     amount: 100,
     network: "Polkadot",
@@ -125,7 +125,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 11,
-    user_id: 1009,
+    user_id: 9,
     asset: "MATIC",
     amount: 1000,
     network: "Polygon",
@@ -137,7 +137,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 12,
-    user_id: 1010,
+    user_id: 10,
     asset: "XRP",
     amount: 500,
     network: "Ripple",
@@ -149,7 +149,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 13,
-    user_id: 1003,
+    user_id: 3,
     asset: "LTC",
     amount: 15.5,
     network: "Litecoin",
@@ -161,7 +161,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 14,
-    user_id: 1011,
+    user_id: 11,
     asset: "AVAX",
     amount: 25,
     network: "Avalanche",
@@ -173,7 +173,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 15,
-    user_id: 1012,
+    user_id: 12,
     asset: "LINK",
     amount: 200,
     network: "ERC20",
@@ -185,7 +185,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 16,
-    user_id: 1004,
+    user_id: 4,
     asset: "TRX",
     amount: 10000,
     network: "TRC20",
@@ -197,7 +197,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 17,
-    user_id: 1013,
+    user_id: 13,
     asset: "UNI",
     amount: 150,
     network: "Ethereum",
@@ -209,7 +209,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 18,
-    user_id: 1005,
+    user_id: 5,
     asset: "DAI",
     amount: 500,
     network: "BSC",
@@ -221,7 +221,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 19,
-    user_id: 1014,
+    user_id: 14,
     asset: "BCH",
     amount: 2.1,
     network: "BCH",
@@ -233,7 +233,7 @@ export const MOCK_DEPOSITS: TDeposits[] = [
   },
   {
     id: 20,
-    user_id: 1015,
+    user_id: 15,
     asset: "XLM",
     amount: 3000,
     network: "Stellar",

@@ -9,8 +9,8 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import { MoreHorizontal } from "lucide-react"
-import { UserDetailView } from "./user-detail-view"
+import { Eye, MoreHorizontal } from "lucide-react"
+import Link from "next/link"
 import { UserQuickEdit } from "./user-quick-edit"
 import { UserStatusBadge } from "./user-status-badge"
 import { UserWalletsView } from "./user-wallets"
@@ -88,7 +88,12 @@ export const getUserColumns = (): ColumnDef<TUser>[] => [
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <div className="space-y-2 p-2">
-            <UserDetailView user={row.original} />
+            <Link
+              href={`/users/${row.original.id}`}
+              className="hover:text-brand-primary flex items-center gap-1 p-1 text-sm"
+            >
+              <Eye size={14} /> Xem chi tiết
+            </Link>
             <UserWalletsView id={row.original.id} />
             <UserQuickEdit user={row.original} />
           </div>

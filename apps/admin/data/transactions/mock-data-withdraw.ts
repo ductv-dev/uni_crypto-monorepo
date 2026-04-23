@@ -1,12 +1,12 @@
 import {
   EWithdrawStatus,
-  Withdrawals,
+  TWithdrawals,
 } from "@/types/transactions/withdraw.type"
 
-export const MOCK_WITHDRAWALS: Withdrawals[] = [
+export const MOCK_WITHDRAWALS: TWithdrawals[] = [
   {
     id: 1,
-    user_id: 1001,
+    user_id: 1,
     asset: "USDT",
     amount: 9500,
     fee: 10,
@@ -19,7 +19,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 2,
-    user_id: 1002,
+    user_id: 2,
     asset: "BTC",
     amount: 0.05,
     fee: 0.0001,
@@ -32,7 +32,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 3,
-    user_id: 1003,
+    user_id: 3,
     asset: "ETH",
     amount: 0.5,
     fee: 0.005,
@@ -45,7 +45,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 4,
-    user_id: 1004,
+    user_id: 4,
     asset: "USDC",
     amount: 5000,
     fee: 5,
@@ -58,7 +58,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 5,
-    user_id: 1005,
+    user_id: 5,
     asset: "SOL",
     amount: 10,
     fee: 0.01,
@@ -71,7 +71,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 6,
-    user_id: 1021,
+    user_id: 21,
     asset: "BTC",
     amount: 0.1,
     fee: 0.0002,
@@ -84,7 +84,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 7,
-    user_id: 1022,
+    user_id: 22,
     asset: "ETH",
     amount: 3.5,
     fee: 0.01,
@@ -97,7 +97,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 8,
-    user_id: 1023,
+    user_id: 23,
     asset: "USDT",
     amount: 2000,
     fee: 1,
@@ -110,7 +110,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 9,
-    user_id: 1024,
+    user_id: 24,
     asset: "SOL",
     amount: 100,
     fee: 0.05,
@@ -123,7 +123,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 10,
-    user_id: 1025,
+    user_id: 25,
     asset: "BNB",
     amount: 5,
     fee: 0.005,
@@ -136,7 +136,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 11,
-    user_id: 1026,
+    user_id: 26,
     asset: "USDC",
     amount: 3000,
     fee: 15,
@@ -149,7 +149,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 12,
-    user_id: 1027,
+    user_id: 27,
     asset: "ADA",
     amount: 10000,
     fee: 2,
@@ -163,7 +163,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 13,
-    user_id: 1028,
+    user_id: 28,
     asset: "DOT",
     amount: 50,
     fee: 0.1,
@@ -176,7 +176,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 14,
-    user_id: 1029,
+    user_id: 29,
     asset: "MATIC",
     amount: 500,
     fee: 0.5,
@@ -189,7 +189,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 15,
-    user_id: 1030,
+    user_id: 30,
     asset: "XRP",
     amount: 1000,
     fee: 0.25,
@@ -202,7 +202,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 16,
-    user_id: 1031,
+    user_id: 31,
     asset: "LTC",
     amount: 10,
     fee: 0.01,
@@ -215,7 +215,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 17,
-    user_id: 1032,
+    user_id: 32,
     asset: "AVAX",
     amount: 50,
     fee: 0.01,
@@ -228,7 +228,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 18,
-    user_id: 1033,
+    user_id: 33,
     asset: "LINK",
     amount: 100,
     fee: 0.1,
@@ -241,7 +241,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 19,
-    user_id: 1034,
+    user_id: 34,
     asset: "TRX",
     amount: 5000,
     fee: 1,
@@ -254,7 +254,7 @@ export const MOCK_WITHDRAWALS: Withdrawals[] = [
   },
   {
     id: 20,
-    user_id: 1035,
+    user_id: 35,
     asset: "UNI",
     amount: 100,
     fee: 0.1,

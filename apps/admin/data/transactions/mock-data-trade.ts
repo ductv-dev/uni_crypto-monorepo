@@ -1,6 +1,6 @@
-import { Trade } from "@/types/transactions/trades.type"
+import { TTrade } from "@/types/transactions/trades.type"
 
-export const MOCK_TRADES: Trade[] = [
+export const MOCK_TRADES: TTrade[] = [
   {
     id: "TRD-001",
     buy_order_id: "1",

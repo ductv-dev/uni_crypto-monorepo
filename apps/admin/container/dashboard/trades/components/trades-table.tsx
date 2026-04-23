@@ -1,6 +1,6 @@
 "use client"
 
-import { Trade } from "@/types/transactions/trades.type"
+import { TTrade } from "@/types/transactions/trades.type"
 import { flexRender, Table as TableType } from "@tanstack/react-table"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
@@ -13,7 +13,7 @@ import {
 } from "@workspace/ui/components/table"
 
 type TTradesTableProps = {
-  table: TableType<Trade>
+  table: TableType<TTrade>
   columns: any[]
   isLoading: boolean
   loadingRowCount?: number
