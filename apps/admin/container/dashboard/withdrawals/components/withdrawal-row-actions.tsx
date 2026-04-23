@@ -50,6 +50,7 @@ export const WithdrawalRowActions: React.FC<TWithdrawalRowActionsProps> = ({
 }) => {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [draft, setDraft] = useState<Withdrawals>(withdrawal)
   const { mutateAsync: updateWithdrawal, isPending } = useUpdateWithdrawal()
   const { mutateAsync: deleteWithdrawal, isPending: isDeleting } =
@@ -77,7 +78,7 @@ export const WithdrawalRowActions: React.FC<TWithdrawalRowActionsProps> = ({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon">
             <MoreHorizontal className="h-4 w-4" />
@@ -88,6 +89,7 @@ export const WithdrawalRowActions: React.FC<TWithdrawalRowActionsProps> = ({
             className="cursor-pointer"
             onSelect={(event) => {
               event.preventDefault()
+              setIsDropdownOpen(false)
               setDraft(withdrawal)
               setIsEditOpen(true)
             }}
@@ -99,6 +101,7 @@ export const WithdrawalRowActions: React.FC<TWithdrawalRowActionsProps> = ({
             className="cursor-pointer text-red-500 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30"
             onSelect={(event) => {
               event.preventDefault()
+              setIsDropdownOpen(false)
               setIsDeleteOpen(true)
             }}
           >

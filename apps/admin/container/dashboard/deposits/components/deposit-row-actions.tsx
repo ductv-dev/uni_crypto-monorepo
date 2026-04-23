@@ -47,6 +47,7 @@ export const DepositRowActions: React.FC<TDepositRowActionsProps> = ({
 }) => {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [draft, setDraft] = useState<TDeposits>(deposit)
   const { mutateAsync: updateDeposit, isPending } = useUpdateDeposit()
   const { mutateAsync: deleteDeposit, isPending: isDeleting } =
@@ -74,7 +75,7 @@ export const DepositRowActions: React.FC<TDepositRowActionsProps> = ({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon">
             <MoreHorizontal className="h-4 w-4" />
@@ -85,6 +86,7 @@ export const DepositRowActions: React.FC<TDepositRowActionsProps> = ({
             className="cursor-pointer"
             onSelect={(event) => {
               event.preventDefault()
+              setIsDropdownOpen(false)
               setDraft(deposit)
               setIsEditOpen(true)
             }}
@@ -96,6 +98,7 @@ export const DepositRowActions: React.FC<TDepositRowActionsProps> = ({
             className="cursor-pointer text-red-500 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30"
             onSelect={(event) => {
               event.preventDefault()
+              setIsDropdownOpen(false)
               setIsDeleteOpen(true)
             }}
           >

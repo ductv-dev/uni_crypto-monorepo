@@ -50,6 +50,7 @@ type TOrderRowActionsProps = {
 export const OrderRowActions: React.FC<TOrderRowActionsProps> = ({ order }) => {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [draft, setDraft] = useState<TOrderBook>(order)
   const { mutateAsync: updateOrderBook, isPending } = useUpdateOrderBook()
   const { mutateAsync: deleteOrderBook, isPending: isDeleting } =
@@ -77,7 +78,7 @@ export const OrderRowActions: React.FC<TOrderRowActionsProps> = ({ order }) => {
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon">
             <MoreHorizontal className="h-4 w-4" />
@@ -88,6 +89,7 @@ export const OrderRowActions: React.FC<TOrderRowActionsProps> = ({ order }) => {
             className="cursor-pointer"
             onSelect={(event) => {
               event.preventDefault()
+              setIsDropdownOpen(false)
               setDraft(order)
               setIsEditOpen(true)
             }}
@@ -99,6 +101,7 @@ export const OrderRowActions: React.FC<TOrderRowActionsProps> = ({ order }) => {
             className="cursor-pointer text-red-500 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30"
             onSelect={(event) => {
               event.preventDefault()
+              setIsDropdownOpen(false)
               setIsDeleteOpen(true)
             }}
           >

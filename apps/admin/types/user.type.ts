@@ -30,3 +30,15 @@ export type TUserResponse = {
     totalPages: number
   }
 }
+
+export type TUserWallet = {
+  id: string
+  userId: string
+  asset: string
+  network: string
+  walletAddress: string
+  availableBalance: string
+  lockedBalance: string
+  totalBalance: string
+  status: string
+}

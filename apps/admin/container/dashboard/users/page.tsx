@@ -44,6 +44,7 @@ export const User = () => {
     searchQuery,
     filter
   )
+
   const totalPages = dataUser?.pagination.totalPages || 0
 
   const debouncedSearch = useMemo(

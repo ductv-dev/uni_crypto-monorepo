@@ -13,6 +13,7 @@ import { MoreHorizontal } from "lucide-react"
 import { UserDetailView } from "./user-detail-view"
 import { UserQuickEdit } from "./user-quick-edit"
 import { UserStatusBadge } from "./user-status-badge"
+import { UserWalletsView } from "./user-wallets"
 
 export const getUserColumns = (): ColumnDef<TUser>[] => [
   {
@@ -88,6 +89,7 @@ export const getUserColumns = (): ColumnDef<TUser>[] => [
         <DropdownMenuContent align="end" className="w-48">
           <div className="space-y-2 p-2">
             <UserDetailView user={row.original} />
+            <UserWalletsView id={row.original.id} />
             <UserQuickEdit user={row.original} />
           </div>
         </DropdownMenuContent>

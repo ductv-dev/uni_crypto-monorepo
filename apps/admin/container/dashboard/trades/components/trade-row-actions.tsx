@@ -38,6 +38,7 @@ type TTradeRowActionsProps = {
 export const TradeRowActions: React.FC<TTradeRowActionsProps> = ({ trade }) => {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [draft, setDraft] = useState<Trade>(trade)
   const { mutateAsync: updateTrade, isPending } = useUpdateTrade()
   const { mutateAsync: deleteTrade, isPending: isDeleting } = useDeleteTrade()
@@ -64,7 +65,7 @@ export const TradeRowActions: React.FC<TTradeRowActionsProps> = ({ trade }) => {
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon">
             <MoreHorizontal className="h-4 w-4" />
@@ -75,6 +76,7 @@ export const TradeRowActions: React.FC<TTradeRowActionsProps> = ({ trade }) => {
             className="cursor-pointer"
             onSelect={(event) => {
               event.preventDefault()
+              setIsDropdownOpen(false)
               setDraft(trade)
               setIsEditOpen(true)
             }}
@@ -86,6 +88,7 @@ export const TradeRowActions: React.FC<TTradeRowActionsProps> = ({ trade }) => {
             className="cursor-pointer text-red-500 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30"
             onSelect={(event) => {
               event.preventDefault()
+              setIsDropdownOpen(false)
               setIsDeleteOpen(true)
             }}
           >

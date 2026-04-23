@@ -17,6 +17,7 @@ import {
   ClipboardClock,
   Coins,
   Download,
+  FileSliders,
   FileText,
   LayoutDashboard,
   NotebookText,
@@ -110,7 +111,7 @@ const data = {
         {
           title: "System Overview",
           url: "/wallet",
-          icon: <Wallet />,
+          icon: <FileSliders />,
         },
         {
           title: "Hot Wallets",
