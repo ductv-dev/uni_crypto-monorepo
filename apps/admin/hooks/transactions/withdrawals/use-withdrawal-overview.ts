@@ -1,7 +1,7 @@
 import { MOCK_WITHDRAWALS } from "@/data/transactions/mock-data-withdraw"
 import {
   EWithdrawStatus,
-  Withdrawals,
+  TWithdrawals,
 } from "@/types/transactions/withdraw.type"
 import { useQuery, type UseQueryResult } from "@tanstack/react-query"
 
@@ -13,7 +13,7 @@ export type TWithdrawalOverview = {
 }
 
 export const calculateOverview = (
-  withdrawals: Withdrawals[]
+  withdrawals: TWithdrawals[]
 ): TWithdrawalOverview[] => {
   const overview: TWithdrawalOverview[] = [
     {

@@ -1,6 +1,6 @@
 "use client"
 
-import { Withdrawals } from "@/types/transactions/withdraw.type"
+import { TWithdrawals } from "@/types/transactions/withdraw.type"
 import { flexRender, Table as TableType } from "@tanstack/react-table"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
@@ -13,7 +13,7 @@ import {
 } from "@workspace/ui/components/table"
 
 type TWithdrawalsTableProps = {
-  table: TableType<Withdrawals>
+  table: TableType<TWithdrawals>
   columns: any[]
   isLoading: boolean
   loadingRowCount?: number

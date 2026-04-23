@@ -1,11 +1,11 @@
 import { MOCK_TRADES } from "@/data/transactions/mock-data-trade"
-import { TTradeFilter, Trade } from "@/types/transactions/trades.type"
+import { TTrade, TTradeFilter } from "@/types/transactions/trades.type"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 
 export const TRADES_LIST_QUERY_KEY = "trades-list"
 
 type TTradesResponse = {
-  data: Trade[]
+  data: TTrade[]
   pagination: {
     page: number
     limit: number

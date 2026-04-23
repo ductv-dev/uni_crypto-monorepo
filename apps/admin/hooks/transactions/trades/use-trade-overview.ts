@@ -1,5 +1,5 @@
 import { MOCK_TRADES } from "@/data/transactions/mock-data-trade"
-import { Trade } from "@/types/transactions/trades.type"
+import { TTrade } from "@/types/transactions/trades.type"
 import { useQuery, type UseQueryResult } from "@tanstack/react-query"
 
 export const TRADE_OVERVIEW_QUERY_KEY = ["trade-overview"]
@@ -9,7 +9,7 @@ export type TTradeOverview = {
   total: number
 }
 
-export const calculateOverview = (trades: Trade[]): TTradeOverview[] => {
+export const calculateOverview = (trades: TTrade[]): TTradeOverview[] => {
   const totalVolume = trades.reduce((sum, trade) => sum + trade.total, 0)
   const uniquePairs = new Set(trades.map((trade) => trade.pair)).size
 

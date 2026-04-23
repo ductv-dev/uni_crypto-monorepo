@@ -1,14 +1,14 @@
 import { MOCK_WITHDRAWALS } from "@/data/transactions/mock-data-withdraw"
 import {
   TWithdrawFilter,
-  Withdrawals,
+  TWithdrawals,
 } from "@/types/transactions/withdraw.type"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 
 export const WITHDRAWALS_LIST_QUERY_KEY = "withdrawals-list"
 
 type TWithdrawalsResponse = {
-  data: Withdrawals[]
+  data: TWithdrawals[]
   pagination: {
     page: number
     limit: number
