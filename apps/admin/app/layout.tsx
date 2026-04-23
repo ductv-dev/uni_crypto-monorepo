@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 
 import { ThemeProvider } from "@/components/theme-provider"
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import "@workspace/ui/globals.css"
 
 import { cn } from "@/lib/utils/utils"
@@ -59,7 +60,10 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <TooltipProvider>
-            <Providers>{children}</Providers>
+            <Providers>
+              {children}
+              <ReactQueryDevtools initialIsOpen={false} />
+            </Providers>
           </TooltipProvider>
         </ThemeProvider>
         <Toaster position="top-right" />

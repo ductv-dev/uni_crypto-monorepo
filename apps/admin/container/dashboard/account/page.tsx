@@ -2,7 +2,6 @@
 import { SidebarInset, SidebarTrigger } from "@/components/layout/sidebar"
 import { useAdmin } from "@/store/admin-store"
 
-import { TRole } from "@/types/admin.type"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,66 +9,10 @@ import {
   BreadcrumbList,
 } from "@workspace/ui/components/breadcrumb"
 import { Separator } from "@workspace/ui/components/separator"
-import { Crown, Shield } from "lucide-react"
 import { DeviceManagement } from "./components/device-management"
 import { Information } from "./components/information"
-const permissions = [
-  {
-    id: 1,
-    name: "User Management",
-    description: "Manage user accounts",
-    actions: ["create", "read", "update", "delete"],
-  },
-  {
-    id: 2,
-    name: "Product Management",
-    description: "Manage product inventory",
-    actions: ["create", "read", "update", "delete"],
-  },
-  {
-    id: 3,
-    name: "Order Management",
-    description: "Manage customer orders",
-    actions: ["create", "read", "update", "delete"],
-  },
-]
-const data = [
-  {
-    id: "1",
-    action: "Duyệt tài khoản khách hàng ID: hfiuwegfiuw",
-    date: 1713100000000,
-  },
-  {
-    id: "2",
-    action: "Khóa tài khoản khách hàng ID: hfiuwegfiuw",
-    date: 1713100000000,
-  },
-  {
-    id: "3",
-    action: "Duyệt tài khoản khách hàng ID: hfiuwegfiuw",
-    date: 1713100000000,
-  },
-  {
-    id: "4",
-    action: "Duyệt tài khoản khách hàng ID: hfiuwegfiuw",
-    date: 1713100000000,
-  },
-  {
-    id: "5",
-    action: "Duyệt tài khoản khách hàng ID: hfiuwegfiuw",
-    date: 1713100000000,
-  },
-  {
-    id: "6",
-    action: "Duyệt tài khoản khách hàng ID: hfiuwegfiuw",
-    date: 1713100000000,
-  },
-]
+
 export const Account = () => {
-  const roleIcon: Record<TRole, React.ReactNode> = {
-    super_admin: <Crown className="size-4 text-yellow-500" />,
-    admin: <Shield className="size-4 text-primary" />,
-  }
   const admin = useAdmin((state) => state.admin)
 
   return (
