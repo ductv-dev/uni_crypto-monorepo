@@ -38,11 +38,11 @@ const getColors = (title: string) => {
     case "Total Trades":
       return "bg-blue-500/10 text-blue-600 dark:text-blue-400"
     case "Unique Pairs":
-      return "bg-green-500/10 text-green-600 dark:text-green-400"
+      return "bg-blue-500/10 text-blue-600 dark:text-blue-400"
     case "Total Volume":
-      return "bg-orange-500/10 text-orange-600 dark:text-orange-400"
+      return "bg-green-500/10 text-green-600 dark:text-green-400"
     case "Average Trade Size":
-      return "bg-red-500/10 text-red-600 dark:text-red-400"
+      return "bg-orange-500/10 text-orange-600 dark:text-orange-400"
     default:
       return "bg-gray-500/10 text-gray-600 dark:text-gray-400"
   }
