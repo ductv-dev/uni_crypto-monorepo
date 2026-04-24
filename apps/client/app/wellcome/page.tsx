@@ -1,6 +1,7 @@
 "use client"
-import { Welcome } from "@/container/welcome/page"
+
+import { Wellcome } from "@/container/wellcome/page"
 
 export default function WelcomePage() {
-  return <Welcome />
+  return <Wellcome />
 }
