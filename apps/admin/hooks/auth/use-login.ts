@@ -13,7 +13,7 @@ export const useLogin = () => {
         error instanceof Error ? error.message : "Không thể đăng nhập"
       )
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success("Đăng nhập thành công")
       route.push("/dashboard")
     },

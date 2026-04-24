@@ -20,11 +20,9 @@ import {
 } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 import { Bitcoin } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { SubmitHandler, useForm } from "react-hook-form"
 
 export const Login = () => {
-  const route = useRouter()
   const {
     register,
     handleSubmit,

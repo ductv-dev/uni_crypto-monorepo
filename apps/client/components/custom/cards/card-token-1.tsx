@@ -1,5 +1,5 @@
 "use client"
-import { MiniChart } from "@/components/charts/chart-widget"
+import { MiniChart } from "@workspace/ui/components/charts/chart-widget"
 import { use24hData } from "@/hooks/use-24h-data"
 import { cn } from "@/lib/utils/utils"
 import {

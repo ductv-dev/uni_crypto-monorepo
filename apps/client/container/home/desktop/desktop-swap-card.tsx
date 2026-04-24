@@ -18,8 +18,6 @@ import { useState } from "react"
 import { TToken } from "@workspace/shared/types"
 
 export const DesktopSwapCard = () => {
-  if (!LIST_TOKEN) return null
-
   const [tokenFrom, setTokenFrom] = useState<TToken["symbol"]>(
     LIST_TOKEN?.[0]?.symbol ?? ""
   )

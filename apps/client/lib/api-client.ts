@@ -37,7 +37,7 @@ export const apiClient = {
   // User endpoints
   user: {
     current: async () => apiClient.fetch("/user/me"),
-    update: async (data: any) =>
+    update: async (data: Record<string, unknown>) =>
       apiClient.fetch("/user/me", {
         method: "PATCH",
         body: JSON.stringify(data),
@@ -53,7 +53,7 @@ export const apiClient = {
   // Wallet endpoints
   wallets: {
     methods: async () => apiClient.fetch("/wallets/methods"),
-    create: async (data: any) =>
+    create: async (data: Record<string, unknown>) =>
       apiClient.fetch("/wallets", {
         method: "POST",
         body: JSON.stringify(data),

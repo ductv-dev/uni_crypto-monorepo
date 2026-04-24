@@ -36,7 +36,7 @@ export const AnimatedThemeToggler = ({
     })
 
     return () => observer.disconnect()
-  }, [])
+  }, [setTheme])
 
   const toggleTheme = useCallback(() => {
     const button = buttonRef.current

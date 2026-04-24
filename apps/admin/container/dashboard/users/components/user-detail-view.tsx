@@ -123,7 +123,6 @@ export const UserDetailView: React.FC<TUserDetailViewProps> = ({ user }) => {
         return "bg-gray-100 text-gray-800"
     }
   }
-  console.log("isDialogOpen", isDialogOpen)
 
   return (
     <>

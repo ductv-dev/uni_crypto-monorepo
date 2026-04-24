@@ -118,6 +118,7 @@ export const SectionMyWallet = ({ data }: Props) => {
                         <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-secondary/50 shadow-sm">
                           {item.logoURI ? (
                             // Using standard img tag if strict Next/Image domain is not configured yet
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={item.logoURI}
                               alt={item.name}

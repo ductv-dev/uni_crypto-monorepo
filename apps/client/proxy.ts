@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 
 const AUTH_ROUTES = new Set(["/login", "/register"])
-const PUBLIC_ROUTES = new Set(["/", "/wellcome"])
 const PROTECTED_ROUTES = new Set([
   "/user",
   "/add-wallet",
@@ -28,7 +27,6 @@ export function proxy(req: NextRequest) {
   const accessToken = req.cookies.get("access_token")?.value
   const isAuthenticated = Boolean(accessToken)
   const isAuthRoute = isRouteMatch(pathname, AUTH_ROUTES)
-  const isPublicRoute = isRouteMatch(pathname, PUBLIC_ROUTES)
   const isProtectedRoute = isRouteMatch(pathname, PROTECTED_ROUTES)
 
   if (isAuthRoute && isAuthenticated) {

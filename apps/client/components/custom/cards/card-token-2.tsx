@@ -32,6 +32,7 @@ export const CardToken2: React.FC<TCardToken2> = ({
     >
       <div className="flex items-center gap-2.5">
         <div className="relative h-6 w-6 shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={image}
             alt={symbol}

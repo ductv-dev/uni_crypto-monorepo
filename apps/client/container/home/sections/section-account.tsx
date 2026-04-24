@@ -29,8 +29,7 @@ export const SectionAccount: React.FC<Props> = ({ data }) => {
         className: "",
         icon: <Copy size={16} strokeWidth={2} className="text-green-500" />,
       })
-    } catch (err) {
-      console.log(err)
+    } catch {
       toast.error("Failed to copy to clipboard!")
     }
   }
@@ -43,6 +42,7 @@ export const SectionAccount: React.FC<Props> = ({ data }) => {
           <DrawerTrigger>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
               {data.avatar ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={data.avatar}
                   alt="avatar"
@@ -60,6 +60,7 @@ export const SectionAccount: React.FC<Props> = ({ data }) => {
             <div className="mt-5 flex flex-col items-center justify-center gap-3">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20">
                 {data.avatar ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={data.avatar}
                     alt="avatar"

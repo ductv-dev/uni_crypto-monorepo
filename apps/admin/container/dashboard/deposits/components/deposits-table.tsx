@@ -1,7 +1,11 @@
 "use client"
 
 import { TDeposits } from "@/types/transactions/deposits.type"
-import { flexRender, Table as TableType } from "@tanstack/react-table"
+import {
+  ColumnDef,
+  flexRender,
+  Table as TableType,
+} from "@tanstack/react-table"
 import {
   Table,
   TableBody,
@@ -14,7 +18,7 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 
 type TDepositsTableProps = {
   table: TableType<TDeposits>
-  columns: any[]
+  columns: ColumnDef<TDeposits>[]
   isLoading: boolean
   loadingRowCount?: number
 }

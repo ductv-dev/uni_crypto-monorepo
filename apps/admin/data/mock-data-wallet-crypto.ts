@@ -6,7 +6,7 @@ type SystemWallet = {
   status: "active" | "maintenance"
   updated_at: string
 }
-export const SYSTEM_WALLETS = [
+export const SYSTEM_WALLETS: SystemWallet[] = [
   {
     id: "w1",
     asset: "USDT",

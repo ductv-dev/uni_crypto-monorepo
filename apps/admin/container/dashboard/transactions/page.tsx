@@ -54,7 +54,7 @@ import { TransactionsToolbar } from "./components/transactions-toolbar"
 import { TypeTransaction } from "./components/type"
 
 export const Transaction = () => {
-  const [limit, setLimit] = useState<number>(10)
+  const [limit] = useState<number>(10)
   const [offset, setOffset] = useState<number>(0)
   const [filter, setFilter] = useState<TFilters>({
     type: undefined,

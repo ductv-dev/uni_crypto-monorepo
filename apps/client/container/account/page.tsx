@@ -45,8 +45,7 @@ export const Account = () => {
         className: "",
         icon: <Copy size={16} strokeWidth={2} className="text-green-500" />,
       })
-    } catch (err) {
-      console.log(err)
+    } catch {
       toast.error("Failed to copy to clipboard!")
     }
   }

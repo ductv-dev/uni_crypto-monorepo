@@ -9,7 +9,6 @@ export const useLogout = () => {
     mutationFn: api.logout,
     mutationKey: ["logout"],
     onError: (error) => {
-      console.log(error)
       toast.error(
         error instanceof Error ? error.message : "Không thể đăng xuất"
       )
