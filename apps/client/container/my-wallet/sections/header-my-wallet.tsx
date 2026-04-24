@@ -10,14 +10,16 @@ import {
   DrawerTrigger,
 } from "@workspace/ui/components/drawer"
 import { ArrowLeft, Plus } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { ListAddWallet } from "../components/add-wallet"
 
 export const HeaderMyWallet = () => {
   const isMobile = useIsMobile()
+  const route = useRouter()
   return (
     <div className="flex items-center justify-between px-2.5 py-5">
       <div className="lg:hidden">
-        <Button variant="ghost" size="icon">
+        <Button onClick={() => route.back()} variant="ghost" size="icon">
           <ArrowLeft className="h-5 w-5" />
         </Button>
       </div>

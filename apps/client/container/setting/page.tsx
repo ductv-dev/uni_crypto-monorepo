@@ -1,11 +1,11 @@
 "use client"
 
 import { CardSetting } from "@/components/custom/cards/card-setting"
+import { useLogout } from "@/hooks/use-logout"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
 import { AnimatedThemeToggler } from "@workspace/ui/components/animated-theme-toggler"
-import { toast } from "@workspace/ui/index"
 
-import { ChevronLeft, Download, Settings, User2 } from "lucide-react"
+import { ChevronLeft, Download, LogOut, Settings, User2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 const LIST_SETTING = [
@@ -26,10 +26,8 @@ const LIST_SETTING = [
 export const Setting = () => {
   const route = useRouter()
   const { isInstallable, install } = usePwaInstall()
-  const handleLogout = () => {
-    toast.success("Đăng xuất thành công")
-    route.push("/wellcome")
-  }
+  const { mutate: logout, isPending } = useLogout()
+
   return (
     <div>
       <div className="fixed top-2.5 w-full px-2.5">
@@ -75,9 +73,10 @@ export const Setting = () => {
 
         <CardSetting
           className="text-red-500"
-          onClick={() => handleLogout()}
+          onClick={() => logout()}
+          disabled={isPending}
           title="Đăng xuất"
-          icon={<Download size={16} className="text-red-500" strokeWidth={2} />}
+          icon={<LogOut size={16} className="text-red-500" strokeWidth={2} />}
         />
       </div>
     </div>

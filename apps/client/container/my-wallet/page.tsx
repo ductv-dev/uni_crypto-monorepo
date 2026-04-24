@@ -1,6 +1,7 @@
 "use client"
 
 import { useUser } from "@/store/user-store"
+import { TUser } from "@workspace/shared/types"
 import {
   Select,
   SelectContent,
@@ -10,7 +11,6 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import { useState } from "react"
-import { TUser } from "@workspace/shared/types"
 import { AddNewWallet } from "./sections/add-new-wallet"
 import { HeaderMyWallet } from "./sections/header-my-wallet"
 import { SectionMyWallet } from "./sections/section-my-wallet"
@@ -30,7 +30,7 @@ export const MyWallet = () => {
     <div className="min-h-screen">
       <HeaderMyWallet />
       {wallet && wallet.length > 0 ? (
-        <div className="">
+        <div className="px-4">
           <Select
             value={activeWallet?.address}
             onValueChange={(val) => setSelectedWalletAddress(val)}

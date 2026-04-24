@@ -1,6 +1,7 @@
 import { ButtonNav } from "@/components/custom/button/button-navigation"
 import { CardSetting } from "@/components/custom/cards/card-setting"
 import { shortenHex } from "@/lib/utils/utils"
+import { TUser } from "@workspace/shared/types"
 import { Button } from "@workspace/ui/components/button"
 import {
   Drawer,
@@ -12,7 +13,6 @@ import {
 import { toast } from "@workspace/ui/index"
 import { Copy, Settings, User2, Wallet } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { TUser } from "@workspace/shared/types"
 
 type Props = {
   data: TUser
@@ -82,16 +82,18 @@ export const SectionAccount: React.FC<Props> = ({ data }) => {
                 </div>
               </div>
             </div>
-            <CardSetting
-              onClick={() => route.push("/user/my-wallet")}
-              title="My Wallet"
-              icon={<Wallet strokeWidth={3} size={20} />}
-            />
-            <CardSetting
-              title="Account"
-              onClick={() => route.push("/user/account")}
-              icon={<User2 strokeWidth={3} size={20} />}
-            />
+            <div className="flex flex-col gap-2.5">
+              <CardSetting
+                onClick={() => route.push("/user/my-wallet")}
+                title="My Wallet"
+                icon={<Wallet strokeWidth={3} size={20} />}
+              />
+              <CardSetting
+                title="Account"
+                onClick={() => route.push("/user/account")}
+                icon={<User2 strokeWidth={3} size={20} />}
+              />
+            </div>
             <DrawerFooter>
               <DrawerClose>
                 <Button variant="outline">Cancel</Button>

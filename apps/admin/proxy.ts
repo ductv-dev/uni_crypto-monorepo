@@ -13,7 +13,7 @@ const isSafeRedirectPath = (pathname: string | null) =>
 
 export function proxy(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl
-  const accessToken = req.cookies.get("access_token")?.value
+  const accessToken = req.cookies.get("admin_access_token")?.value
   const isAuthenticated = Boolean(accessToken)
   const isAuthRoute = isRouteMatch(pathname, AUTH_ROUTES)
   const isPublicRoute = isRouteMatch(pathname, PUBLIC_ROUTES)

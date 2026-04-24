@@ -8,7 +8,7 @@ export async function POST() {
     message: "Đăng xuất thành công",
   })
 
-  response.cookies.set("access_token", "", {
+  response.cookies.set("admin_access_token", "", {
     httpOnly: true,
     sameSite: "lax",
     secure: isProduction,
@@ -16,7 +16,7 @@ export async function POST() {
     maxAge: 0,
   })
 
-  response.cookies.set("refresh_token", "", {
+  response.cookies.set("admin_refresh_token", "", {
     httpOnly: true,
     sameSite: "lax",
     secure: isProduction,

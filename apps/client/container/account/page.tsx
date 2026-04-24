@@ -1,16 +1,6 @@
 "use client"
 
-import { CardSetting } from "@/components/custom/cards/card-setting"
-import { shortenHex } from "@/lib/utils/utils"
-import { useUser } from "@/store/user-store"
-import {
-  Avatar,
-  AvatarBadge,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar"
 import { Button } from "@workspace/ui/components/button"
-import { Card, CardContent } from "@workspace/ui/components/card"
 import {
   Drawer,
   DrawerClose,
@@ -19,151 +9,122 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from "@workspace/ui/components/drawer"
 import { Input } from "@workspace/ui/components/input"
-import { toast } from "@workspace/ui/index"
-import { Copy, Download, Pen, ShieldCheck, User2 } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
-import { TUser } from "@workspace/shared/types"
+
+import { useAccountProfile } from "@/hooks/use-account-profile"
+
+import { AccountCompletion } from "./sections/account-completion"
+import { AccountHeader } from "./sections/account-header"
+import { AccountInfo } from "./sections/account-info"
+import { AccountManagement } from "./sections/account-management"
+import { AccountSecurity } from "./sections/account-security"
+import { AccountSkeleton } from "./sections/account-skeleton"
+import { AccountStats } from "./sections/account-stats"
 
 export const Account = () => {
-  const user = useUser((state: { user: TUser }) => state.user)
-  const setName = useUser(
-    (state: { setName: (name: string) => void }) => state.setName
-  )
-  const route = useRouter()
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [name, setNameValue] = useState(user.name)
+  const {
+    user,
+    name,
+    shortID,
+    drawerOpen,
+    walletCount,
+    tokenCount,
+    totalBalance,
+    profileStatus,
+    completedStatusCount,
+    profileCompletion,
+    isLoading,
+    isUpdating,
+    onNameChange,
+    onDrawerOpenChange,
+    onOpenNameDrawer,
+    onCopy,
+    onSubmitName,
+    onGoToWallets,
+    onGoToSettings,
+    onLogout,
+  } = useAccountProfile()
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(user.id)
-      toast.success("Đã sao chép vào clipboard!", {
-        duration: 2000,
-        className: "",
-        icon: <Copy size={16} strokeWidth={2} className="text-green-500" />,
-      })
-    } catch {
-      toast.error("Failed to copy to clipboard!")
-    }
+  if (isLoading) {
+    return <AccountSkeleton />
   }
-
-  const handleEditName = () => {
-    const nextName = name.trim()
-
-    if (!nextName) {
-      toast.error("Tên không được để trống")
-      return
-    }
-
-    setName(nextName)
-    setNameValue(nextName)
-    setDrawerOpen(false)
-    toast.success("Đã cập nhật tên")
-  }
-
-  const shortID = shortenHex(user.id)
 
   return (
-    <div className="w-full p-2.5">
-      <div className="flex items-center justify-center py-2.5">
-        <h2 className="text-xl font-semibold">Thông tin tài khoản</h2>
-      </div>
-      <div className="flex flex-col gap-2.5">
-        <Card>
-          <CardContent>
-            <div className="flex flex-col gap-5">
-              <div className="flex items-center gap-2.5">
-                <Avatar className="size-12">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback>{user?.name.charAt(0) || "U"}</AvatarFallback>
-                  <AvatarBadge className="right-0 bottom-0 size-10">
-                    <ShieldCheck />
-                  </AvatarBadge>
-                </Avatar>
+    <>
+      <div className="min-h-[calc(100vh-5rem)] pb-20 lg:pb-10">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-3 py-4 sm:gap-5 sm:px-4 sm:py-6">
+          <AccountHeader
+            user={user}
+            shortID={shortID}
+            completedStatusCount={completedStatusCount}
+            totalStatusCount={profileStatus.length}
+            onCopy={onCopy}
+            onOpenNameDrawer={onOpenNameDrawer}
+          />
 
-                <p className="font-semibold text-foreground/60">{user.name}</p>
-                <Drawer
-                  open={drawerOpen}
-                  onOpenChange={(open: boolean) => {
-                    setDrawerOpen(open)
-                    if (open) {
-                      setNameValue(user.name)
-                    }
-                  }}
-                >
-                  <DrawerTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Pen size={16} strokeWidth={1} />
-                    </Button>
-                  </DrawerTrigger>
-                  <DrawerContent className="px-2.5">
-                    <DrawerHeader className="px-0 text-left">
-                      <DrawerTitle>Chỉnh sửa tên</DrawerTitle>
-                      <DrawerDescription>
-                        Cập nhật tên hiển thị cho tài khoản của bạn.
-                      </DrawerDescription>
-                    </DrawerHeader>
-                    <div className="pb-4">
-                      <Input
-                        value={name}
-                        maxLength={32}
-                        placeholder="Nhập tên mới"
-                        onChange={(e) => setNameValue(e.target.value)}
-                      />
-                    </div>
-                    <DrawerFooter className="px-0">
-                      <Button
-                        size={"lg"}
-                        onClick={handleEditName}
-                        disabled={!name.trim() || name.trim() === user.name}
-                      >
-                        Lưu thay đổi
-                      </Button>
-                      <DrawerClose asChild>
-                        <Button size={"lg"} variant="outline">
-                          Hủy
-                        </Button>
-                      </DrawerClose>
-                    </DrawerFooter>
-                  </DrawerContent>
-                </Drawer>
-              </div>
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <p className="text-foreground/60">Thông tin đăng ký</p>
-                  <p>{user.email}</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-foreground/60">ID</p>
-                  <div className="flex gap-1">
-                    <p className="">{shortID}</p>
-                    <button onClick={() => handleCopy()} className="">
-                      <Copy size={16} strokeWidth={1} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <hr />
-        <div>
-          <CardSetting
-            title="Xác minh"
-            description="Chưa xác minh"
-            icon={<User2 />}
+          <AccountStats
+            totalBalance={totalBalance}
+            walletCount={walletCount}
+            tokenCount={tokenCount}
           />
-          <CardSetting
-            onClick={() => route.push("/wellcome")}
-            className="text-red-500"
-            title="Đăng xuất"
-            icon={<Download className="text-red-500" />}
-          />
+
+          <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+            <AccountInfo user={user} onCopy={onCopy} />
+            <AccountCompletion
+              profileCompletion={profileCompletion}
+              completedStatusCount={completedStatusCount}
+              profileStatus={profileStatus}
+            />
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+            <AccountManagement
+              onGoToWallets={onGoToWallets}
+              onGoToSettings={onGoToSettings}
+              onOpenNameDrawer={onOpenNameDrawer}
+            />
+            <AccountSecurity
+              onGoToSettings={onGoToSettings}
+              onLogout={onLogout}
+            />
+          </div>
         </div>
       </div>
-    </div>
+
+      <Drawer open={drawerOpen} onOpenChange={onDrawerOpenChange}>
+        <DrawerContent className="px-3 sm:px-4">
+          <DrawerHeader className="px-0 text-left">
+            <DrawerTitle>Chỉnh sửa tên hiển thị</DrawerTitle>
+            <DrawerDescription>
+              Tên mới sẽ xuất hiện trên hồ sơ và các khu vực tài khoản trong ứng
+              dụng.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="pb-4">
+            <Input
+              value={name}
+              maxLength={32}
+              placeholder="Nhập tên mới"
+              onChange={(e) => onNameChange(e.target.value)}
+            />
+          </div>
+          <DrawerFooter className="px-0">
+            <Button
+              size="lg"
+              onClick={onSubmitName}
+              disabled={isUpdating || !name.trim() || name.trim() === user.name}
+            >
+              {isUpdating ? "Đang lưu..." : "Lưu thay đổi"}
+            </Button>
+            <DrawerClose asChild>
+              <Button size="lg" variant="outline">
+                Hủy
+              </Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    </>
   )
 }

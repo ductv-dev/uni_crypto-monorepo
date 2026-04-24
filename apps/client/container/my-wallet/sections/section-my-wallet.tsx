@@ -1,6 +1,7 @@
 "use client"
 
 import { shortenHex } from "@/lib/utils/utils"
+import { TWallet } from "@workspace/shared/types"
 import { Button } from "@workspace/ui/components/button"
 import {
   Card,
@@ -17,7 +18,6 @@ import {
   Wallet2,
 } from "lucide-react"
 import { useState } from "react"
-import { TWallet } from "@workspace/shared/types"
 
 type Props = {
   data: TWallet
@@ -34,7 +34,7 @@ export const SectionMyWallet = ({ data }: Props) => {
   const [isHide, setIsHide] = useState(false)
   const walletAddress = shortenHex(data.address)
   return (
-    <div className="flex w-full flex-col gap-2.5 p-2.5 lg:flex-row">
+    <div className="flex w-full flex-col gap-2.5 lg:flex-row">
       {/* Wallet  */}
       <div className="w-full lg:w-1/3">
         <Card className="h-full">

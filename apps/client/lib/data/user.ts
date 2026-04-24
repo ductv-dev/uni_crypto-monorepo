@@ -1,97 +1,47 @@
 /**
  * User data layer
- * This function can be replaced with API call without changing the hook
+ * Có thể thay trực tiếp bằng API thật mà không cần sửa component UI.
  */
 
+import { MOCK_USER } from "@/data/mock-user"
 import { TUser } from "@workspace/shared/types"
 
-// Mock data
-const MOCK_USER: TUser = {
-  name: "Account",
-  id: "0x1234567890abcdef",
-  avatar: "",
-  email: "example@gmail.com",
-  wallet: [
-    {
-      address: "0x1234567890abc2def",
-      name: "Wallet 1",
-      balanceUSDT: 100,
-      tokens: [
-        {
-          symbol: "ETH",
-          name: "Ethereum",
-          logoURI:
-            "https://assets.coingecko.com/coins/images/279/standard/ethereum.png?1696506040",
-          amount: 1,
-          usdValue: 100,
-        },
-        {
-          symbol: "USDT",
-          name: "Tether",
-          logoURI:
-            "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0x55d398326f99059fF775485246999027B3197955/logo.png",
-          amount: 100,
-          usdValue: 100,
-        },
-        {
-          symbol: "BTC",
-          name: "Bitcoin",
-          logoURI:
-            "https://assets.coingecko.com/coins/images/1/standard/bitcoin.png?1696506040",
-          amount: 1,
-          usdValue: 100,
-        },
-      ],
-    },
-    {
-      address: "0x1234567890abcedef",
-      name: "Wallet 2",
-      balanceUSDT: 100,
-      tokens: [
-        {
-          symbol: "ETH",
-          name: "Ethereum",
-          logoURI:
-            "https://assets.coingecko.com/coins/images/279/standard/ethereum.png?1696506040",
-          amount: 44,
-          usdValue: 100,
-        },
-        {
-          symbol: "USDT",
-          name: "Tether",
-          logoURI:
-            "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0x55d398326f99059fF775485246999027B3197955/logo.png",
-          amount: 32,
-          usdValue: 100,
-        },
-        {
-          symbol: "BTC",
-          name: "Bitcoin",
-          logoURI:
-            "https://assets.coingecko.com/coins/images/1/standard/bitcoin.png?1696506040",
-          amount: 11,
-          usdValue: 100,
-        },
-      ],
-    },
-  ],
-}
+const wait = (ms: number) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+
+const cloneUser = (user: TUser): TUser => ({
+  ...user,
+  wallet: user.wallet?.map((wallet) => ({
+    ...wallet,
+    tokens: wallet.tokens.map((token) => ({ ...token })),
+  })),
+})
+
+let currentUser: TUser = cloneUser(MOCK_USER)
 
 /**
  * Fetch current user
- * MIGRATION: Replace with apiClient.user.current() when API is ready
+ * MIGRATION: thay bằng apiClient.user.current() khi backend sẵn sàng.
  */
 export async function fetchCurrentUser(): Promise<TUser> {
-  // Mock: simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 300))
-  return MOCK_USER
+  await wait(300)
+
+  return cloneUser(currentUser)
 }
 
 /**
  * Update user profile
+ * MIGRATION: thay bằng apiClient.user.update(payload).
  */
 export async function updateUser(data: Partial<TUser>): Promise<TUser> {
-  // Mock: return updated user
-  await new Promise((resolve) => setTimeout(resolve, 300))
-  return { ...MOCK_USER, ...data }
+  await wait(300)
+
+  currentUser = cloneUser({
+    ...currentUser,
+    ...data,
+  })
+
+  return cloneUser(currentUser)
 }

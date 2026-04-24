@@ -19,21 +19,27 @@ export const CardSetting: React.FC<TCardSetting> = ({
   disabled,
 }) => {
   return (
-    <div
+    <button
+      type="button"
       onClick={() => !disabled && onClick?.()}
+      disabled={disabled}
       className={cn(
-        "flex w-full cursor-pointer items-center gap-2.5 p-2.5 text-foreground/60 hover:bg-accent",
+        "flex w-full items-center gap-3 rounded-2xl border border-border/70 bg-background/80 p-4 text-left text-foreground transition-colors hover:bg-accent",
         disabled && "cursor-not-allowed opacity-50",
         className
       )}
     >
-      <div className="rounded-lg bg-accent p-2.5">{icon}</div>
-
-      <p className="flex-1 text-start text-lg font-semibold">{title}</p>
-      <div className="flex items-center justify-center gap-2.5">
-        {description && <p className="text-foreground/60">{description}</p>}
-        <ChevronRight size={24} className="text-foreground/60" />
+      <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent text-foreground/70">
+        {icon}
       </div>
-    </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold">{title}</p>
+        {description && (
+          <p className="mt-0.5 text-sm opacity-70">{description}</p>
+        )}
+      </div>
+      <ChevronRight className="size-5 opacity-50" />
+    </button>
   )
 }

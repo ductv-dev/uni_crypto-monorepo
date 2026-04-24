@@ -1,5 +1,4 @@
 "use client"
-import { MiniChart } from "@workspace/ui/components/charts/chart-widget"
 import { use24hData } from "@/hooks/use-24h-data"
 import { cn } from "@/lib/utils/utils"
 import {
@@ -7,6 +6,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@workspace/ui/components/avatar"
+import { MiniChart } from "@workspace/ui/components/charts/chart-widget"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { ChevronDown, ChevronUp } from "lucide-react"
 
@@ -121,7 +121,7 @@ export const CardToken1: React.FC<TCardToken1Props> = ({
           </>
         ) : (
           <>
-            <span className="text-sm font-semibold tabular-nums">
+            <span className="text-sm font-semibold text-nowrap tabular-nums">
               {currentPrice > 0
                 ? currentPrice.toLocaleString(undefined, {
                     minimumFractionDigits: 2,

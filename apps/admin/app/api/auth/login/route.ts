@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
     const isProduction = process.env.NODE_ENV === "production"
 
-    response.cookies.set("access_token", mockData.accessToken, {
+    response.cookies.set("admin_access_token", mockData.accessToken, {
       httpOnly: true,
       sameSite: "lax",
       secure: isProduction,
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       maxAge: 60 * 15 * 15,
     })
 
-    response.cookies.set("refresh_token", mockData.refreshToken, {
+    response.cookies.set("admin_refresh_token", mockData.refreshToken, {
       httpOnly: true,
       sameSite: "lax",
       secure: isProduction,
