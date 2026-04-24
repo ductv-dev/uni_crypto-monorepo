@@ -1,7 +1,7 @@
 import {
   EWithdrawStatus,
   TWithdrawals,
-} from "@/types/transactions/withdraw.type"
+} from "@/types/transactions/withdrawal.type"
 
 export const MOCK_WITHDRAWALS: TWithdrawals[] = [
   {

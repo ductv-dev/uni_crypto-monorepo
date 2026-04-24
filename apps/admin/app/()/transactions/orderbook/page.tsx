@@ -1,5 +1,5 @@
-import { OrderBook } from "@/container/dashboard/order-book/page"
+import { redirect } from "next/navigation"
 
-export default function OrderBookPage() {
-  return <OrderBook />
+export default function LegacyOrderBookPage() {
+  return redirect("/transactions/order-book")
 }

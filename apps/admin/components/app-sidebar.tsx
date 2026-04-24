@@ -70,7 +70,7 @@ const data = {
       items: [
         {
           title: "Order Book",
-          url: "/transactions/orderbook",
+          url: "/transactions/order-book",
           icon: <NotebookText />,
         },
         {
@@ -80,7 +80,7 @@ const data = {
         },
         {
           title: "Withdrawals",
-          url: "/transactions/withdrawal",
+          url: "/transactions/withdrawals",
           icon: <Download />,
         },
         {

@@ -167,10 +167,10 @@ export const useAccountProfile = (): UseAccountProfileResult => {
     onCopy,
     onSubmitName,
     onGoToWallets: () => router.push("/user/my-wallet"),
-    onGoToSettings: () => router.push("/user/setting"),
+    onGoToSettings: () => router.push("/user/settings"),
     onLogout: () => {
       toast.success("Đăng xuất thành công")
-      router.push("/wellcome")
+      router.push("/welcome")
     },
   }
 }

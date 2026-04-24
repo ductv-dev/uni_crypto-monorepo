@@ -3,7 +3,7 @@
 import {
   EWithdrawStatus,
   TWithdrawFilter,
-} from "@/types/transactions/withdraw.type"
+} from "@/types/transactions/withdrawal.type"
 import { Button } from "@workspace/ui/components/button"
 import {
   Drawer,

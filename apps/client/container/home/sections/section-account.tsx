@@ -112,7 +112,7 @@ export const SectionAccount: React.FC<Props> = ({ data }) => {
           </div>
         </div>
       </div>
-      <ButtonNav onClick={() => route.push("/user/setting")}>
+      <ButtonNav onClick={() => route.push("/user/settings")}>
         <Settings size={16} strokeWidth={2} className="text-foreground/60" />
       </ButtonNav>
     </div>

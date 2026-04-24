@@ -1,11 +1,10 @@
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 
-import { ThemeProvider } from "@/components/theme-provider"
 import "@workspace/ui/globals.css"
-
 import { cn } from "@/lib/utils/utils"
-import Providers from "@/provider/query-provider"
+import { QueryProvider } from "@workspace/ui/components/query-provider"
+import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import { Toaster } from "@workspace/ui/index"
 
 export const metadata: Metadata = {
@@ -57,11 +56,11 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider>
-          <Providers>
+          <QueryProvider>
             <div className="max-w-screen">
               <div className="mx-auto max-w-7xl">{children}</div>
             </div>
-          </Providers>
+          </QueryProvider>
         </ThemeProvider>
         <Toaster position="top-center" />
       </body>

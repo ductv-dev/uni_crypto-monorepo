@@ -1,6 +1,6 @@
 "use client"
 
-import { TWithdrawFilter } from "@/types/transactions/withdraw.type"
+import { TWithdrawFilter } from "@/types/transactions/withdrawal.type"
 import { Input } from "@workspace/ui/components/input"
 import { SearchIcon } from "lucide-react"
 import { FilterWithdrawals } from "./filter-withdrawals"

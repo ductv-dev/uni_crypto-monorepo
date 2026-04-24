@@ -5,7 +5,7 @@ import { useUpdateWithdrawal } from "@/hooks/transactions/withdrawals/use-update
 import {
   EWithdrawStatus,
   TWithdrawals,
-} from "@/types/transactions/withdraw.type"
+} from "@/types/transactions/withdrawal.type"
 import {
   AlertDialog,
   AlertDialogContent,

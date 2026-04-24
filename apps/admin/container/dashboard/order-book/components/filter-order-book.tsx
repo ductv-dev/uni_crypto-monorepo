@@ -5,7 +5,7 @@ import {
   EOrderStatus,
   EOrderType,
   TFilterOrderBook,
-} from "@/types/transactions/orders-book.type"
+} from "@/types/transactions/order-book.type"
 import { Button } from "@workspace/ui/components/button"
 import {
   Drawer,

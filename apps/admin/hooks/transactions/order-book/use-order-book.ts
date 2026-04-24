@@ -2,7 +2,7 @@ import { MOCK_ORDERS } from "@/data/transactions/mock-data-orders"
 import {
   TFilterOrderBook,
   TOrderBook,
-} from "@/types/transactions/orders-book.type"
+} from "@/types/transactions/order-book.type"
 import { keepPreviousData, useQuery } from "@tanstack/react-query"
 export const ORDER_LIST_QUERY_KEY = "order-list"
 

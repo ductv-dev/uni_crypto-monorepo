@@ -1,6 +1,6 @@
 "use client"
 
-import { TWithdrawFilter } from "@/types/transactions/withdraw.type"
+import { TWithdrawFilter } from "@/types/transactions/withdrawal.type"
 
 export type TWithdrawalPagination = {
   limit: number

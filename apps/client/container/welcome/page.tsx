@@ -29,7 +29,7 @@ const FEATURES = [
   { icon: <TrendingUp size={18} />, text: "Biểu đồ thời gian thực" },
 ]
 
-export const Wellcome = () => {
+export const Welcome = () => {
   const { isInstallable, install } = usePwaInstall()
 
   return (

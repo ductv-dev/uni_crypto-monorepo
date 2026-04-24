@@ -6,7 +6,7 @@ import { useWithdrawals } from "@/hooks/transactions/withdrawals/use-withdrawals
 import {
   TWithdrawFilter,
   TWithdrawals,
-} from "@/types/transactions/withdraw.type"
+} from "@/types/transactions/withdrawal.type"
 import {
   ColumnDef,
   getCoreRowModel,

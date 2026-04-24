@@ -1,6 +1,6 @@
 "use client"
 
-import { TWithdrawals } from "@/types/transactions/withdraw.type"
+import { TWithdrawals } from "@/types/transactions/withdrawal.type"
 import {
   ColumnDef,
   flexRender,

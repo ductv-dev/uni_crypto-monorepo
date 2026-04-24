@@ -3,6 +3,7 @@ import { CardSetting } from "@/components/custom/cards/card-setting"
 import { useLogout } from "@/hooks/use-logout"
 import { shortenHex } from "@/lib/utils/utils"
 import { useUser } from "@/store/user-store"
+import { AnimatedThemeToggler } from "@workspace/ui/components/animated-theme-toggler"
 import {
   Drawer,
   DrawerContent,
@@ -15,7 +16,6 @@ import { TNavItem, TUser } from "@workspace/shared/types"
 import { ArrowLeftRight, Copy, LogOut, User2, Wallet } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { AnimatedThemeToggler } from "../animated-theme-toggler"
 
 type Props = { data: TNavItem[] }
 export const NavbarDesktop: React.FC<Props> = ({ data }) => {
@@ -108,31 +108,33 @@ export const NavbarDesktop: React.FC<Props> = ({ data }) => {
                 </div>
               </div>
 
-              <CardSetting
-                onClick={() => {
-                  setIsDrawerOpen(false)
-                  router.push("/user/my-wallet")
-                }}
-                title="My Wallet"
-                icon={<Wallet strokeWidth={3} size={20} />}
-              />
-              <CardSetting
-                onClick={() => {
-                  setIsDrawerOpen(false)
-                  router.push("/user/account")
-                }}
-                title="Account"
-                icon={<User2 strokeWidth={3} size={20} />}
-              />
-              <CardSetting
-                onClick={() => {
-                  setIsDrawerOpen(false)
-                  logout()
-                }}
-                title="Logout"
-                icon={<LogOut strokeWidth={3} size={20} />}
-                disabled={isLoggingOut}
-              />
+              <div className="flex flex-col gap-2.5">
+                <CardSetting
+                  onClick={() => {
+                    setIsDrawerOpen(false)
+                    router.push("/user/my-wallet")
+                  }}
+                  title="My Wallet"
+                  icon={<Wallet strokeWidth={3} size={20} />}
+                />
+                <CardSetting
+                  onClick={() => {
+                    setIsDrawerOpen(false)
+                    router.push("/user/account")
+                  }}
+                  title="Account"
+                  icon={<User2 strokeWidth={3} size={20} />}
+                />
+                <CardSetting
+                  onClick={() => {
+                    setIsDrawerOpen(false)
+                    logout()
+                  }}
+                  title="Logout"
+                  icon={<LogOut strokeWidth={3} size={20} />}
+                  disabled={isLoggingOut}
+                />
+              </div>
             </DrawerContent>
           </Drawer>
           <AnimatedThemeToggler />

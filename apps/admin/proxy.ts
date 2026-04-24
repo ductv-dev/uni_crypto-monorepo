@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 const AUTH_ROUTES = new Set(["/login", "/register"])
-const PUBLIC_ROUTES = new Set(["/wellcome"])
+const PUBLIC_ROUTES = new Set(["/welcome", "/wellcome"])
 const DEFAULT_AUTHENTICATED_REDIRECT = "/dashboard"
 const LOGIN_ROUTE = "/login"
 

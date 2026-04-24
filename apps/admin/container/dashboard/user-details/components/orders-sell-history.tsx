@@ -1,4 +1,4 @@
-import { TOrderBook } from "@/types/transactions/orders-book.type"
+import { TOrderBook } from "@/types/transactions/order-book.type"
 import {
   ColumnDef,
   flexRender,

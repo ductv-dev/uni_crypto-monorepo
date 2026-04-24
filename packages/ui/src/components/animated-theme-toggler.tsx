@@ -1,7 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
 import { Moon, Sun } from "lucide-react"
+import { useTheme } from "next-themes"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { flushSync } from "react-dom"
 
 import { cn } from "@workspace/ui/lib/utils"
@@ -17,10 +18,14 @@ export const AnimatedThemeToggler = ({
 }: AnimatedThemeTogglerProps) => {
   const [isDark, setIsDark] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const { setTheme } = useTheme()
 
   useEffect(() => {
     const updateTheme = () => {
       setIsDark(document.documentElement.classList.contains("dark"))
+      setTheme(
+        document.documentElement.classList.contains("dark") ? "dark" : "light"
+      )
     }
 
     updateTheme()
@@ -32,7 +37,7 @@ export const AnimatedThemeToggler = ({
     })
 
     return () => observer.disconnect()
-  }, [])
+  }, [setTheme])
 
   const toggleTheme = useCallback(() => {
     const button = buttonRef.current

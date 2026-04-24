@@ -1,6 +1,6 @@
 "use client"
 
-import { TOrderOverView } from "@/hooks/transactions/orders-book/use-order-book-overview"
+import { TOrderOverView } from "@/hooks/transactions/order-book/use-order-book-overview"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import {

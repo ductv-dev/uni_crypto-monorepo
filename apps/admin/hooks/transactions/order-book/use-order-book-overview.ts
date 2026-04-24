@@ -1,5 +1,5 @@
 import { MOCK_ORDERS } from "@/data/transactions/mock-data-orders"
-import { EOrderStatus, TOrderBook } from "@/types/transactions/orders-book.type"
+import { EOrderStatus, TOrderBook } from "@/types/transactions/order-book.type"
 import { useQuery, type UseQueryResult } from "@tanstack/react-query"
 
 export const ORDER_OVERVIEW_QUERY_KEY = ["order-overview"]

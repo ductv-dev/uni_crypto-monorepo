@@ -1,13 +1,13 @@
 "use client"
 
-import { useDeleteOrderBook } from "@/hooks/transactions/orders-book/use-delete-order-book"
-import { useUpdateOrderBook } from "@/hooks/transactions/orders-book/use-update-order-book"
+import { useDeleteOrderBook } from "@/hooks/transactions/order-book/use-delete-order-book"
+import { useUpdateOrderBook } from "@/hooks/transactions/order-book/use-update-order-book"
 import {
   EOrderSide,
   EOrderStatus,
   EOrderType,
   TOrderBook,
-} from "@/types/transactions/orders-book.type"
+} from "@/types/transactions/order-book.type"
 import {
   AlertDialog,
   AlertDialogContent,

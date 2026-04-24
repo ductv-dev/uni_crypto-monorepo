@@ -1,13 +1,13 @@
 "use client"
 import { BadgeStatus } from "@/components/custom/badge/badge-status"
 import { SidebarInset, SidebarTrigger } from "@/components/layout/sidebar"
-import { useOrderBook } from "@/hooks/transactions/orders-book/use-order-book"
-import { useOrderBookOverview } from "@/hooks/transactions/orders-book/use-order-book-overview"
+import { useOrderBook } from "@/hooks/transactions/order-book/use-order-book"
+import { useOrderBookOverview } from "@/hooks/transactions/order-book/use-order-book-overview"
 import { TPagination } from "@/types/pagination.type"
 import {
   TFilterOrderBook,
   TOrderBook,
-} from "@/types/transactions/orders-book.type"
+} from "@/types/transactions/order-book.type"
 import {
   ColumnDef,
   flexRender,
@@ -162,7 +162,7 @@ export const OrderBook = () => {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbLink href="/transactions/orderbook">
+                <BreadcrumbLink href="/transactions/order-book">
                   Transactions{" "}
                 </BreadcrumbLink>
               </BreadcrumbItem>
@@ -175,7 +175,7 @@ export const OrderBook = () => {
         </div>
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <h1 className="text-2xl font-bold tracking-tight">Orders Book</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Order Book</h1>
         <OverviewOrderOverview
           overview={orderOverview}
           isLoading={isLoadingOverview}

@@ -1,4 +1,4 @@
-import { ORDER_LIST_QUERY_KEY } from "@/hooks/transactions/orders-book/use-order-book"
+import { ORDER_LIST_QUERY_KEY } from "@/hooks/transactions/order-book/use-order-book"
 import {
   useMutation,
   useQueryClient,

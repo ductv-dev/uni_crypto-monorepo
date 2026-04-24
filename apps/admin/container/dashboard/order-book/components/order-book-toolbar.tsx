@@ -1,6 +1,6 @@
 "use client"
 
-import { TFilterOrderBook } from "@/types/transactions/orders-book.type"
+import { TFilterOrderBook } from "@/types/transactions/order-book.type"
 import { Input } from "@workspace/ui/components/input"
 import { Search } from "lucide-react"
 import { FilterOrderBook } from "./filter-order-book"

@@ -5,25 +5,37 @@ import { useLogout } from "@/hooks/use-logout"
 import { usePwaInstall } from "@/hooks/use-pwa-install"
 import { AnimatedThemeToggler } from "@workspace/ui/components/animated-theme-toggler"
 
-import { ChevronLeft, Download, LogOut, Settings, User2 } from "lucide-react"
+import {
+  ChevronLeft,
+  Download,
+  LogOut,
+  Settings as SettingsIcon,
+  User2,
+} from "lucide-react"
 import { useRouter } from "next/navigation"
 
 const LIST_SETTING = [
   {
     name: "Notifications",
-    icon: <Settings size={16} strokeWidth={2} className="text-foreground/60" />,
+    icon: (
+      <SettingsIcon size={16} strokeWidth={2} className="text-foreground/60" />
+    ),
   },
   {
     name: "Privacy",
-    icon: <Settings size={16} strokeWidth={2} className="text-foreground/60" />,
+    icon: (
+      <SettingsIcon size={16} strokeWidth={2} className="text-foreground/60" />
+    ),
   },
   {
     name: "Security",
-    icon: <Settings size={16} strokeWidth={2} className="text-foreground/60" />,
+    icon: (
+      <SettingsIcon size={16} strokeWidth={2} className="text-foreground/60" />
+    ),
   },
 ]
 
-export const Setting = () => {
+export const SettingsPage = () => {
   const route = useRouter()
   const { isInstallable, install } = usePwaInstall()
   const { mutate: logout, isPending } = useLogout()

@@ -1,5 +1,5 @@
 import { WITHDRAWALS_LIST_QUERY_KEY } from "@/hooks/transactions/withdrawals/use-withdrawals"
-import { TWithdrawals } from "@/types/transactions/withdraw.type"
+import { TWithdrawals } from "@/types/transactions/withdrawal.type"
 import {
   useMutation,
   useQueryClient,

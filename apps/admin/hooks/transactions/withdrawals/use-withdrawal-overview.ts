@@ -2,7 +2,7 @@ import { MOCK_WITHDRAWALS } from "@/data/transactions/mock-data-withdraw"
 import {
   EWithdrawStatus,
   TWithdrawals,
-} from "@/types/transactions/withdraw.type"
+} from "@/types/transactions/withdrawal.type"
 import { useQuery, type UseQueryResult } from "@tanstack/react-query"
 
 export const WITHDRAWAL_OVERVIEW_QUERY_KEY = ["withdrawal-overview"]

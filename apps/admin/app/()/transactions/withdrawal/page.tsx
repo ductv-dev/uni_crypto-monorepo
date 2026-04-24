@@ -1,5 +1,5 @@
-import { WithdrawalsPage } from "@/container/dashboard/withdrawals/page"
+import { redirect } from "next/navigation"
 
-export default function WithdrawalPage() {
-  return <WithdrawalsPage />
+export default function LegacyWithdrawalPage() {
+  return redirect("/transactions/withdrawals")
 }

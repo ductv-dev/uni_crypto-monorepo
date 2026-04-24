@@ -6,8 +6,8 @@ import { MOCK_DEPOSITS } from "@/data/transactions/mock-data-deposit"
 import { MOCK_ORDERS } from "@/data/transactions/mock-data-orders"
 import { MOCK_WITHDRAWALS } from "@/data/transactions/mock-data-withdraw"
 import { TDeposits } from "@/types/transactions/deposits.type"
-import { EOrderType, TOrderBook } from "@/types/transactions/orders-book.type"
-import { TWithdrawals } from "@/types/transactions/withdraw.type"
+import { EOrderType, TOrderBook } from "@/types/transactions/order-book.type"
+import { TWithdrawals } from "@/types/transactions/withdrawal.type"
 import { TUser, TUserWallet } from "@/types/user.type"
 
 export type TDataUserResponse = {

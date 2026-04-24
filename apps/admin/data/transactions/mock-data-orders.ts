@@ -3,7 +3,7 @@ import {
   EOrderStatus,
   EOrderType,
   TOrderBook,
-} from "@/types/transactions/orders-book.type"
+} from "@/types/transactions/order-book.type"
 
 export const MOCK_ORDERS: TOrderBook[] = [
   // Pair BTC/USDT Matches
