@@ -51,7 +51,6 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   Coins,
-  Dot,
   MoreHorizontal,
   Plus,
   Search,
@@ -59,6 +58,7 @@ import {
 import { useEffect, useMemo, useState } from "react"
 import { DialogCreateToken } from "./components/dialog-create-token"
 import { DrawerTokenStatus } from "./components/drawer-token-status"
+import { TokensPagination } from "./components/tokens-pagiation"
 
 const TokenActions = ({ token }: { token: TToken }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -102,8 +102,18 @@ const TokenActions = ({ token }: { token: TToken }) => {
 export const TokenManagement = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchQueryDebounced, setSearchQueryDebounced] = useState("")
-  const { data: dataToken, isLoading } = useDataToken(searchQueryDebounced)
+  const [pagination, setPagination] = useState({
+    limit: 5,
+    offset: 0,
+  })
+  const { data: dataToken, isLoading } = useDataToken(
+    searchQueryDebounced,
+    pagination.limit,
+    pagination.offset
+  )
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+
+  const totalPages = dataToken?.pagination.totalPages || 0
 
   const debouncedSearch = useMemo(
     () =>
@@ -127,10 +137,10 @@ export const TokenManagement = () => {
   const stats = useMemo(() => {
     if (!dataToken) return { total: 0, deposit: 0, withdraw: 0, trading: 0 }
     return {
-      total: dataToken.length,
-      deposit: dataToken.filter((t) => t.isDepositEnabled).length,
-      withdraw: dataToken.filter((t) => t.isWithdrawEnabled).length,
-      trading: dataToken.filter((t) => t.isTradingEnabled).length,
+      total: dataToken.data.length,
+      deposit: dataToken.data.filter((t) => t.isDepositEnabled).length,
+      withdraw: dataToken.data.filter((t) => t.isWithdrawEnabled).length,
+      trading: dataToken.data.filter((t) => t.isTradingEnabled).length,
     }
   }, [dataToken])
 
@@ -188,8 +198,7 @@ export const TokenManagement = () => {
                     : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                 }`}
               >
-                <Dot className="mr-1 h-3 w-3" /> Deposit:{" "}
-                {isDeposit ? "On" : "Off"}
+                Deposit: {isDeposit ? "On" : "Off"}
               </span>
               <span
                 className={`inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
@@ -198,8 +207,7 @@ export const TokenManagement = () => {
                     : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                 }`}
               >
-                <Dot className="mr-1 h-3 w-3" /> Withdraw:{" "}
-                {isWithdraw ? "On" : "Off"}
+                Withdraw: {isWithdraw ? "On" : "Off"}
               </span>
               <span
                 className={`inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
@@ -208,8 +216,7 @@ export const TokenManagement = () => {
                     : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                 }`}
               >
-                <Dot className="mr-1 h-3 w-3" /> Trading:{" "}
-                {isTrading ? "On" : "Off"}
+                Trading: {isTrading ? "On" : "Off"}
               </span>
             </div>
           )
@@ -224,7 +231,7 @@ export const TokenManagement = () => {
     []
   )
   const table = useReactTable({
-    data: dataToken || [],
+    data: dataToken?.data || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
   })
@@ -396,6 +403,11 @@ export const TokenManagement = () => {
             </Table>
           </div>
         </div>
+        <TokensPagination
+          pagination={pagination}
+          totalPages={totalPages}
+          onChange={setPagination}
+        />
         <DialogCreateToken open={isCreateOpen} onOpenChange={setIsCreateOpen} />
       </div>
     </SidebarInset>

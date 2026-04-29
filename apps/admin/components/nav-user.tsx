@@ -9,6 +9,7 @@ import {
 import { useLogout } from "@/hooks/auth/use-logout"
 import { roleLabel } from "@/lib/config/role-config"
 import { useAdmin } from "@/store/admin-store"
+import { AnimatedThemeToggler } from "@workspace/ui/components/animated-theme-toggler"
 import {
   Avatar,
   AvatarFallback,
@@ -81,6 +82,7 @@ export function NavUser() {
                     {roleLabel[admin.role]}
                   </span>
                 </div>
+                <AnimatedThemeToggler />
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

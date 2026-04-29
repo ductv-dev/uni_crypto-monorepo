@@ -27,7 +27,7 @@ const FEATURES = [
   { icon: <TrendingUp size={18} />, text: "Biểu đồ thời gian thực" },
 ]
 
-export const Welcome = () => {
+export const Wellcome = () => {
   return (
     <div className="min-h-screen overflow-hidden bg-background">
       {/* ── MOBILE ── */}

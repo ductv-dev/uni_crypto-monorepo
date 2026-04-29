@@ -46,7 +46,7 @@ import {
   TableRow,
 } from "@workspace/ui/components/table"
 import { toast } from "@workspace/ui/index"
-import { Dot, MoreHorizontal } from "lucide-react"
+import { MoreHorizontal } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { FormCreateRole } from "./components/form-create-role"
 import { FormUpdateRole } from "./components/form-update-role"
@@ -110,7 +110,7 @@ export const Roles = () => {
                   : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
               }`}
             >
-              <Dot className="mr-1 h-3 w-3" /> {status}
+              {status}
             </span>
           )
         },

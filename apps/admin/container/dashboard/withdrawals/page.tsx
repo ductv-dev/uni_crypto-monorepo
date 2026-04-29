@@ -1,5 +1,6 @@
 "use client"
 
+import { BadgeStatus } from "@/components/custom/badge/badge-status"
 import { SidebarInset, SidebarTrigger } from "@/components/layout/sidebar"
 import { useWithdrawalOverview } from "@/hooks/transactions/withdrawals/use-withdrawal-overview"
 import { useWithdrawals } from "@/hooks/transactions/withdrawals/use-withdrawals"
@@ -113,21 +114,7 @@ export const WithdrawalsPage = () => {
         header: "Status",
         cell: ({ row }) => {
           const status = row.original.status
-          return (
-            <span
-              className={`rounded-full px-2 py-1 text-xs font-medium ${
-                status === "completed"
-                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                  : status === "pending"
-                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                    : status === "approved"
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-              }`}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </span>
-          )
+          return <BadgeStatus status={status} />
         },
       },
       {

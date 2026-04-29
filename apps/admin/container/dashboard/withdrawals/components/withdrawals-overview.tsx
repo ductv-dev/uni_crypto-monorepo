@@ -58,11 +58,11 @@ export const WithdrawalsOverview: React.FC<TWithdrawalsOverviewProps> = ({
         {Array.from({ length: 4 }).map((_, index) => (
           <Card key={index} className="h-30">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <Skeleton className="h-4 w-[110px]" />
+              <Skeleton className="h-4 w-27.5" />
               <Skeleton className="h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-8 w-[60px]" />
+              <Skeleton className="h-8 w-15" />
             </CardContent>
           </Card>
         ))}

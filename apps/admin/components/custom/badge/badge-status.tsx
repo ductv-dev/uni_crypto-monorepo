@@ -1,6 +1,5 @@
 import { EStatus } from "@/types/status.enum"
 import { Badge } from "@workspace/ui/components/badge"
-import { Dot } from "lucide-react"
 
 type TStatus = {
   status: EStatus | string
@@ -16,7 +15,9 @@ export const BadgeStatus: React.FC<TStatus> = ({ status }) => {
       case EStatus.VERIFIED:
       case EStatus.FILLED:
       case EStatus.PAID:
+      case EStatus.CONFIRMED:
       case EStatus.REFUNDED:
+      case EStatus.COMPLETED:
         return {
           label:
             {
@@ -26,6 +27,8 @@ export const BadgeStatus: React.FC<TStatus> = ({ status }) => {
               [EStatus.FILLED]: "Filled",
               [EStatus.PAID]: "Paid",
               [EStatus.REFUNDED]: "Refunded",
+              [EStatus.CONFIRMED]: "Confirmed",
+              [EStatus.COMPLETED]: "Completed",
             }[normalizedStatus] ?? "Success",
           className:
             "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800/50",
@@ -82,8 +85,13 @@ export const BadgeStatus: React.FC<TStatus> = ({ status }) => {
           dotClassName: "text-gray-600 dark:text-gray-400",
         }
       case "PARTIALLY_FILLED":
+      case EStatus.APPPROVED:
         return {
-          label: "Partially Filled",
+          label:
+            {
+              [EStatus.APPPROVED]: "Approved",
+              PARTIALLY_FILLED: "Partially Filled",
+            }[normalizedStatus] ?? "Approved",
           className:
             "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800/50",
           dotClassName: "text-orange-600 dark:text-orange-400",
@@ -108,7 +116,6 @@ export const BadgeStatus: React.FC<TStatus> = ({ status }) => {
 
   return (
     <Badge variant="outline" className={config.className}>
-      <Dot className={config.dotClassName} />
       {config.label}
     </Badge>
   )

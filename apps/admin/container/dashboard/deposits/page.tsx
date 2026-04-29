@@ -1,5 +1,6 @@
 "use client"
 
+import { BadgeStatus } from "@/components/custom/badge/badge-status"
 import { SidebarInset, SidebarTrigger } from "@/components/layout/sidebar"
 import { useDepositOverview } from "@/hooks/transactions/deposits/use-deposit-overview"
 import { useDeposits } from "@/hooks/transactions/deposits/use-deposits"
@@ -90,19 +91,7 @@ export const Deposits = () => {
         header: "Status",
         cell: ({ row }) => {
           const status = row.original.status
-          return (
-            <span
-              className={`rounded-full px-2 py-1 text-xs font-medium ${
-                status === "confirmed"
-                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                  : status === "pending"
-                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-              }`}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </span>
-          )
+          return <BadgeStatus status={status} />
         },
       },
       {
