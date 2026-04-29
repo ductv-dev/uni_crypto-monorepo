@@ -10,8 +10,8 @@ import {
 } from "@workspace/ui/components/card"
 
 export const TopToken: React.FC = () => {
-  const { data: tokenList = [] } = useDataToken()
-  const data = tokenList.slice(0, 5)
+  const { data: tokenResponse } = useDataToken()
+  const data = tokenResponse?.data.slice(0, 5) ?? []
 
   return (
     <Card>

@@ -54,12 +54,13 @@ const TYPE_CHART: TTypeChart[] = [
 ]
 
 export const SectionChart: React.FC = () => {
-  const { data: tokenList = [] } = useDataToken()
+  const { data: tokenResponse } = useDataToken()
   const { resolvedTheme } = useTheme()
   const [typeChart, setTypeChart] = useState<TTypeChart>(TYPE_CHART[0]!)
   const [activeTimeframe, setActiveTimeframe] = useState<Timeframe>("1D")
   const [symbol, setSymbol] = useState<TToken | null>(null)
   const [open, setOpen] = useState(false)
+  const tokenList = tokenResponse?.data ?? []
 
   useEffect(() => {
     if (!symbol && tokenList.length > 0) {
