@@ -1,14 +1,421 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
-   moduleFormat    = "cjs"
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  password       String
+  is_active      Boolean  @default(true)
+  is_blocked     Boolean  @default(false)
+  is_super_admin Boolean  @default(false)
+  type_account   String   @default("user")
+
+  role_id String?
+  role    Role? @relation(fields: [role_id], references: [id])
+
+  hash_active         String? @unique
+  hash_reset_password String? @unique
+
+  info UserInfo?
+
+  sessions  Session[]
+  auditLogs AuditLog[]
+
+  wallets             Wallet[]
+  orders              OrderBook[]
+  depositsWithdrawals DepositWithdrawal[] @relation("UserDeposits")
+  approvedRequests    DepositWithdrawal[] @relation("AdminDeposits")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role_id])
+  @@index([email])
+}
+
+model UserInfo {
+  id            String   @id @default(uuid())
+  user_id       String   @unique
+  first_name    String
+  last_name     String
+  date_of_birth DateTime?
+  gender        String?
+  phone_number  String?
+  address       String?
+  city          String?
+  country       String?
+
+  user User @relation(fields: [user_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Role {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+  status      Boolean @default(true)
+
+  users       User[]
+  permissions RolePermission[]
+  level       Int @default(2) // 1: super admin, 2: admin, 3:.... 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Permission {
+  id              String  @id @default(uuid())
+  permission_code String  @unique
+  name            String  @unique
+  description     String?
+  status          Boolean @default(true)
+
+  roles       RolePermission[]
+  table_rules PermissionTableRule[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RolePermission {
+  id            String @id @default(uuid())
+  role_id       String
+  permission_id String
+
+  role       Role       @relation(fields: [role_id], references: [id])
+  permission Permission @relation(fields: [permission_id], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([role_id, permission_id])
+  @@index([role_id])
+  @@index([permission_id])
+}
+
+model PermissionTableRule {
+  id              String @id @default(uuid())
+  permission_code String
+  table_name      String
+
+  can_create Boolean @default(false)
+  can_read   Boolean @default(false)
+  can_update Boolean @default(false)
+  can_delete Boolean @default(false)
+
+  permission Permission @relation(fields: [permission_code], references: [permission_code])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([permission_code, table_name])
+  @@index([table_name])
+}
+
+model Session {
+  id            String   @id @default(uuid())
+  user_id       String
+  refresh_token String   @unique
+  ip_address    String?
+  user_agent    String?
+  device        String?
+  revoked_at    DateTime?
+  expires_at    DateTime
+
+  user User @relation(fields: [user_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([user_id])
+  @@index([expires_at])
+}
+
+model AuditLog {
+  id         String  @id @default(uuid())
+  user_id    String?
+  action     String
+  table_name String
+  record_id  String?
+  changes    Json?
+  ip_address String?
+
+  user User? @relation(fields: [user_id], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([user_id])
+  @@index([table_name])
+  @@index([record_id])
+  @@index([createdAt])
+}
+
+model Asset {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  symbol      String  @unique
+  description String?
+  status      Boolean @default(true)
+
+  wallets             Wallet[]
+  depositWithdrawals  DepositWithdrawal[]
+  base_markets        Market[] @relation("BaseAsset")
+  quote_markets       Market[] @relation("QuoteAsset")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Wallet {
+  id       String @id @default(uuid())
+  user_id  String
+  asset_id String
+
+  available_balance Decimal @default(0) @db.Decimal(30, 10)
+  blocked_balance   Decimal @default(0) @db.Decimal(30, 10)
+
+  status Boolean @default(true)
+
+  user  User  @relation(fields: [user_id], references: [id])
+  asset Asset @relation(fields: [asset_id], references: [id])
+
+  transactions WalletTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([user_id, asset_id])
+  @@index([user_id])
+  @@index([asset_id])
+}
+
+model WalletTransaction {
+  id        String @id @default(uuid())
+  wallet_id String
+
+  // deposit, withdraw, order_lock, order_unlock, trade_buy, trade_sell, fee
+  type String
+
+  // credit = cộng tiền/coin, debit = trừ tiền/coin
+  direction String
+
+  amount         Decimal @db.Decimal(30, 10)
+  balance_before Decimal @db.Decimal(30, 10)
+  balance_after  Decimal @db.Decimal(30, 10)
+
+  // Liên kết mềm tới deposit/withdraw/order/trade
+  reference_type String?
+  reference_id   String?
+
+  status      String  @default("success")
+  description String?
+
+  wallet Wallet @relation(fields: [wallet_id], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([wallet_id])
+  @@index([type])
+  @@index([reference_type, reference_id])
+  @@index([createdAt])
+}
+
+model Market {
+  id             String @id @default(uuid())
+  symbol         String @unique
+  base_asset_id  String
+  quote_asset_id String
+
+  last_price    Decimal @default(0) @db.Decimal(30, 10)
+  high_price_24h Decimal @default(0) @db.Decimal(30, 10)
+  low_price_24h  Decimal @default(0) @db.Decimal(30, 10)
+  volume_24h     Decimal @default(0) @db.Decimal(30, 10)
+
+  min_order_amount Decimal @db.Decimal(30, 10)
+  max_order_amount Decimal? @db.Decimal(30, 10)
+  min_order_value  Decimal @default(0) @db.Decimal(30, 10)
+
+  price_precision    Int @default(2)
+  quantity_precision Int @default(6)
+
+  description String?
+  status      Boolean @default(true)
+
+  baseAsset  Asset @relation("BaseAsset", fields: [base_asset_id], references: [id])
+  quoteAsset Asset @relation("QuoteAsset", fields: [quote_asset_id], references: [id])
+
+  orders OrderBook[]
+  trades Trade[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([base_asset_id])
+  @@index([quote_asset_id])
+}
+
+model OrderBook {
+  id        String @id @default(uuid())
+  user_id   String
+  market_id String
+
+  // limit, market
+  type String
+
+  // buy, sell
+  side String
+
+  price        Decimal? @db.Decimal(30, 10)
+  quantity     Decimal  @db.Decimal(30, 10)
+  filled_qty   Decimal  @default(0) @db.Decimal(30, 10)
+  remaining_qty Decimal @db.Decimal(30, 10)
+
+  // open, partial_filled, filled, cancelled
+  status String @default("open")
+
+  user   User   @relation(fields: [user_id], references: [id])
+  market Market @relation(fields: [market_id], references: [id])
+
+  buyTrades  Trade[] @relation("BuyOrder")
+  sellTrades Trade[] @relation("SellOrder")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([user_id])
+  @@index([market_id])
+  @@index([side])
+  @@index([status])
+  @@index([price])
+  @@index([createdAt])
+}
+
+model Trade {
+  id            String @id @default(uuid())
+  market_id     String
+  buy_order_id  String
+  sell_order_id String
+
+  price    Decimal @db.Decimal(30, 10)
+  quantity Decimal @db.Decimal(30, 10)
+  total    Decimal @db.Decimal(30, 10)
+
+  buyer_fee  Decimal @default(0) @db.Decimal(30, 10)
+  seller_fee Decimal @default(0) @db.Decimal(30, 10)
+
+  market    Market    @relation(fields: [market_id], references: [id])
+  buyOrder  OrderBook @relation("BuyOrder", fields: [buy_order_id], references: [id])
+  sellOrder OrderBook @relation("SellOrder", fields: [sell_order_id], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([market_id])
+  @@index([buy_order_id])
+  @@index([sell_order_id])
+  @@index([createdAt])
+}
+
+model DepositWithdrawal {
+  id       String @id @default(uuid())
+  user_id  String
+  asset_id String
+
+  // deposit, withdraw
+  type String
+
+  amount Decimal @db.Decimal(30, 10)
+  fee    Decimal @default(0) @db.Decimal(30, 10)
+
+  network       String?
+  tx_hash       String?
+  from_address  String?
+  to_address    String?
+  confirmations Int?
+
+  admin_id String?
+
+  // pending, approved, rejected, completed, failed
+  status String @default("pending")
+
+  note            String?
+  rejected_reason String?
+  approved_at     DateTime?
+  completed_at    DateTime?
+
+  user  User  @relation("UserDeposits", fields: [user_id], references: [id])
+  asset Asset @relation(fields: [asset_id], references: [id])
+  admin User? @relation("AdminDeposits", fields: [admin_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([user_id])
+  @@index([asset_id])
+  @@index([admin_id])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum TypeAccount {
+  user
+  admin
+}
+ enum DepositWithdrawalStatus {
+  pending
+  approved
+  rejected
+  completed
+  failed
+}
+ enum OrderBookStatus {
+  open
+  partial_filled
+  filled
+  cancelled
+}
+ enum OrderBookType {
+  limit
+  market
+}
+ enum OrderBookSide {
+  buy
+  sell
+}
+ enum WalletTransactionType {
+  deposit
+  withdraw
+  order_lock
+  order_unlock
+  trade_buy
+  trade_sell
+  fee
+}
+ enum WalletTransactionDirection {
+  credit
+  debit
+}
+  enum PermissionTableName {
+  User
+  UserInfo
+  Role
+  Permission
+  RolePermission
+  PermissionTableRule
+  Session
+  AuditLog    
+  Asset
+  Wallet
+  WalletTransaction
+  Market
+  OrderBook
+  Trade
+  DepositWithdrawal
 }
