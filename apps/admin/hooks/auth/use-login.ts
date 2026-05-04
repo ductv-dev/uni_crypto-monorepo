@@ -1,10 +1,21 @@
 import { api } from "@/lib/api/api"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "@workspace/ui/index"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
+
+const DEFAULT_REDIRECT = "/dashboard"
+
+const getSafeRedirectPath = (pathname: string | null) => {
+  if (!pathname || !pathname.startsWith("/") || pathname.startsWith("//")) {
+    return DEFAULT_REDIRECT
+  }
+
+  return pathname
+}
 
 export const useLogin = () => {
   const route = useRouter()
+  const searchParams = useSearchParams()
   return useMutation({
     mutationFn: api.login,
     mutationKey: ["login"],
@@ -15,7 +26,8 @@ export const useLogin = () => {
     },
     onSuccess: () => {
       toast.success("Đăng nhập thành công")
-      route.push("/dashboard")
+      const redirectPath = getSafeRedirectPath(searchParams.get("next"))
+      route.push(redirectPath)
     },
   })
 }

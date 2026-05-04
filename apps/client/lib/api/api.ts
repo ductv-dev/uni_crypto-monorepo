@@ -30,4 +30,18 @@ export const api = {
 
     return res.json()
   },
+
+  activeAccount: async (data: { token: string; email: string }) => {
+    const res = await fetch("/api/auth/activate-account", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+
+    if (!res.ok) {
+      const errorData = await res.json()
+      throw new Error(errorData.message || "Account activation failed")
+    }
+
+    return res.json()
+  },
 }
