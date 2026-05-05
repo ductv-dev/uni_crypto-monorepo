@@ -35,6 +35,34 @@ const SUPER_ADMIN_PROFILE = {
   date_of_birth: new Date('1995-01-01'),
 };
 
+const ROLE_SEEDS = [
+  {
+    name: 'USER',
+    description: 'Default end-user role with the lowest privilege level.',
+    level: 5,
+  },
+  {
+    name: 'STAFF',
+    description: 'Operational staff role with limited back-office access.',
+    level: 4,
+  },
+  {
+    name: 'MANAGER',
+    description: 'Manager role with elevated operational permissions.',
+    level: 3,
+  },
+  {
+    name: 'ADMIN',
+    description: 'Administrator role for platform administration tasks.',
+    level: 2,
+  },
+  {
+    name: 'SUPER_ADMIN',
+    description: 'System super admin with full access.',
+    level: 1,
+  },
+] as const;
+
 const ASSET_SEEDS = [
   {
     name: 'Bitcoin',
@@ -118,20 +146,30 @@ function buildPermissionDefinition(tableName: string) {
 }
 
 async function seedPermissionsAndRole() {
-  const role = await prisma.role.upsert({
-    where: { name: 'super_admin' },
-    update: {
-      description: 'System super admin with full access.',
-      level: 1,
-      status: true,
-    },
-    create: {
-      name: 'super_admin',
-      description: 'System super admin with full access.',
-      level: 1,
-      status: true,
-    },
-  });
+  const roles = await Promise.all(
+    ROLE_SEEDS.map((role) =>
+      prisma.role.upsert({
+        where: { name: role.name },
+        update: {
+          description: role.description,
+          level: role.level,
+          status: true,
+        },
+        create: {
+          name: role.name,
+          description: role.description,
+          level: role.level,
+          status: true,
+        },
+      }),
+    ),
+  );
+
+  const superAdminRole = roles.find((role) => role.name === 'SUPER_ADMIN');
+
+  if (!superAdminRole) {
+    throw new Error('SUPER_ADMIN role could not be seeded.');
+  }
 
   const permissionDefinitions = Object.values(PermissionTableName).map(
     buildPermissionDefinition,
@@ -188,20 +226,23 @@ async function seedPermissionsAndRole() {
       prisma.rolePermission.upsert({
         where: {
           role_id_permission_id: {
-            role_id: role.id,
+            role_id: superAdminRole.id,
             permission_id: permission.id,
           },
         },
         update: {},
         create: {
-          role_id: role.id,
+          role_id: superAdminRole.id,
           permission_id: permission.id,
         },
       }),
     ),
   );
 
-  return role;
+  return {
+    roles,
+    superAdminRole,
+  };
 }
 
 async function seedAssets() {
@@ -341,14 +382,15 @@ async function seedSuperAdmin(
 }
 
 async function main() {
-  const role = await seedPermissionsAndRole();
+  const { roles, superAdminRole } = await seedPermissionsAndRole();
   const assetMap = await seedAssets();
   await seedMarkets(assetMap);
-  const superAdmin = await seedSuperAdmin(role.id, assetMap);
+  const superAdmin = await seedSuperAdmin(superAdminRole.id, assetMap);
 
   console.log('Seed completed successfully.');
   console.log(`Super admin email: ${superAdmin.email}`);
   console.log(`Super admin password: ${SUPER_ADMIN_PASSWORD}`);
+  console.log(`Roles seeded: ${roles.map((role) => role.name).join(', ')}`);
   console.log(
     `Permissions granted: ${Object.keys(PermissionTableName).length}`,
   );
