@@ -37,4 +37,33 @@ export class MailService {
       },
     });
   }
+
+  async sendMailResetPassword(email: string, token: string) {
+    const appName = this.configService.get<string>('APP_NAME') ?? 'Uni Crypto';
+    const resetPasswordBaseUrl =
+      this.configService.get<string>('RESET_PASSWORD_URL') ??
+      this.configService.get<string>('CLIENT_URL') ??
+      this.configService.get<string>('ADMIN_URL') ??
+      'http://localhost:3000/reset-password';
+
+    const resetPasswordUrl = `${resetPasswordBaseUrl}${
+      resetPasswordBaseUrl.includes('?') ? '&' : '?'
+    }token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`;
+
+    await this.mailerService.sendMail({
+      to: email,
+      subject: `Reset your ${appName} password`,
+      template: 'reset-password',
+      context: {
+        appName,
+        email,
+        token,
+        resetPasswordUrl,
+        supportEmail:
+          this.configService.get<string>('MAIL_USER') ??
+          'support@uni-crypto.local',
+        currentYear: new Date().getFullYear(),
+      },
+    });
+  }
 }

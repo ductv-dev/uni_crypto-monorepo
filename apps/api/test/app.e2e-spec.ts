@@ -1,5 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
@@ -20,6 +20,17 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect('Hello World!');
+      .expect((response) => {
+        const body = response.body as {
+          name: string;
+          description: string;
+          endpoints: unknown[];
+        };
+
+        expect(body.name).toBe('Uni Crypto API');
+        expect(typeof body.description).toBe('string');
+        expect(Array.isArray(body.endpoints)).toBe(true);
+        expect(body.endpoints.length).toBeGreaterThan(0);
+      });
   });
 });

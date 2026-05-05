@@ -10,23 +10,11 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
-
-type AccessTokenPayload = {
-  sub: string;
-  email: string;
-  iat?: number;
-  exp?: number;
-};
-
-type AuthenticatedRequest = {
-  headers: Record<string, string | string[] | undefined>;
-  user?: AccessTokenPayload & {
-    token: string;
-    role_id: string | null;
-    is_super_admin: boolean;
-    type_account: string;
-  };
-};
+import {
+  AccessTokenUser,
+  JwtUserPayload,
+  RequestWithUser,
+} from '../types/request-user';
 
 const IS_PUBLIC_KEY = 'is-public';
 
@@ -48,7 +36,7 @@ export class AtGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
     const accessToken = this.extractAccessToken(request);
     if (!accessToken) {
       throw new UnauthorizedException('Missing access token');
@@ -63,14 +51,11 @@ export class AtGuard implements CanActivate {
       );
     }
 
-    let payload: AccessTokenPayload;
+    let payload: JwtUserPayload;
     try {
-      payload = await this.jwtService.verifyAsync<AccessTokenPayload>(
-        accessToken,
-        {
-          secret: accessTokenSecret,
-        },
-      );
+      payload = await this.jwtService.verifyAsync<JwtUserPayload>(accessToken, {
+        secret: accessTokenSecret,
+      });
     } catch {
       throw new UnauthorizedException('Access token is invalid or expired');
     }
@@ -78,7 +63,26 @@ export class AtGuard implements CanActivate {
     if (!payload.sub || !payload.email) {
       throw new UnauthorizedException('Invalid token payload');
     }
+    const sessionId = await this.prisma.session.findUnique({
+      where: {
+        id: payload.sessionId,
+      },
+      select: {
+        id: true,
+        revoked_at: true,
+        expires_at: true,
+      },
+    });
 
+    if (!sessionId) {
+      throw new UnauthorizedException('Invalid session');
+    }
+    if (sessionId.revoked_at) {
+      throw new UnauthorizedException('Session is revoked');
+    }
+    if (sessionId.expires_at < new Date()) {
+      throw new UnauthorizedException('Session is expired');
+    }
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       select: {
@@ -104,31 +108,26 @@ export class AtGuard implements CanActivate {
       throw new ForbiddenException('User account is blocked');
     }
 
-    request.user = {
+    const authenticatedUser: AccessTokenUser = {
       ...payload,
       token: accessToken,
       role_id: user.role_id,
       is_super_admin: user.is_super_admin,
       type_account: user.type_account,
     };
+    request.user = authenticatedUser;
 
     return true;
   }
 
-  private extractAccessToken(request: AuthenticatedRequest): string | null {
-    const authorizationHeader = request.headers.authorization;
-    const bearerToken = Array.isArray(authorizationHeader)
-      ? authorizationHeader[0]
-      : authorizationHeader;
+  private extractAccessToken(request: RequestWithUser): string | null {
+    const bearerToken = request.get('authorization');
 
     if (bearerToken?.startsWith('Bearer ')) {
       return bearerToken.slice(7).trim();
     }
 
-    const cookieHeader = request.headers.cookie;
-    const rawCookieHeader = Array.isArray(cookieHeader)
-      ? cookieHeader.join(';')
-      : cookieHeader;
+    const rawCookieHeader = request.get('cookie');
 
     if (!rawCookieHeader) {
       return null;
