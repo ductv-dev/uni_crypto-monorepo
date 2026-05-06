@@ -4,7 +4,7 @@ import { MailService } from 'src/mail/mail.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { AtGuard, RtGuard } from './guards';
+import { AccountTypeGuard, AtGuard, RtGuard } from './guards';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 
 @Module({
@@ -13,11 +13,12 @@ import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
     AuthService,
     PrismaService,
     JwtService,
+    AccountTypeGuard,
     AtGuard,
     RtGuard,
     RefreshTokenStrategy,
     MailService,
   ],
-  exports: [AtGuard, RtGuard],
+  exports: [AccountTypeGuard, AtGuard, RtGuard],
 })
 export class AuthModule {}

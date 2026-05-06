@@ -1,3 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
+import { IS_PUBLIC_KEY } from '../constants/auth.constants';
 
-export const Public = () => SetMetadata('is-public', true);
+// Dùng cho các route không cần đăng nhập, ví dụ signin/signup/refresh.
+export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);

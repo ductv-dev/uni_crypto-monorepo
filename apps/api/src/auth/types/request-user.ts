@@ -1,4 +1,5 @@
 import type { Request } from 'express';
+import type { AuthAccountType } from '../constants/auth.constants';
 
 export type JwtUserPayload = {
   sub: string;
@@ -12,7 +13,7 @@ export type AccessTokenUser = JwtUserPayload & {
   token: string;
   role_id: string | null;
   is_super_admin: boolean;
-  type_account: string;
+  type_account: AuthAccountType;
 };
 
 export type RefreshTokenUser = JwtUserPayload & {

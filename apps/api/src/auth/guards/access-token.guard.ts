@@ -11,12 +11,15 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
+  AUTH_ACCOUNT_TYPES,
+  type AuthAccountType,
+  IS_PUBLIC_KEY,
+} from '../constants/auth.constants';
+import {
   AccessTokenUser,
   JwtUserPayload,
   RequestWithUser,
 } from '../types/request-user';
-
-const IS_PUBLIC_KEY = 'is-public';
 
 @Injectable()
 export class AtGuard implements CanActivate {
@@ -28,6 +31,7 @@ export class AtGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    // Public route sẽ bỏ qua toàn bộ flow xác thực.
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -53,6 +57,7 @@ export class AtGuard implements CanActivate {
 
     let payload: JwtUserPayload;
     try {
+      // Verify chữ ký và thời hạn token trước khi dùng payload.
       payload = await this.jwtService.verifyAsync<JwtUserPayload>(accessToken, {
         secret: accessTokenSecret,
       });
@@ -63,6 +68,8 @@ export class AtGuard implements CanActivate {
     if (!payload.sub || !payload.email) {
       throw new UnauthorizedException('Invalid token payload');
     }
+
+    // Token hợp lệ nhưng session trong DB vẫn có thể đã bị revoke hoặc hết hạn.
     const sessionId = await this.prisma.session.findUnique({
       where: {
         id: payload.sessionId,
@@ -83,6 +90,8 @@ export class AtGuard implements CanActivate {
     if (sessionId.expires_at < new Date()) {
       throw new UnauthorizedException('Session is expired');
     }
+
+    // Luôn lấy trạng thái user mới nhất từ DB thay vì tin hoàn toàn vào JWT.
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       select: {
@@ -108,6 +117,11 @@ export class AtGuard implements CanActivate {
       throw new ForbiddenException('User account is blocked');
     }
 
+    if (!this.isValidAccountType(user.type_account)) {
+      throw new ForbiddenException('User account type is invalid');
+    }
+
+    // Chuẩn hóa request.user để decorator/guard khác dùng lại cùng một shape.
     const authenticatedUser: AccessTokenUser = {
       ...payload,
       token: accessToken,
@@ -121,12 +135,14 @@ export class AtGuard implements CanActivate {
   }
 
   private extractAccessToken(request: RequestWithUser): string | null {
+    // Ưu tiên Bearer token để hỗ trợ API client/mobile app.
     const bearerToken = request.get('authorization');
 
     if (bearerToken?.startsWith('Bearer ')) {
       return bearerToken.slice(7).trim();
     }
 
+    // Fallback sang cookie để hỗ trợ web client và admin panel.
     const rawCookieHeader = request.get('cookie');
 
     if (!rawCookieHeader) {
@@ -150,6 +166,14 @@ export class AtGuard implements CanActivate {
         }),
     );
 
+    // Cho phép frontend tách session admin/client bằng 2 cookie name khác nhau.
     return cookies.admin_access_token || cookies.access_token || null;
+  }
+
+  private isValidAccountType(
+    accountType: string,
+  ): accountType is AuthAccountType {
+    // Chỉ chấp nhận các loại tài khoản đã được định nghĩa nội bộ.
+    return AUTH_ACCOUNT_TYPES.includes(accountType as AuthAccountType);
   }
 }

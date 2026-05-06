@@ -2,11 +2,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcrypt';
 import 'dotenv/config';
 import { Pool } from 'pg';
-import {
-  PermissionTableName,
-  PrismaClient,
-  TypeAccount,
-} from '../generated/prisma/client';
+import { PrismaClient, TypeAccount } from '../generated/prisma/client';
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -62,6 +58,8 @@ const ROLE_SEEDS = [
     level: 1,
   },
 ] as const;
+
+type SeedRoleName = (typeof ROLE_SEEDS)[number]['name'];
 
 const ASSET_SEEDS = [
   {
@@ -134,14 +132,91 @@ const MARKET_SEEDS = [
   },
 ] as const;
 
-function buildPermissionDefinition(tableName: string) {
-  const permissionCode = `manage_${tableName.toLowerCase()}`;
+const PERMISSION_ACTIONS = ['read', 'create', 'update', 'delete'] as const;
+
+type PermissionAction = (typeof PERMISSION_ACTIONS)[number];
+const TABLE_RESOURCE_NAMES = {
+  User: 'users',
+  UserInfo: 'user_infos',
+  Role: 'roles',
+  Permission: 'permissions',
+  RolePermission: 'role_permissions',
+  Session: 'sessions',
+  AuditLog: 'audit_logs',
+  Asset: 'assets',
+  Wallet: 'wallets',
+  WalletTransaction: 'wallet_transactions',
+  Market: 'markets',
+  OrderBook: 'order_books',
+  Trade: 'trades',
+  DepositWithdrawal: 'deposit_withdrawals',
+} as const;
+
+type PermissionTableName = keyof typeof TABLE_RESOURCE_NAMES;
+
+const ALL_PERMISSION_TABLES = Object.keys(
+  TABLE_RESOURCE_NAMES,
+) as PermissionTableName[];
+
+const ROLE_PERMISSION_TABLES: Record<
+  SeedRoleName,
+  readonly PermissionTableName[]
+> = {
+  USER: [],
+  STAFF: [
+    'Asset',
+    'Market',
+    'Wallet',
+    'WalletTransaction',
+    'OrderBook',
+    'Trade',
+    'DepositWithdrawal',
+  ],
+  MANAGER: [
+    'User',
+    'UserInfo',
+    'Asset',
+    'Market',
+    'Wallet',
+    'WalletTransaction',
+    'OrderBook',
+    'Trade',
+    'DepositWithdrawal',
+    'AuditLog',
+  ],
+  ADMIN: [
+    'User',
+    'UserInfo',
+    'Role',
+    'Permission',
+    'RolePermission',
+    'Session',
+    'AuditLog',
+    'Asset',
+    'Wallet',
+    'WalletTransaction',
+    'Market',
+    'OrderBook',
+    'Trade',
+    'DepositWithdrawal',
+  ],
+  SUPER_ADMIN: ALL_PERMISSION_TABLES,
+} as const;
+
+function buildPermissionDefinition(
+  tableName: PermissionTableName,
+  action: PermissionAction,
+) {
+  const resourceName = TABLE_RESOURCE_NAMES[tableName];
+  const permissionCode = `${resourceName}.${action}`;
+  const actionLabel = action.charAt(0).toUpperCase() + action.slice(1);
 
   return {
     tableName,
+    action,
     permissionCode,
-    name: `Manage ${tableName}`,
-    description: `Full CRUD permission for ${tableName}.`,
+    name: `${actionLabel} ${resourceName}`,
+    description: `${actionLabel} permission for ${tableName}.`,
   };
 }
 
@@ -165,14 +240,13 @@ async function seedPermissionsAndRole() {
     ),
   );
 
-  const superAdminRole = roles.find((role) => role.name === 'SUPER_ADMIN');
-
-  if (!superAdminRole) {
-    throw new Error('SUPER_ADMIN role could not be seeded.');
-  }
-
-  const permissionDefinitions = Object.values(PermissionTableName).map(
-    buildPermissionDefinition,
+  const roleMap = new Map(
+    roles.map((role) => [role.name as SeedRoleName, role]),
+  );
+  const permissionDefinitions = ALL_PERMISSION_TABLES.flatMap((tableName) =>
+    PERMISSION_ACTIONS.map((action) =>
+      buildPermissionDefinition(tableName, action),
+    ),
   );
 
   const permissions = await Promise.all(
@@ -194,54 +268,70 @@ async function seedPermissionsAndRole() {
     ),
   );
 
-  await Promise.all(
-    permissionDefinitions.map(({ permissionCode, tableName }) =>
-      prisma.permissionTableRule.upsert({
-        where: {
-          permission_code_table_name: {
-            permission_code: permissionCode,
-            table_name: tableName,
-          },
-        },
-        update: {
-          can_create: true,
-          can_read: true,
-          can_update: true,
-          can_delete: true,
-        },
-        create: {
-          permission_code: permissionCode,
-          table_name: tableName,
-          can_create: true,
-          can_read: true,
-          can_update: true,
-          can_delete: true,
-        },
-      }),
-    ),
+  const permissionMap = new Map(
+    permissions.map((permission) => [permission.permission_code, permission]),
+  );
+
+  const rolePermissionPairs = Object.entries(ROLE_PERMISSION_TABLES).flatMap(
+    ([roleName, tableNames]) => {
+      const role = roleMap.get(roleName as SeedRoleName);
+
+      if (!role) {
+        throw new Error(`${roleName} role could not be seeded.`);
+      }
+
+      return tableNames.flatMap((tableName) =>
+        PERMISSION_ACTIONS.map((action) => {
+          const permissionCode = buildPermissionDefinition(
+            tableName,
+            action,
+          ).permissionCode;
+          const permission = permissionMap.get(permissionCode);
+
+          if (!permission) {
+            throw new Error(
+              `Permission ${permissionCode} could not be seeded.`,
+            );
+          }
+
+          return {
+            role_id: role.id,
+            permission_id: permission.id,
+          };
+        }),
+      );
+    },
   );
 
   await Promise.all(
-    permissions.map((permission) =>
+    rolePermissionPairs.map(({ role_id, permission_id }) =>
       prisma.rolePermission.upsert({
         where: {
           role_id_permission_id: {
-            role_id: superAdminRole.id,
-            permission_id: permission.id,
+            role_id,
+            permission_id,
           },
         },
         update: {},
         create: {
-          role_id: superAdminRole.id,
-          permission_id: permission.id,
+          role_id,
+          permission_id,
         },
       }),
     ),
   );
 
+  const superAdminRole = roleMap.get('SUPER_ADMIN');
+
+  if (!superAdminRole) {
+    throw new Error('SUPER_ADMIN role could not be seeded.');
+  }
+
   return {
     roles,
     superAdminRole,
+    permissionsCount: permissions.length,
+    rolePermissionsCount: rolePermissionPairs.length,
   };
 }
 
@@ -382,7 +472,8 @@ async function seedSuperAdmin(
 }
 
 async function main() {
-  const { roles, superAdminRole } = await seedPermissionsAndRole();
+  const { roles, superAdminRole, permissionsCount, rolePermissionsCount } =
+    await seedPermissionsAndRole();
   const assetMap = await seedAssets();
   await seedMarkets(assetMap);
   const superAdmin = await seedSuperAdmin(superAdminRole.id, assetMap);
@@ -391,9 +482,8 @@ async function main() {
   console.log(`Super admin email: ${superAdmin.email}`);
   console.log(`Super admin password: ${SUPER_ADMIN_PASSWORD}`);
   console.log(`Roles seeded: ${roles.map((role) => role.name).join(', ')}`);
-  console.log(
-    `Permissions granted: ${Object.keys(PermissionTableName).length}`,
-  );
+  console.log(`Permissions seeded: ${permissionsCount}`);
+  console.log(`Role permissions seeded: ${rolePermissionsCount}`);
   console.log(`Assets seeded: ${ASSET_SEEDS.length}`);
   console.log(`Markets seeded: ${MARKET_SEEDS.length}`);
 }
