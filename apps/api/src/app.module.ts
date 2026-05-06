@@ -8,6 +8,7 @@ import { PrismaService } from './prisma/prisma.service';
 import { MailModule } from './mail/mail.module';
 import { UsersModule } from './users/users.module';
 import { PermissionModule } from './permission/permission.module';
+import { RoleModule } from './role/role.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { PermissionModule } from './permission/permission.module';
     MailModule,
     UsersModule,
     PermissionModule,
+    RoleModule,
   ],
 
   controllers: [AppController],
