@@ -214,10 +214,6 @@ export class AccountService {
     };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} account`;
-  }
-
   async updatePassword(id: string, dto: ChangePasswordDto, roleLevel: number) {
     const user = await this.prisma.user.findUnique({
       where: {
@@ -382,6 +378,113 @@ export class AccountService {
 
     return {
       message: 'Profile updated successfully',
+    };
+  }
+
+  async findOne(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+        email: true,
+        is_active: true,
+        is_blocked: true,
+        is_super_admin: true,
+        type_account: true,
+        createdAt: true,
+        updatedAt: true,
+        role: {
+          select: {
+            id: true,
+            name: true,
+            level: true,
+            status: true,
+          },
+        },
+        info: {
+          select: {
+            first_name: true,
+            last_name: true,
+            date_of_birth: true,
+            gender: true,
+            phone_number: true,
+            address: true,
+            city: true,
+            country: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return user;
+  }
+
+  async updateRole(id: string, role_id: string, roleLevel: number) {
+    const role = await this.prisma.role.findUnique({
+      where: {
+        id: role_id,
+      },
+      select: {
+        level: true,
+      },
+    });
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
+    if (role.level <= roleLevel) {
+      throw new UnauthorizedException(
+        'You can not assign a role with equal or higher level than yours',
+      );
+    }
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+        role_id: true,
+        type_account: true,
+        role: {
+          select: {
+            level: true,
+          },
+        },
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (user.type_account === 'USER') {
+      throw new UnauthorizedException('You can not update role for USER');
+    }
+    if (!user.role?.level) {
+      throw new NotFoundException('User has no assigned role');
+    }
+    if (user.role.level <= roleLevel) {
+      throw new UnauthorizedException(
+        'You can not update account have role higher than yours',
+      );
+    }
+
+    const updateRole = await this.prisma.user.update({
+      where: {
+        id: id,
+      },
+      data: {
+        role_id: role_id,
+      },
+    });
+    if (!updateRole) {
+      throw new ServiceUnavailableException('Failed to update role');
+    }
+    return {
+      message: 'Role updated successfully',
     };
   }
 }

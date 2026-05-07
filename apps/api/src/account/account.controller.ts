@@ -27,11 +27,11 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Controller('account')
 @UseGuards(AtGuard, AccountTypeGuard)
+@AdminOnly()
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 
   @Post()
-  @AdminOnly()
   @Permissions(PERMISSION_CODES.CREATE_USERS)
   create(
     @Body() createAccountDto: CreateAccountDto,
@@ -75,7 +75,6 @@ export class AccountController {
   }
 
   @Patch('block/:id')
-  @AdminOnly()
   @Permissions(PERMISSION_CODES.UPDATE_USERS)
   block(
     @Param('id') id: string,
@@ -90,5 +89,19 @@ export class AccountController {
     @getCurrentUser('role_level') roleLevel: number,
   ) {
     return this.accountService.updateProfile(id, dto, roleLevel);
+  }
+  @Get('info/:id')
+  @Permissions(PERMISSION_CODES.READ_USERS)
+  findOne(@Param('id') id: string) {
+    return this.accountService.findOne(id);
+  }
+  @Post('update-role/:id')
+  @Permissions(PERMISSION_CODES.UPDATE_USERS)
+  updateRole(
+    @Param('id') id: string,
+    @Body() dto: { role_id: string },
+    @getCurrentUser('role_level') roleLevel: number,
+  ) {
+    return this.accountService.updateRole(id, dto.role_id, roleLevel);
   }
 }
