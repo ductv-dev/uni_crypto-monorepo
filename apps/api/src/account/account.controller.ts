@@ -2,12 +2,12 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
-  Delete,
   Get,
   Param,
   ParseIntPipe,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -23,6 +23,7 @@ import { Permissions } from '../permission/decorators/permissions.decorator';
 import { AccountService } from './account.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateAccountDto } from './dto/create-account.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Controller('account')
 @UseGuards(AtGuard, AccountTypeGuard)
@@ -63,18 +64,31 @@ export class AccountController {
   }
   // đổi mật khẩu user
 
-  @Patch(':id')
+  @Patch('change-password/:id')
   @Permissions(PERMISSION_CODES.UPDATE_USERS)
   update(
     @Param('id') id: string,
     @Body() dto: ChangePasswordDto,
     @getCurrentUser('role_level') roleLevel: number,
   ) {
-    return this.accountService.update(id, dto, roleLevel);
+    return this.accountService.updatePassword(id, dto, roleLevel);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.accountService.remove(+id);
+  @Patch('block/:id')
+  @AdminOnly()
+  @Permissions(PERMISSION_CODES.UPDATE_USERS)
+  block(
+    @Param('id') id: string,
+    @getCurrentUser('role_level') roleLevel: number,
+  ) {
+    return this.accountService.block(id, roleLevel);
+  }
+  @Put('update-profile/:id')
+  updateProfile(
+    @Param('id') id: string,
+    @Body() dto: UpdateProfileDto,
+    @getCurrentUser('role_level') roleLevel: number,
+  ) {
+    return this.accountService.updateProfile(id, dto, roleLevel);
   }
 }

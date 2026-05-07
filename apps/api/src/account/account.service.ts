@@ -5,11 +5,13 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { AuditLogService } from 'src/audit-log/audit-log.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from '../../generated/prisma/client';
+import { hashPassword } from 'src/utils/hash-password';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateAccountDto } from './dto/create-account.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class AccountService {
@@ -24,6 +26,7 @@ export class AccountService {
     private prisma: PrismaService,
     private auditLogService: AuditLogService,
   ) {}
+  // Tạo mới tài khoản
   async create(
     createAccountDto: CreateAccountDto,
     roleLevel: number,
@@ -49,10 +52,12 @@ export class AccountService {
     if (emailExists) {
       throw new ConflictException('Email already exists');
     }
+    const hashedPassword = await hashPassword(createAccountDto.password);
+
     const user = await this.prisma.user.create({
       data: {
         email: createAccountDto.email,
-        password: createAccountDto.password,
+        password: hashedPassword,
         type_account: createAccountDto.type,
         is_super_admin: createAccountDto.is_super_admin,
         is_active: createAccountDto.is_active,
@@ -213,17 +218,28 @@ export class AccountService {
     return `This action returns a #${id} account`;
   }
 
-  async update(id: string, dto: ChangePasswordDto, roleLevel: number) {
-    const user = await this.prisma.user.findMany({
+  async updatePassword(id: string, dto: ChangePasswordDto, roleLevel: number) {
+    const user = await this.prisma.user.findUnique({
       where: {
         id,
+      },
+      select: {
+        id: true,
+        role_id: true,
       },
     });
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    if (!user.role_id) {
+      throw new NotFoundException('User has no assigned role');
+    }
+
     const role = await this.prisma.role.findUnique({
-      where: { id },
+      where: {
+        id: user.role_id,
+      },
     });
     if (!role) {
       throw new NotFoundException('Role not found');
@@ -234,11 +250,138 @@ export class AccountService {
         'You cannot assign a role with equal or higher level than yours',
       );
     }
+    const hashedPassword = await hashPassword(dto.password);
+    const changePassword = await this.prisma.user.update({
+      where: {
+        id,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
+    if (!changePassword) {
+      throw new ServiceUnavailableException('Failed to change password');
+    }
+    await this.auditLogService.create({
+      user_id: user.id,
+      action: 'CHANGE PASSWORD',
+      table_name: 'users',
+      record_id: '',
+      changes: 'New password',
+      ip_address: '127.0.0.1',
+    });
 
-    return `This action updates a #${id} account`;
+    return {
+      message: 'Password changed successfully',
+    };
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} account`;
+  async block(id: string, roleLevel: number) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+        role_id: true,
+        is_blocked: true,
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (!user.role_id) {
+      throw new NotFoundException('User has no assigned role');
+    }
+    const roleUser = await this.prisma.role.findUnique({
+      where: {
+        id: user.role_id,
+      },
+    });
+    if (!roleUser) {
+      throw new NotFoundException('Role not found');
+    }
+    if (roleUser.level <= roleLevel) {
+      throw new UnauthorizedException('You can not block/unblock this account');
+    }
+    const changeBlock = await this.prisma.user.update({
+      where: {
+        id,
+      },
+      data: {
+        is_blocked: !user.is_blocked,
+      },
+    });
+    if (!changeBlock) {
+      throw new ServiceUnavailableException('Failed to change block status');
+    }
+    await this.auditLogService.create({
+      user_id: user.id,
+      action: user.is_blocked ? 'UNBLOCK' : 'BLOCK',
+      table_name: 'users',
+      record_id: '',
+      changes: user.is_blocked ? 'Unblocked' : 'Blocked',
+      ip_address: '127.0.0.1',
+    });
+
+    return {
+      message: 'Block status changed successfully',
+    };
+  }
+
+  async updateProfile(id: string, dto: UpdateProfileDto, roleLevel: number) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+        role_id: true,
+        role: {
+          select: {
+            level: true,
+          },
+        },
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (!user.role?.level) {
+      throw new NotFoundException('User has no assigned role');
+    }
+    if (user.role.level <= roleLevel) {
+      throw new UnauthorizedException('You can not update this account');
+    }
+    const updateProfile = await this.prisma.userInfo.update({
+      where: {
+        user_id: id,
+      },
+      data: {
+        first_name: dto.first_name,
+        last_name: dto.last_name,
+        date_of_birth: dto.date_of_birth,
+        gender: dto.gender,
+        phone_number: dto.phone_number,
+        address: dto.address,
+        city: dto.city,
+        country: dto.country,
+      },
+    });
+    if (!updateProfile) {
+      throw new ServiceUnavailableException('Failed to update profile');
+    }
+    await this.auditLogService.create({
+      user_id: user.id,
+      action: 'UPDATE PROFILE',
+      table_name: 'users',
+      record_id: '',
+      changes: 'New profile',
+      ip_address: '127.0.0.1',
+    });
+
+    return {
+      message: 'Profile updated successfully',
+    };
   }
 }
