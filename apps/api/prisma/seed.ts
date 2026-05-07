@@ -471,17 +471,102 @@ async function seedSuperAdmin(
   return superAdmin;
 }
 
+async function seedTestUsers(
+  roles: any[],
+  assetMap: Map<string, { id: string }>,
+) {
+  const hashedPassword = await bcrypt.hash('Test@123', 10);
+
+  for (const role of roles) {
+    if (role.name === 'SUPER_ADMIN') continue; // SUPER_ADMIN is already created
+
+    const email = `${role.name.toLowerCase()}@uni-crypto.local`;
+    const profile = {
+      first_name: 'Test',
+      last_name: role.name,
+      gender: 'other',
+      phone_number: '+84000000000',
+      address: 'Test Address',
+      city: 'Test City',
+      country: 'Vietnam',
+      date_of_birth: new Date('1995-01-01'),
+    };
+
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {
+        password: hashedPassword,
+        is_active: true,
+        is_blocked: false,
+        is_super_admin: false,
+        type_account:
+          role.name === 'USER' ? TypeAccount.user : TypeAccount.admin,
+        role_id: role.id,
+        info: {
+          upsert: {
+            update: profile,
+            create: profile,
+          },
+        },
+      },
+      create: {
+        email,
+        password: hashedPassword,
+        is_active: true,
+        is_blocked: false,
+        is_super_admin: false,
+        type_account:
+          role.name === 'USER' ? TypeAccount.user : TypeAccount.admin,
+        role_id: role.id,
+        info: {
+          create: profile,
+        },
+      },
+    });
+
+    await Promise.all(
+      Array.from(assetMap.values()).map((asset) =>
+        prisma.wallet.upsert({
+          where: {
+            user_id_asset_id: {
+              user_id: user.id,
+              asset_id: asset.id,
+            },
+          },
+          update: {
+            status: true,
+          },
+          create: {
+            user_id: user.id,
+            asset_id: asset.id,
+            status: true,
+          },
+        }),
+      ),
+    );
+  }
+}
+
 async function main() {
   const { roles, superAdminRole, permissionsCount, rolePermissionsCount } =
     await seedPermissionsAndRole();
   const assetMap = await seedAssets();
   await seedMarkets(assetMap);
   const superAdmin = await seedSuperAdmin(superAdminRole.id, assetMap);
+  await seedTestUsers(roles, assetMap);
 
   console.log('Seed completed successfully.');
   console.log(`Super admin email: ${superAdmin.email}`);
   console.log(`Super admin password: ${SUPER_ADMIN_PASSWORD}`);
   console.log(`Roles seeded: ${roles.map((role) => role.name).join(', ')}`);
+  console.log('Test users created for each role:');
+  roles.forEach((role) => {
+    if (role.name !== 'SUPER_ADMIN') {
+      console.log(
+        `- ${role.name.toLowerCase()}@uni-crypto.local (Password: Test@123)`,
+      );
+    }
+  });
   console.log(`Permissions seeded: ${permissionsCount}`);
   console.log(`Role permissions seeded: ${rolePermissionsCount}`);
   console.log(`Assets seeded: ${ASSET_SEEDS.length}`);

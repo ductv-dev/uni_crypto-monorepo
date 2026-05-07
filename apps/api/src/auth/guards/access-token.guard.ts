@@ -98,6 +98,11 @@ export class AtGuard implements CanActivate {
         id: true,
         email: true,
         role_id: true,
+        role: {
+          select: {
+            level: true,
+          },
+        },
         is_active: true,
         is_blocked: true,
         is_super_admin: true,
@@ -126,6 +131,7 @@ export class AtGuard implements CanActivate {
       ...payload,
       token: accessToken,
       role_id: user.role_id,
+      role_level: user.role?.level ?? null,
       is_super_admin: user.is_super_admin,
       type_account: user.type_account,
     };

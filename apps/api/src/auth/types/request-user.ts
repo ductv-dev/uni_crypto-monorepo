@@ -12,6 +12,7 @@ export type JwtUserPayload = {
 export type AccessTokenUser = JwtUserPayload & {
   token: string;
   role_id: string | null;
+  role_level: number | null;
   is_super_admin: boolean;
   type_account: AuthAccountType;
 };

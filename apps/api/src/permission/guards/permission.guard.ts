@@ -54,6 +54,7 @@ export class PermissionGuard implements CanActivate {
         permission: {
           select: {
             permission_code: true,
+            status: true,
           },
         },
         role: {
@@ -81,7 +82,7 @@ export class PermissionGuard implements CanActivate {
 
     if (!hasPermission) {
       throw new ForbiddenException(
-        'You do not have permission to access this resource.',
+        'You do not have permission to access this resource or your permissions are not active.',
       );
     }
 

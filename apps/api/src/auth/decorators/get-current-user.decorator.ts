@@ -8,6 +8,7 @@ type CurrentUserKey =
   | 'exp'
   | 'token'
   | 'role_id'
+  | 'role_level'
   | 'is_super_admin'
   | 'type_account'
   | 'refreshToken'
