@@ -5,9 +5,9 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@workspace/db';
 import { AuditLogService } from 'src/audit-log/audit-log.service';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '@workspace/db';
 import { hashPassword } from 'src/utils/hash-password';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateAccountDto } from './dto/create-account.dto';

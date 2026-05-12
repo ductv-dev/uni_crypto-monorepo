@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '@workspace/db';
 import { CreatePermissionDTO } from './dto';
 import { GetAllPermissionsDto } from './dto/get-all-permission.dto';
 

@@ -7,7 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcrypt';
 import { MailService } from 'src/mail/mail.service';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '@workspace/db';
 import { AuthSigninDto } from './dto/signin.dto';
 import { AuthSignupDto } from './dto/signup.dto';
 import { AccessTokenResponse, Tokens } from './types/token';

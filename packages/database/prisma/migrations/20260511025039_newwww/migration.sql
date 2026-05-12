@@ -19,9 +19,6 @@ CREATE TYPE "WalletTransactionType" AS ENUM ('deposit', 'withdraw', 'order_lock'
 -- CreateEnum
 CREATE TYPE "WalletTransactionDirection" AS ENUM ('credit', 'debit');
 
--- CreateEnum
-CREATE TYPE "PermissionTableName" AS ENUM ('User', 'UserInfo', 'Role', 'Permission', 'RolePermission', 'PermissionTableRule', 'Session', 'AuditLog', 'Asset', 'Wallet', 'WalletTransaction', 'Market', 'OrderBook', 'Trade', 'DepositWithdrawal');
-
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -64,6 +61,7 @@ CREATE TABLE "Role" (
     "name" TEXT NOT NULL,
     "description" TEXT,
     "status" BOOLEAN NOT NULL DEFAULT true,
+    "level" INTEGER NOT NULL DEFAULT 2,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -91,21 +89,6 @@ CREATE TABLE "RolePermission" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "RolePermission_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "PermissionTableRule" (
-    "id" TEXT NOT NULL,
-    "permission_code" TEXT NOT NULL,
-    "table_name" TEXT NOT NULL,
-    "can_create" BOOLEAN NOT NULL DEFAULT false,
-    "can_read" BOOLEAN NOT NULL DEFAULT false,
-    "can_update" BOOLEAN NOT NULL DEFAULT false,
-    "can_delete" BOOLEAN NOT NULL DEFAULT false,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "PermissionTableRule_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -302,12 +285,6 @@ CREATE INDEX "RolePermission_permission_id_idx" ON "RolePermission"("permission_
 CREATE UNIQUE INDEX "RolePermission_role_id_permission_id_key" ON "RolePermission"("role_id", "permission_id");
 
 -- CreateIndex
-CREATE INDEX "PermissionTableRule_table_name_idx" ON "PermissionTableRule"("table_name");
-
--- CreateIndex
-CREATE UNIQUE INDEX "PermissionTableRule_permission_code_table_name_key" ON "PermissionTableRule"("permission_code", "table_name");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Session_refresh_token_key" ON "Session"("refresh_token");
 
 -- CreateIndex
@@ -423,9 +400,6 @@ ALTER TABLE "RolePermission" ADD CONSTRAINT "RolePermission_role_id_fkey" FOREIG
 
 -- AddForeignKey
 ALTER TABLE "RolePermission" ADD CONSTRAINT "RolePermission_permission_id_fkey" FOREIGN KEY ("permission_id") REFERENCES "Permission"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "PermissionTableRule" ADD CONSTRAINT "PermissionTableRule_permission_code_fkey" FOREIGN KEY ("permission_code") REFERENCES "Permission"("permission_code") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

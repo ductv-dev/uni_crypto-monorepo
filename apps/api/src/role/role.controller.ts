@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { TypeAccount } from 'generated/prisma/enums';
+import { TypeAccount } from '@workspace/db';
 import { AccountType, getCurrentUser } from 'src/auth/decorators';
 import { AccountTypeGuard, AtGuard } from 'src/auth/guards';
 import { PERMISSION_CODES } from 'src/constant/permission-code.constant';
