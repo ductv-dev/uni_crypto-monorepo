@@ -12,6 +12,7 @@ import { PermissionModule } from './permission/permission.module';
 import { ProfileModule } from './profile/profile.module';
 import { RoleModule } from './role/role.module';
 import { TestConnectDbModule } from './test-connect-db/test-connect-db.module';
+import { TestRabbitmqModule } from './test-rabbitmq/test-rabbitmq.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -33,6 +34,7 @@ import { UsersModule } from './users/users.module';
     AccountModule,
     AuditLogModule,
     TestConnectDbModule,
+    TestRabbitmqModule,
   ],
 
   controllers: [AppController],

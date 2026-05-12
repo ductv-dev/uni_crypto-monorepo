@@ -1,9 +1,11 @@
-// apps/matching-engine/src/main.ts
 import { NestFactory } from "@nestjs/core"
 import { MicroserviceOptions, Transport } from "@nestjs/microservices"
 import { MatchingEngineModule } from "./matching-engine.module"
+import { Logger } from "@nestjs/common"
 
 async function bootstrap() {
+  const logger = new Logger("MatchingEngine")
+
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     MatchingEngineModule,
     {
@@ -21,6 +23,7 @@ async function bootstrap() {
   )
 
   await app.listen()
+  logger.log("Matching Engine is listening on RabbitMQ...")
 }
 
 bootstrap()
