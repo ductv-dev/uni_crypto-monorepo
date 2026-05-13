@@ -33,11 +33,13 @@ model User {
   depositsWithdrawals DepositWithdrawal[] @relation("UserDeposits")
   approvedRequests    DepositWithdrawal[] @relation("AdminDeposits")
 
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([role_id])
   @@index([email])
+
 }
 
 model UserInfo {
@@ -176,6 +178,65 @@ model Wallet {
   @@index([asset_id])
 }
 
+
+
+model OutboxEvent {
+  id String @id @default(uuid())
+
+  // order_created, order_cancelled
+event_type OutboxEventType
+status     OutboxEventStatus @default(pending)
+
+  // id của order trong bảng OrderBook
+  order_id String
+
+  // dữ liệu gửi sang RabbitMQ cho matching engine
+  payload Json
+
+  // pending, processing, sent, failed
+
+  retry_count   Int     @default(0)
+  error_message String?
+
+  locked_by String?
+  locked_at DateTime?
+
+  sent_at DateTime?
+
+  order OrderBook @relation(fields: [order_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order_id])
+  @@index([event_type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ConsumedMessage {
+  id String @id @default(uuid())
+
+  // chính là OutboxEvent.id gửi qua RabbitMQ
+  message_id String
+
+  // ví dụ: matching-engine
+  consumer_name String
+
+  // processing, success, failed
+status ConsumedMessageStatus @default(processing)
+  error_message String?
+  processed_at  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([message_id, consumer_name])
+  @@index([consumer_name])
+  @@index([status])
+  @@index([processed_at])
+}
+
 model WalletTransaction {
   id        String @id @default(uuid())
   wallet_id String
@@ -265,6 +326,7 @@ model OrderBook {
 
   buyTrades  Trade[] @relation("BuyOrder")
   sellTrades Trade[] @relation("SellOrder")
+  outboxEvents OutboxEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -387,4 +449,21 @@ enum WalletTransactionType {
 enum WalletTransactionDirection {
   credit
   debit
+}
+enum OutboxEventType {
+  order_created
+  order_cancelled
+}
+
+enum OutboxEventStatus {
+  pending
+  processing
+  sent
+  failed
+}
+
+enum ConsumedMessageStatus {
+  processing
+  success
+  failed
 }
