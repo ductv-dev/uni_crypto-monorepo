@@ -308,10 +308,10 @@ model OrderBook {
   market_id String
 
   // limit, market
-  type String
+  type OrderBookType
 
   // buy, sell
-  side String
+  side OrderBookSide
 
   price         Decimal? @db.Decimal(30, 10)
   quantity      Decimal  @db.Decimal(30, 10)
@@ -435,6 +435,7 @@ enum OrderBookSide {
   buy
   sell
 }
+
 
 enum WalletTransactionType {
   deposit

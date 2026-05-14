@@ -17,6 +17,7 @@ import { WalletModule } from './wallet/wallet.module';
 import { MyWalletModule } from './my-wallet/my-wallet.module';
 import { DepositWithdrawalModule } from './deposit-withdrawal/deposit-withdrawal.module';
 import { MarketModule } from './market/market.module';
+import { BuySellModule } from './buy-sell/buy-sell.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { MarketModule } from './market/market.module';
     MyWalletModule,
     DepositWithdrawalModule,
     MarketModule,
+    BuySellModule,
   ],
 
   controllers: [AppController],

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common"
-import { PrismaService } from "@workspace/db"
+import { PrismaService, OrderBookType } from "@workspace/db"
 
 interface OrderCreatedPayload {
   orderId: string
@@ -60,7 +60,7 @@ export class MatchingEngineService {
           data: {
             user_id: payload.userId,
             market_id: market.id,
-            type: payload.type.toLowerCase(),
+            type: payload.type.toLowerCase() as OrderBookType,
             side: "buy",
             price: payload.price,
             quantity: payload.quantity,
@@ -75,7 +75,7 @@ export class MatchingEngineService {
           data: {
             user_id: payload.userId,
             market_id: market.id,
-            type: payload.type.toLowerCase(),
+            type: payload.type.toLowerCase() as OrderBookType,
             side: "sell",
             price: payload.price,
             quantity: payload.quantity,
