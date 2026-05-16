@@ -55,6 +55,23 @@ export class MyWalletService {
     });
   }
 
+  async findByAsset(userId: string, assetId: string) {
+    const wallet = await this.prisma.wallet.findUnique({
+      where: {
+        user_id_asset_id: { user_id: userId, asset_id: assetId },
+      },
+      include: {
+        asset: true,
+      },
+    });
+
+    if (!wallet) {
+      throw new NotFoundException('Wallet not found for this asset');
+    }
+
+    return wallet;
+  }
+
   async findOne(userId: string, id: string) {
     const wallet = await this.prisma.wallet.findUnique({
       where: { id },

@@ -38,6 +38,8 @@ const fontMono = Geist_Mono({
   variable: "--font-mono",
 })
 
+import { AuthInit } from "@/components/auth-init"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -57,6 +59,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider>
           <QueryProvider>
+            <AuthInit />
             <div className="max-w-screen">
               <div className="mx-auto max-w-7xl">{children}</div>
             </div>

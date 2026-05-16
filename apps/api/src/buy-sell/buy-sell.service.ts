@@ -4,31 +4,74 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '@workspace/db';
+import { Decimal } from 'decimal.js';
 import { CreateBuyDto } from './dto/create-buy-sell.dto';
 import { UpdateBuySellDto } from './dto/update-buy-sell.dto';
-
 @Injectable()
 export class BuySellService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createBuySellDto: CreateBuyDto, userId: string) {
-    const { symbol, type, side, price, quantity } = createBuySellDto;
+  async create(
+    createBuySellDto: CreateBuyDto,
+    userId: string,
+    ipAddress: string,
+  ) {
+    const { market_id, type, side, price, quantity } = createBuySellDto;
 
     // BƯỚC 1: KIỂM TRA SÀN (MARKET)
     // Lấy thông tin cặp giao dịch (VD: BTC/USDT) từ database dựa trên symbol.
     const market = await this.prisma.market.findUnique({
-      where: { symbol },
+      where: { id: market_id },
+      select: {
+        base_asset_id: true,
+        quote_asset_id: true,
+        status: true,
+        price_precision: true,
+        quantity_precision: true,
+        min_order_amount: true,
+        max_order_amount: true,
+        min_order_value: true,
+      },
     });
 
     if (!market) {
-      throw new NotFoundException(`Market ${symbol} not found`);
+      throw new NotFoundException(`Market ${market_id} not found`);
     }
 
     if (!market.status) {
-      throw new BadRequestException(`Market ${symbol} is currently inactive`);
+      throw new BadRequestException(
+        `Market ${market_id} is currently inactive`,
+      );
+    }
+    // Kiểm tra số lượng tối đa, tối thiểu của market quy định
+    if (
+      quantity < market.min_order_amount.toNumber() ||
+      (market.max_order_amount && quantity > market.max_order_amount.toNumber())
+    ) {
+      throw new BadRequestException(
+        `Order quantity must be between ${market.min_order_amount.toNumber()} and ${market.max_order_amount ? market.max_order_amount.toNumber() : 'unlimited'}`,
+      );
+    }
+    //Kiểm tra số lượng có đúng định dạng không
+    this.validatePrecision(quantity, market.quantity_precision);
+    //Kiểm tra giá có đúng định dạng không
+    if (type === 'limit') {
+      this.validatePrecision(price, market.price_precision);
+
+      // Kiểm tra giá trị tối thiểu của lệnh
+      if (
+        !this.validateLimitOrderValue(
+          price.toString(),
+          quantity.toString(),
+          market.min_order_value.toString(),
+        )
+      ) {
+        throw new BadRequestException(
+          `Order value must be at least ${market.min_order_value.toNumber()}`,
+        );
+      }
     }
 
-    // BƯỚC 2: XÁC ĐỊNH TÀI SẢN VÀ SỐ LƯỢNG CẦN THIẾT
     // - Nếu lệnh BUY: Cần dùng quote_asset (VD: Mua BTC/USDT thì cần thanh toán bằng USDT).
     // - Nếu lệnh SELL: Cần dùng base_asset (VD: Bán BTC/USDT thì cần trừ BTC).
     const requiredAssetId =
@@ -39,7 +82,6 @@ export class BuySellService {
     // - Lệnh SELL: Số lượng BTC cần thiết = đúng bằng quantity bán ra.
     const requiredAmount = side === 'buy' ? quantity * price : quantity;
 
-    // BƯỚC 3: KIỂM TRA VÍ (WALLET)
     // Tìm ví của user tương ứng với loại tài sản vừa xác định ở trên.
     const wallet = await this.prisma.wallet.findUnique({
       where: {
@@ -51,20 +93,22 @@ export class BuySellService {
     });
 
     if (!wallet) {
-      throw new BadRequestException('Wallet not found for this asset');
+      await this.prisma.wallet.create({
+        data: {
+          user_id: userId,
+          asset_id: requiredAssetId,
+          available_balance: 0,
+          blocked_balance: 0,
+        },
+      });
+      throw new BadRequestException('Insufficient balance');
     }
 
-    // Đảm bảo số dư khả dụng (available) không nhỏ hơn số lượng cần để đặt lệnh.
     if (wallet.available_balance.toNumber() < requiredAmount) {
       throw new BadRequestException('Insufficient balance');
     }
 
-    // BƯỚC 4: LƯU VÀO BẢNG ORDER VÀ KHÓA SỐ DƯ (DÙNG TRANSACTION)
-    // Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu: Nếu 1 thao tác lỗi, toàn bộ sẽ bị rollback.
     return this.prisma.$transaction(async (tx) => {
-      // 4.1. Khóa số dư trong ví:
-      // - Trừ phần tiền cần thiết khỏi available_balance.
-      // - Cộng phần tiền đó vào blocked_balance (tiền bị giam khi lệnh đang mở).
       const newAvailable = wallet.available_balance.toNumber() - requiredAmount;
       const newBlocked = wallet.blocked_balance.toNumber() + requiredAmount;
 
@@ -76,13 +120,10 @@ export class BuySellService {
         },
       });
 
-      // 4.2. Lưu thông tin lệnh vào bảng OrderBook:
-      // - Trạng thái ban đầu là 'open' (đang chờ khớp).
-      // - remaining_qty lúc này chính là toàn bộ quantity (chưa khớp được phần nào).
       const order = await tx.orderBook.create({
         data: {
           user_id: userId,
-          market_id: market.id,
+          market_id,
           type: type,
           side: side,
           price: price,
@@ -94,7 +135,7 @@ export class BuySellService {
 
       // 4.3. Lưu lịch sử biến động ví (WalletTransaction):
       // Ghi lại hành động khóa tiền ('order_lock') để phục vụ tra soát (audit) sau này.
-      await tx.walletTransaction.create({
+      const walletTransaction = await tx.walletTransaction.create({
         data: {
           wallet_id: wallet.id,
           type: 'order_lock',
@@ -107,14 +148,125 @@ export class BuySellService {
           status: 'success',
         },
       });
+      await tx.outboxEvent.create({
+        data: {
+          event_type: 'order_created',
+          status: 'pending',
+          order_id: order.id,
+          retry_count: 0,
+          payload: {
+            order: order,
+            wallet: wallet,
+            walletTransaction: walletTransaction,
+          },
+        },
+      });
 
-      // Trả về thông tin lệnh vừa tạo
+      await tx.auditLog.create({
+        data: {
+          user_id: userId,
+          action: 'order_placed',
+          table_name: 'order_book, wallet, wallet_transaction',
+          record_id: order.id,
+          changes: {
+            orderbook: {
+              create: {
+                id: order.id,
+                user_id: userId,
+                market_id,
+                type,
+                side,
+                price,
+                quantity,
+                remaining_qty: quantity,
+                status: 'open',
+              },
+            },
+            wallet: {
+              update: {
+                id: wallet.id,
+                user_id: userId,
+                asset_id: requiredAssetId,
+                available_balance: newAvailable,
+                blocked_balance: newBlocked,
+              },
+            },
+            wallet_transaction: {
+              create: {
+                id: walletTransaction.id,
+                wallet_id: wallet.id,
+                type: 'order_lock',
+                direction: 'debit',
+                amount: requiredAmount,
+                balance_before: wallet.available_balance,
+                balance_after: newAvailable,
+                reference_type: 'order',
+                reference_id: order.id,
+                status: 'success',
+              },
+            },
+          },
+          ip_address: ipAddress,
+        },
+      });
       return order;
     });
   }
+  // Hàm check định dạng số lượng và giá, nếu không đúng thì throw error
+  private validatePrecision(
+    inputValue: string | number,
+    maxPrecision: number,
+  ): boolean {
+    const normalizedValue = inputValue.toString().replace(',', '.');
+    const parts = normalizedValue.split('.');
+    if (parts.length === 2 && parts[1].length > maxPrecision) {
+      throw new BadRequestException('Invalid precision');
+    }
+    return true;
+  }
+  private validateLimitOrderValue(
+    priceInput: string,
+    quantityInput: string,
+    minOrderValue: string,
+  ): boolean {
+    try {
+      const price = new Decimal(priceInput);
+      const quantity = new Decimal(quantityInput);
+      const minVal = new Decimal(minOrderValue);
 
-  findAll() {
-    return `This action returns all buySell`;
+      // Tính tổng giá trị lệnh
+      const orderValue = price.mul(quantity);
+
+      // So sánh: orderValue >= minOrderValue
+      return orderValue.greaterThanOrEqualTo(minVal);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async findAll() {
+    const order = await this.prisma.orderBook.findMany({
+      where: {
+        status: {
+          in: ['open', 'partial_filled'],
+        },
+      },
+      include: {
+        market: {
+          select: {
+            symbol: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return order;
   }
 
   findOne(id: number) {

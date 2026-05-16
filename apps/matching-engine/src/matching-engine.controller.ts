@@ -1,23 +1,31 @@
-import { Controller, Logger } from "@nestjs/common"
+import { Controller, Get, Logger, Param, Query } from "@nestjs/common"
 import { Ctx, EventPattern, Payload, RmqContext } from "@nestjs/microservices"
 import { MatchingEngineService } from "./matching-engine.service"
+import { OrderBookManager } from "./order-book-manager.service"
 
-interface OrderCreatedPayload {
-  orderId: string
-  userId: string
-  symbol: string
-  side: string
-  type: string
-  price: number
-  quantity: number
-  createdAt: string
+type OrderCreatedPayload = {
+  messageId: string
+  order: any
+  wallet: any
+  walletTransaction: any
 }
 
 @Controller()
 export class MatchingEngineController {
   private readonly logger = new Logger(MatchingEngineController.name)
 
-  constructor(private readonly matchingEngineService: MatchingEngineService) {}
+  constructor(
+    private readonly matchingEngineService: MatchingEngineService,
+    private readonly orderBookManager: OrderBookManager
+  ) {}
+
+  @Get("order-book/:marketId")
+  getOrderBook(
+    @Param("marketId") marketId: string,
+    @Query("limit") limit?: number
+  ) {
+    return this.orderBookManager.getBookDepth(marketId, limit)
+  }
 
   /**
    * Lắng nghe event 'order.created' từ RabbitMQ.
@@ -35,25 +43,21 @@ export class MatchingEngineController {
     const channel = context.getChannelRef()
     const originalMessage = context.getMessage()
 
-    this.logger.log(`Received order.created event — orderId: ${data.orderId}`)
+    this.logger.log(
+      `Received order.created event - messageId: ${data.messageId}`
+    )
 
     try {
-      const result = await this.matchingEngineService.processOrder(data)
+      // Xử lý order (bao gồm cả kiểm tra Idempotency và Status)
+      await this.matchingEngineService.processOrder(data)
 
-      if (result.success) {
-        // Xử lý thành công → ACK message (xóa khỏi queue)
-        channel.ack(originalMessage)
-        this.logger.log(`ACK — tradeId: ${result.tradeId}`)
-      } else {
-        // Xử lý thất bại (vd: market not found) → vẫn ACK để tránh loop
-        channel.ack(originalMessage)
-        this.logger.warn(`ACK (with failure) — ${result.message}`)
-      }
+      // Xử lý thành công hoặc skip (do trùng lặp/status sai) → ACK message
+      channel.ack(originalMessage)
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error)
 
-      this.logger.error(`NACK — Failed to handle order: ${errorMessage}`)
+      this.logger.error(`Failed to handle order: ${errorMessage}`)
 
       // NACK + requeue: message sẽ quay lại queue để retry
       channel.nack(originalMessage, false, true)

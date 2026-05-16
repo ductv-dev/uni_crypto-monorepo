@@ -25,7 +25,7 @@ export const OrderBookToolbar: React.FC<TOrderBookToolbarProps> = ({
         <Input
           value={searchValue}
           onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Search by User ID, Pair, Side..."
+          placeholder="Search by User ID, Pair..."
           className="pl-8"
         />
       </div>

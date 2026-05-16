@@ -44,4 +44,12 @@ export const api = {
 
     return res.json()
   },
+
+  getWallets: async () => {
+    const res = await fetch("/api/user/wallets")
+
+    if (!res.ok) throw new Error("Failed to fetch wallets")
+
+    return res.json()
+  },
 }

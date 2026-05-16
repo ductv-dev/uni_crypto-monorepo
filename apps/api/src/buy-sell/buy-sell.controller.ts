@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   UseGuards,
+  Ip,
 } from '@nestjs/common';
 import { getCurrentUser } from 'src/auth/decorators';
 import { AtGuard } from 'src/auth/guards';
@@ -23,8 +24,9 @@ export class BuySellController {
   create(
     @Body() createBuySellDto: CreateBuyDto,
     @getCurrentUser('sub') userId: string,
+    @Ip() ip_address: string,
   ) {
-    return this.buySellService.create(createBuySellDto, userId);
+    return this.buySellService.create(createBuySellDto, userId, ip_address);
   }
 
   @Get()

@@ -41,6 +41,13 @@ export const BadgeStatus: React.FC<TStatus> = ({ status }) => {
             "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800/50",
           dotClassName: "text-yellow-600 dark:text-yellow-400",
         }
+      case "OPEN":
+        return {
+          label: "Open",
+          className:
+            "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800/50",
+          dotClassName: "text-blue-600 dark:text-blue-400",
+        }
       case EStatus.PROCESSING:
         return {
           label: "Processing",
@@ -85,12 +92,14 @@ export const BadgeStatus: React.FC<TStatus> = ({ status }) => {
           dotClassName: "text-gray-600 dark:text-gray-400",
         }
       case "PARTIALLY_FILLED":
+      case "PARTIAL_FILLED":
       case EStatus.APPPROVED:
         return {
           label:
             {
               [EStatus.APPPROVED]: "Approved",
               PARTIALLY_FILLED: "Partially Filled",
+              PARTIAL_FILLED: "Partial Filled",
             }[normalizedStatus] ?? "Approved",
           className:
             "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800/50",

@@ -7,17 +7,17 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { AuthModule } from './auth/auth.module';
+import { BuySellModule } from './buy-sell/buy-sell.module';
+import { DepositWithdrawalModule } from './deposit-withdrawal/deposit-withdrawal.module';
 import { MailModule } from './mail/mail.module';
+import { MarketModule } from './market/market.module';
+import { MyWalletModule } from './my-wallet/my-wallet.module';
 import { PermissionModule } from './permission/permission.module';
 import { ProfileModule } from './profile/profile.module';
 import { RoleModule } from './role/role.module';
-import { TestRabbitmqModule } from './test-rabbitmq/test-rabbitmq.module';
+import { OrderBookModule } from './order-book/order-book.module';
 import { UsersModule } from './users/users.module';
 import { WalletModule } from './wallet/wallet.module';
-import { MyWalletModule } from './my-wallet/my-wallet.module';
-import { DepositWithdrawalModule } from './deposit-withdrawal/deposit-withdrawal.module';
-import { MarketModule } from './market/market.module';
-import { BuySellModule } from './buy-sell/buy-sell.module';
 
 @Module({
   imports: [
@@ -37,13 +37,12 @@ import { BuySellModule } from './buy-sell/buy-sell.module';
     ProfileModule,
     AccountModule,
     AuditLogModule,
-
-    TestRabbitmqModule,
     WalletModule,
     MyWalletModule,
     DepositWithdrawalModule,
     MarketModule,
     BuySellModule,
+    OrderBookModule,
   ],
 
   controllers: [AppController],

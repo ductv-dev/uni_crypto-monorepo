@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config"
 import { PrismaModule } from "@workspace/db"
 import { MatchingEngineController } from "./matching-engine.controller"
 import { MatchingEngineService } from "./matching-engine.service"
+import { OrderBookManager } from "./order-book-manager.service"
 
 @Module({
   imports: [
@@ -10,6 +11,6 @@ import { MatchingEngineService } from "./matching-engine.service"
     PrismaModule,
   ],
   controllers: [MatchingEngineController],
-  providers: [MatchingEngineService],
+  providers: [MatchingEngineService, OrderBookManager],
 })
 export class MatchingEngineModule {}

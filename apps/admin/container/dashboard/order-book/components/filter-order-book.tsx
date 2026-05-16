@@ -34,8 +34,8 @@ type TFilterOrderBookProps = {
 
 const DEFAULT_ORDER_BOOK_FILTER: TFilterOrderBook = {
   status: undefined,
-  type: undefined,
   side: undefined,
+  type: undefined,
 }
 
 export const FilterOrderBook: React.FC<TFilterOrderBookProps> = ({
@@ -53,14 +53,7 @@ export const FilterOrderBook: React.FC<TFilterOrderBookProps> = ({
   }
   const [isOpen, setIsOpen] = useState(false)
   return (
-    <Drawer
-      onClose={() => {
-        onApply(filterState)
-      }}
-      direction="right"
-      open={isOpen}
-      onOpenChange={setIsOpen}
-    >
+    <Drawer direction="right" open={isOpen} onOpenChange={setIsOpen}>
       <DrawerTrigger asChild>
         <Button variant="outline" size="sm">
           <Filter className="mr-2 h-4 w-4" />
@@ -88,34 +81,14 @@ export const FilterOrderBook: React.FC<TFilterOrderBookProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Status</SelectItem>
-                <SelectItem value={EOrderStatus.PENDING}>Pending</SelectItem>
+                <SelectItem value={EOrderStatus.OPEN}>Open</SelectItem>
                 <SelectItem value={EOrderStatus.FILLED}>Filled</SelectItem>
-                <SelectItem value={EOrderStatus.CANCELED}>Canceled</SelectItem>
-                <SelectItem value={EOrderStatus.PARTIALLY_FILLED}>
-                  Partially Filled
+                <SelectItem value={EOrderStatus.CANCELLED}>
+                  Cancelled
                 </SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
-
-          <Field>
-            <FieldLabel>Type</FieldLabel>
-            <Select
-              value={filterState.type ?? "ALL"}
-              onValueChange={(value) =>
-                setFilterState((prev) => ({
-                  ...prev,
-                  type: value === "ALL" ? undefined : (value as EOrderType),
-                }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Type</SelectItem>
-                <SelectItem value={EOrderType.BUY}>Buy</SelectItem>
-                <SelectItem value={EOrderType.SELL}>Sell</SelectItem>
+                <SelectItem value={EOrderStatus.PARTIAL_FILLED}>
+                  Partial Filled
+                </SelectItem>
               </SelectContent>
             </Select>
           </Field>
@@ -135,9 +108,31 @@ export const FilterOrderBook: React.FC<TFilterOrderBookProps> = ({
                 <SelectValue placeholder="Select side" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Side</SelectItem>
-                <SelectItem value={EOrderSide.LIMIT}>Limit</SelectItem>
-                <SelectItem value={EOrderSide.MARKET}>Market</SelectItem>
+                <SelectItem value="ALL">All Sides</SelectItem>
+                <SelectItem value={EOrderSide.BUY}>Buy</SelectItem>
+                <SelectItem value={EOrderSide.SELL}>Sell</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field>
+            <FieldLabel>Type</FieldLabel>
+            <Select
+              value={filterState.type ?? "ALL"}
+              onValueChange={(value) =>
+                setFilterState((prev) => ({
+                  ...prev,
+                  type: value === "ALL" ? undefined : (value as EOrderType),
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Types</SelectItem>
+                <SelectItem value={EOrderType.LIMIT}>Limit</SelectItem>
+                <SelectItem value={EOrderType.MARKET}>Market</SelectItem>
               </SelectContent>
             </Select>
           </Field>
@@ -150,9 +145,14 @@ export const FilterOrderBook: React.FC<TFilterOrderBookProps> = ({
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>
           </DrawerClose>
-          <DrawerClose asChild>
-            <Button onClick={() => onApply(filterState)}>Apply Filters</Button>
-          </DrawerClose>
+          <Button
+            onClick={() => {
+              onApply(filterState)
+              setIsOpen(false)
+            }}
+          >
+            Apply Filters
+          </Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

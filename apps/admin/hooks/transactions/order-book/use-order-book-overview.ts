@@ -1,5 +1,3 @@
-import { MOCK_ORDERS } from "@/data/transactions/mock-data-orders"
-import { EOrderStatus, TOrderBook } from "@/types/transactions/order-book.type"
 import { useQuery, type UseQueryResult } from "@tanstack/react-query"
 
 export const ORDER_OVERVIEW_QUERY_KEY = ["order-overview"]
@@ -9,35 +7,30 @@ export type TOrderOverView = {
   total: number
 }
 
-export const calculateOverview = (order: TOrderBook[]): TOrderOverView[] => {
-  const overview: TOrderOverView[] = [
+const getOrderOverview = async (): Promise<TOrderOverView[]> => {
+  const res = await fetch("/api/admin/order-book/overview")
+  if (!res.ok) throw new Error("Failed to fetch order overview")
+
+  const data = await res.json()
+
+  return [
     {
-      title: "Filled Orders",
-      total: order.filter((o) => o.status === EOrderStatus.FILLED).length,
+      title: "Total Orders",
+      total: data.totalOrders,
     },
     {
-      title: "Pending Orders",
-      total: order.filter((d) => d.status === EOrderStatus.PENDING).length,
+      title: "Open Orders",
+      total: data.openOrders,
+    },
+    {
+      title: "Filled Orders",
+      total: data.filledOrders,
     },
     {
       title: "Cancelled Orders",
-      total: order.filter((d) => d.status === EOrderStatus.CANCELED).length,
-    },
-    {
-      title: "Partially Filled",
-      total: order.filter((d) => d.status === EOrderStatus.PARTIALLY_FILLED)
-        .length,
+      total: data.cancelledOrders,
     },
   ]
-
-  return overview
-}
-
-const getOrderOverview = async (): Promise<TOrderOverView[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 500))
-  const overview = calculateOverview(MOCK_ORDERS)
-
-  return overview
 }
 
 export const useOrderBookOverview = (): UseQueryResult<
@@ -46,7 +39,7 @@ export const useOrderBookOverview = (): UseQueryResult<
 > => {
   return useQuery({
     queryKey: ORDER_OVERVIEW_QUERY_KEY,
-    queryFn: () => getOrderOverview(),
+    queryFn: getOrderOverview,
     staleTime: 1000 * 60 * 5,
   })
 }

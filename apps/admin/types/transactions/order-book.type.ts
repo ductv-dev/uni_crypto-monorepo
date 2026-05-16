@@ -1,34 +1,34 @@
 export type TOrderBook = {
-  id: number
-  user_id: number
+  id: string
+  user_id: string
   pair: string
-  type: EOrderType
   side: EOrderSide
+  type: EOrderType
   amount: number
   price: number
   status: EOrderStatus
-  created_at: string
-  updated_at: string
+  createdAt: string
 }
 
 export enum EOrderStatus {
-  PENDING = "pending",
+  OPEN = "open",
   FILLED = "filled",
-  CANCELED = "canceled",
-  PARTIALLY_FILLED = "partially_filled",
+  CANCELLED = "cancelled",
+  PARTIAL_FILLED = "partial_filled",
 }
 
-export enum EOrderType {
+export enum EOrderSide {
   BUY = "buy",
   SELL = "sell",
 }
 
-export enum EOrderSide {
+export enum EOrderType {
   LIMIT = "limit",
   MARKET = "market",
 }
+
 export type TFilterOrderBook = {
   status?: EOrderStatus
-  type?: EOrderType
   side?: EOrderSide
+  type?: EOrderType
 }

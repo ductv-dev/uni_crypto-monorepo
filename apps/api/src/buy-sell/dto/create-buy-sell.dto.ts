@@ -4,7 +4,7 @@ import { IsEnum, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 export class CreateBuyDto {
   @IsString()
   @IsNotEmpty()
-  symbol: string;
+  market_id: string;
 
   @IsEnum(OrderBookType)
   @IsNotEmpty()
@@ -18,7 +18,6 @@ export class CreateBuyDto {
   @IsNotEmpty()
   price: number;
 
-  @IsNumber()
   @IsNotEmpty()
   quantity: number;
 }

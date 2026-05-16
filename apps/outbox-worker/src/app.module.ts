@@ -1,18 +1,18 @@
 import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { OutboxProcessorService } from './outbox.service';
+import { PrismaModule } from '@workspace/db';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import {
-  DEFAULT_MATCHING_QUEUE,
-  MATCHING_ENGINE_SERVICE,
-} from './test-rabbitmq.constants';
-import { TestRabbitmqController } from './test-rabbitmq.controller';
-import { TestRabbitmqService } from './test-rabbitmq.service';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
     ClientsModule.registerAsync([
       {
-        name: MATCHING_ENGINE_SERVICE,
+        name: 'MATCHING_ENGINE_SERVICE',
         imports: [ConfigModule],
         inject: [ConfigService],
         useFactory: (configService: ConfigService) => ({
@@ -26,7 +26,7 @@ import { TestRabbitmqService } from './test-rabbitmq.service';
             ],
             queue: configService.get<string>(
               'MATCHING_QUEUE',
-              DEFAULT_MATCHING_QUEUE,
+              'matching_queue',
             ),
             queueOptions: {
               durable: true,
@@ -36,8 +36,7 @@ import { TestRabbitmqService } from './test-rabbitmq.service';
       },
     ]),
   ],
-  controllers: [TestRabbitmqController],
-  providers: [TestRabbitmqService],
-  exports: [TestRabbitmqService],
+  controllers: [AppController],
+  providers: [AppService, OutboxProcessorService],
 })
-export class TestRabbitmqModule {}
+export class AppModule {}

@@ -9,6 +9,7 @@ import { QueryProvider } from "@workspace/ui/components/query-provider"
 import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { Toaster } from "@workspace/ui/index"
+import { AuthInit } from "@/components/auth-init"
 
 export const metadata: Metadata = {
   title: "Admin Uni Crypto",
@@ -61,6 +62,7 @@ export default function RootLayout({
         <ThemeProvider>
           <TooltipProvider>
             <QueryProvider>
+              <AuthInit />
               {children}
               <ReactQueryDevtools initialIsOpen={false} />
             </QueryProvider>

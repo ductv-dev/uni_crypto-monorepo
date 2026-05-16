@@ -1,47 +1,45 @@
-/**
- * User data layer
- * Có thể thay trực tiếp bằng API thật mà không cần sửa component UI.
- */
-
-import { MOCK_USER } from "@/data/mock-user"
+import { api } from "@/lib/api/api"
 import { TUser } from "@workspace/shared/types"
 
-const wait = (ms: number) =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms)
-  })
-
-const cloneUser = (user: TUser): TUser => ({
-  ...user,
-  wallet: user.wallet?.map((wallet) => ({
-    ...wallet,
-    tokens: wallet.tokens.map((token) => ({ ...token })),
-  })),
-})
-
-let currentUser: TUser = cloneUser(MOCK_USER)
-
 /**
- * Fetch current user
- * MIGRATION: thay bằng apiClient.user.current() khi backend sẵn sàng.
+ * Fetch current user and their wallets from backend
  */
 export async function fetchCurrentUser(): Promise<TUser> {
-  await wait(300)
+  const [userData, wallets] = await Promise.all([api.getMe(), api.getWallets()])
 
-  return cloneUser(currentUser)
+  return {
+    id: userData.id,
+    name: userData.info?.first_name
+      ? `${userData.info.first_name} ${userData.info.last_name || ""}`.trim()
+      : userData.email,
+    email: userData.email,
+    phone: userData.info?.phone_number || "",
+    avatar: userData.info?.avatar || "",
+    wallet: wallets.map((w: any) => ({
+      id: w.id,
+      name: w.asset?.name ? `Ví ${w.asset.name}` : "Ví cá nhân",
+      address: w.id.slice(0, 10),
+      balanceUSDT: Number(w.available_balance || 0),
+      tokens: [
+        {
+          symbol: w.asset?.symbol || "TOKEN",
+          name: w.asset?.name || "Token Name",
+          amount: Number(w.available_balance || 0),
+          usdValue: 1, // Tạm thời giả định 1:1 cho USDT/Asset
+          logoURI: w.asset?.logo_url || "",
+        },
+      ],
+    })),
+  }
 }
 
 /**
  * Update user profile
- * MIGRATION: thay bằng apiClient.user.update(payload).
  */
 export async function updateUser(data: Partial<TUser>): Promise<TUser> {
-  await wait(300)
-
-  currentUser = cloneUser({
+  const currentUser = await fetchCurrentUser()
+  return {
     ...currentUser,
     ...data,
-  })
-
-  return cloneUser(currentUser)
+  }
 }

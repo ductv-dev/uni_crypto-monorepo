@@ -1,6 +1,11 @@
 import { LoginSchema } from "@workspace/shared/schemas"
 import { NextResponse } from "next/server"
 
+const DEFAULT_API_URL = "http://localhost:8080"
+
+const getApiBaseUrl = () =>
+  (process.env.API_URL || DEFAULT_API_URL).trim().replace(/\/$/, "")
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
@@ -13,33 +18,46 @@ export async function POST(req: Request) {
       )
     }
 
-    const { email, password } = parsedBody.data
+    // Call Backend API
+    const apiResponse = await fetch(`${getApiBaseUrl()}/auth/signin`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(parsedBody.data),
+    })
 
-    if (email !== "user@gmail.com" || password !== "12345678") {
+    const responseBody = await apiResponse.json().catch(() => null)
+
+    if (!apiResponse.ok) {
       return NextResponse.json(
-        { message: "Sai tài khoản hoặc mật khẩu" },
-        { status: 401 }
+        {
+          message: responseBody?.message || "Đăng nhập thất bại",
+        },
+        { status: apiResponse.status }
       )
     }
 
-    const mockData = {
-      accessToken: "mock_access_token_user_123",
-      refreshToken: "mock_refresh_token_user_123",
-      user: {
-        id: "user_123",
-        email: "user@gmail.com",
-        name: "User",
-      },
+    const accessToken = responseBody?.access_token
+    const refreshToken = responseBody?.refresh_token
+
+    if (!accessToken || !refreshToken) {
+      return NextResponse.json(
+        { message: "API đăng nhập trả về dữ liệu không hợp lệ" },
+        { status: 502 }
+      )
     }
 
     const response = NextResponse.json({
       success: true,
-      user: mockData.user,
+      user: {
+        email: parsedBody.data.email,
+      },
     })
 
     const isProduction = process.env.NODE_ENV === "production"
 
-    response.cookies.set("access_token", mockData.accessToken, {
+    response.cookies.set("access_token", accessToken, {
       httpOnly: true,
       sameSite: "lax",
       secure: isProduction,
@@ -47,7 +65,7 @@ export async function POST(req: Request) {
       maxAge: 60 * 15,
     })
 
-    response.cookies.set("refresh_token", mockData.refreshToken, {
+    response.cookies.set("refresh_token", refreshToken, {
       httpOnly: true,
       sameSite: "lax",
       secure: isProduction,
@@ -56,7 +74,11 @@ export async function POST(req: Request) {
     })
 
     return response
-  } catch {
-    return NextResponse.json({ message: "Lỗi server" }, { status: 500 })
+  } catch (error) {
+    console.error("Client login route error:", error)
+    return NextResponse.json(
+      { message: "Không thể kết nối tới dịch vụ đăng nhập" },
+      { status: 500 }
+    )
   }
 }

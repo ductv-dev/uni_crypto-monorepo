@@ -113,7 +113,7 @@ export const OrderBook = () => {
       },
       {
         accessorKey: "side",
-        header: "Size",
+        header: "Side",
       },
       {
         accessorKey: "price",

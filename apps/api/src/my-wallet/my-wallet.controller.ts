@@ -25,6 +25,14 @@ export class MyWalletController {
     return this.myWalletService.findAll(userId);
   }
 
+  @Get('asset/:assetId')
+  findByAsset(
+    @getCurrentUserId() userId: string,
+    @Param('assetId') assetId: string,
+  ) {
+    return this.myWalletService.findByAsset(userId, assetId);
+  }
+
   @Get(':id')
   findOne(@getCurrentUserId() userId: string, @Param('id') id: string) {
     return this.myWalletService.findOne(userId, id);

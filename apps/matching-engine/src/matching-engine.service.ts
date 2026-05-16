@@ -1,129 +1,174 @@
-import { Injectable, Logger } from "@nestjs/common"
-import { PrismaService, OrderBookType } from "@workspace/db"
+// matching-engine.service.ts
 
-interface OrderCreatedPayload {
-  orderId: string
-  userId: string
-  symbol: string
+import { Injectable, Logger } from "@nestjs/common"
+import { PrismaService } from "@workspace/db"
+import { OrderBookManager } from "./order-book-manager.service"
+import { BookOrder } from "./type"
+
+interface OrderData {
+  id: string
+  user_id: string
+  market_id: string
   side: string
-  type: string
-  price: number
-  quantity: number
-  createdAt: string
+  type: any
+  price: number | string
+  quantity: number | string
+  filled_qty: number | string
+  status: string
+  createdAt: string | Date
 }
 
-interface TradeResult {
-  success: boolean
-  tradeId?: string
-  message: string
+interface OrderPayload {
+  messageId: string
+  order: OrderData
+  wallet?: any
+  walletTransaction?: any
 }
 
 @Injectable()
 export class MatchingEngineService {
   private readonly logger = new Logger(MatchingEngineService.name)
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly orderBookManager: OrderBookManager
+  ) {}
 
   /**
-   * Xử lý order từ RabbitMQ và tạo Trade test vào DB.
-   *
-   * Flow test đơn giản:
-   * 1. Tìm market theo symbol
-   * 2. Tạo 2 order (buy + sell) giả lập khớp lệnh
-   * 3. Tạo Trade record liên kết 2 order
-   *
-   * Trong production, logic matching sẽ phức tạp hơn nhiều
-   * (order book, price-time priority, partial fill, etc.)
+   * Xử lý order nhận được từ RabbitMQ và thực hiện khớp lệnh
    */
-  async processOrder(payload: OrderCreatedPayload): Promise<TradeResult> {
-    this.logger.log(
-      `Processing order: ${payload.orderId} | ${payload.symbol} | ${payload.side} ${payload.quantity}@${payload.price}`
-    )
+  async processOrder(data: OrderPayload) {
+    const { messageId, order } = data
+    const consumerName = "matching-engine"
 
-    try {
-      const market = await this.prisma.market.findUnique({
-        where: { symbol: payload.symbol },
-      })
+    // 1. Kiểm tra Idempotency (xem message đã được xử lý chưa)
+    const consumedMessage = await this.prisma.consumedMessage.findUnique({
+      where: {
+        message_id_consumer_name: {
+          message_id: messageId,
+          consumer_name: consumerName,
+        },
+      },
+    })
 
-      if (!market) {
-        this.logger.warn(`Market not found: ${payload.symbol}`)
-        return {
-          success: false,
-          message: `Market not found: ${payload.symbol}`,
-        }
-      }
-
-      // Tạo trade test bằng transaction để đảm bảo atomic
-      const trade = await this.prisma.$transaction(async (tx) => {
-        // Tạo buy order giả lập
-        const buyOrder = await tx.orderBook.create({
-          data: {
-            user_id: payload.userId,
-            market_id: market.id,
-            type: payload.type.toLowerCase() as OrderBookType,
-            side: "buy",
-            price: payload.price,
-            quantity: payload.quantity,
-            filled_qty: payload.quantity,
-            remaining_qty: 0,
-            status: "filled",
-          },
-        })
-
-        // Tạo sell order giả lập (counterparty)
-        const sellOrder = await tx.orderBook.create({
-          data: {
-            user_id: payload.userId,
-            market_id: market.id,
-            type: payload.type.toLowerCase() as OrderBookType,
-            side: "sell",
-            price: payload.price,
-            quantity: payload.quantity,
-            filled_qty: payload.quantity,
-            remaining_qty: 0,
-            status: "filled",
-          },
-        })
-
-        // Tạo Trade record
-        const total = payload.price * payload.quantity
-        const createdTrade = await tx.trade.create({
-          data: {
-            market_id: market.id,
-            buy_order_id: buyOrder.id,
-            sell_order_id: sellOrder.id,
-            price: payload.price,
-            quantity: payload.quantity,
-            total,
-            buyer_fee: 0,
-            seller_fee: 0,
-          },
-        })
-
-        return createdTrade
-      })
-
-      this.logger.log(
-        `Trade created successfully — tradeId: ${trade.id}, market: ${payload.symbol}`
-      )
-
-      return {
-        success: true,
-        tradeId: trade.id,
-        message: `Trade created: ${payload.quantity} ${payload.symbol} @ ${payload.price}`,
-      }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error)
-
-      this.logger.error(
-        `Failed to process order ${payload.orderId}: ${errorMessage}`
-      )
-
-      return {
-        success: false,
-        message: `Failed to process order: ${errorMessage}`,
-      }
+    if (consumedMessage) {
+      this.logger.log(`Message ${messageId} already processed. Skipping.`)
+      return
     }
+    // lấy data order từ db qau orderID từ mesage
+    const orderDB = await this.prisma.orderBook.findUnique({
+      where: {
+        id: order.id,
+      },
+    })
+    if (!orderDB) {
+      this.logger.warn(`Order ${order.id} not found. Skipping.`)
+      return
+    }
+    if (orderDB.status === "filled" || orderDB.status === "cancelled") {
+      this.logger.warn(`Order ${order.id} already processed. Skipping.`)
+      return
+    }
+
+    // 2. Validate status của order (chỉ xử lý nếu là open hoặc partial_filled)
+    if (orderDB.status !== "open" && orderDB.status !== "partial_filled") {
+      this.logger.warn(
+        `Order ${order.id} has invalid status: ${orderDB.status}. Skipping.`
+      )
+      return
+    }
+
+    // 3. Xử lý logic nghiệp vụ trong transaction
+    await this.prisma.$transaction(async (tx) => {
+      // Lưu vào ConsumedMessage để đảm bảo không xử lý lại
+      await tx.consumedMessage.upsert({
+        where: {
+          message_id_consumer_name: {
+            message_id: messageId,
+            consumer_name: consumerName,
+          },
+        },
+        update: { status: "success", processed_at: new Date() },
+        create: {
+          message_id: messageId,
+          consumer_name: consumerName,
+          status: "success",
+          processed_at: new Date(),
+        },
+      })
+
+      // 4. Thêm vào in-memory OrderBook và lấy kết quả khớp lệnh
+      const book = this.orderBookManager.getOrCreateBook(order.market_id)
+      const bookOrder: BookOrder = {
+        id: order.id,
+        userId: order.user_id,
+        marketId: order.market_id,
+        side: order.side as "buy" | "sell",
+        type: order.type,
+        price: Number(order.price),
+        quantity: Number(order.quantity),
+        filledQty: Number(order.filled_qty),
+        createdAt: new Date(order.createdAt),
+      }
+
+      const trades = book.addOrder(bookOrder)
+
+      if (trades.length > 0) {
+        this.logger.log(
+          `Order ${order.id} matched! Created ${trades.length} trades.`
+        )
+
+        for (const trade of trades) {
+          // 1. Tạo bản ghi Trade
+          await tx.trade.create({
+            data: {
+              market_id: trade.marketId,
+              buy_order_id:
+                trade.side === "buy" ? trade.takerOrderId : trade.makerOrderId,
+              sell_order_id:
+                trade.side === "sell" ? trade.takerOrderId : trade.makerOrderId,
+              price: trade.price,
+              quantity: trade.quantity,
+              total: trade.price * trade.quantity,
+              buyer_fee: 0,
+              seller_fee: 0,
+            },
+          })
+
+          // 2. Cập nhật Maker Order trong DB
+          // Chúng ta cần lấy makerOrder từ DB hoặc tin tưởng vào trạng thái in-memory
+          // Ở đây ta update dựa trên lượng vừa khớp trong trade này
+          const makerOrderDB = await tx.orderBook.findUnique({
+            where: { id: trade.makerOrderId },
+          })
+
+          if (makerOrderDB) {
+            const newFilled = Number(makerOrderDB.filled_qty) + trade.quantity
+            const remaining = Number(makerOrderDB.quantity) - newFilled
+            await tx.orderBook.update({
+              where: { id: trade.makerOrderId },
+              data: {
+                filled_qty: newFilled,
+                remaining_qty: remaining,
+                status: remaining <= 0 ? "filled" : "partial_filled",
+              },
+            })
+          }
+        }
+
+        // 3. Cập nhật Taker Order (chính là order trong message) sau khi đã khớp hết các maker
+        const takerRemaining = Number(order.quantity) - bookOrder.filledQty
+        await tx.orderBook.update({
+          where: { id: order.id },
+          data: {
+            filled_qty: bookOrder.filledQty,
+            remaining_qty: takerRemaining,
+            status: takerRemaining <= 0 ? "filled" : "partial_filled",
+          },
+        })
+      } else {
+        this.logger.log(`Order ${order.id} added to OrderBook memory.`)
+      }
+    })
   }
 }
