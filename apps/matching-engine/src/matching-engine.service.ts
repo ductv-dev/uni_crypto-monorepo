@@ -3,6 +3,10 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { PrismaService } from "@workspace/db"
 import { OrderBookManager } from "./order-book-manager.service"
+import {
+  MarketTradeCreatedPayload,
+  RedisPublisherService,
+} from "./redis-publisher.service"
 import { BookOrder } from "./type"
 
 interface OrderData {
@@ -31,7 +35,8 @@ export class MatchingEngineService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly orderBookManager: OrderBookManager
+    private readonly orderBookManager: OrderBookManager,
+    private readonly redisPublisher: RedisPublisherService
   ) {}
 
   /**
@@ -60,6 +65,13 @@ export class MatchingEngineService {
       where: {
         id: order.id,
       },
+      include: {
+        market: {
+          select: {
+            symbol: true,
+          },
+        },
+      },
     })
     if (!orderDB) {
       this.logger.warn(`Order ${order.id} not found. Skipping.`)
@@ -79,6 +91,8 @@ export class MatchingEngineService {
     }
 
     // 3. Xử lý logic nghiệp vụ trong transaction
+    let marketTradeEvent: MarketTradeCreatedPayload | undefined
+
     await this.prisma.$transaction(async (tx) => {
       // Lưu vào ConsumedMessage để đảm bảo không xử lý lại
       await tx.consumedMessage.upsert({
@@ -118,9 +132,11 @@ export class MatchingEngineService {
           `Order ${order.id} matched! Created ${trades.length} trades.`
         )
 
+        const persistedTrades: MarketTradeCreatedPayload["trades"] = []
+
         for (const trade of trades) {
           // 1. Tạo bản ghi Trade
-          await tx.trade.create({
+          const tradeRecord = await tx.trade.create({
             data: {
               market_id: trade.marketId,
               buy_order_id:
@@ -133,6 +149,18 @@ export class MatchingEngineService {
               buyer_fee: 0,
               seller_fee: 0,
             },
+          })
+
+          persistedTrades.push({
+            id: tradeRecord.id,
+            makerOrderId: trade.makerOrderId,
+            takerOrderId: trade.takerOrderId,
+            marketId: trade.marketId,
+            price: trade.price,
+            quantity: trade.quantity,
+            total: trade.price * trade.quantity,
+            side: trade.side,
+            createdAt: tradeRecord.createdAt.toISOString(),
           })
 
           // 2. Cập nhật Maker Order trong DB
@@ -166,9 +194,34 @@ export class MatchingEngineService {
             status: takerRemaining <= 0 ? "filled" : "partial_filled",
           },
         })
+
+        const latestTrade = persistedTrades[persistedTrades.length - 1]
+
+        await tx.market.update({
+          where: { id: order.market_id },
+          data: {
+            last_price: latestTrade.price,
+          },
+        })
+
+        marketTradeEvent = {
+          symbol: orderDB.market.symbol,
+          marketId: order.market_id,
+          lastPrice: latestTrade.price,
+          totalQuantity: persistedTrades.reduce(
+            (sum, trade) => sum + trade.quantity,
+            0
+          ),
+          takerOrderId: order.id,
+          trades: persistedTrades,
+        }
       } else {
         this.logger.log(`Order ${order.id} added to OrderBook memory.`)
       }
     })
+
+    if (marketTradeEvent) {
+      await this.redisPublisher.publishMarketTrade(marketTradeEvent)
+    }
   }
 }

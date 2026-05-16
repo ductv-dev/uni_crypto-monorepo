@@ -6,7 +6,7 @@ import { MOCK_DEPOSITS } from "@/data/transactions/mock-data-deposit"
 import { MOCK_ORDERS } from "@/data/transactions/mock-data-orders"
 import { MOCK_WITHDRAWALS } from "@/data/transactions/mock-data-withdraw"
 import { TDeposits } from "@/types/transactions/deposits.type"
-import { EOrderType, TOrderBook } from "@/types/transactions/order-book.type"
+import { EOrderSide, TOrderBook } from "@/types/transactions/order-book.type"
 import { TWithdrawals } from "@/types/transactions/withdrawal.type"
 import { TUser, TUserWallet } from "@/types/user.type"
 
@@ -29,26 +29,23 @@ const getUserById = async (id: string): Promise<TDataUserResponse | null> => {
     return null
   }
 
-  // Chuyển đổi id sang number để khớp với user_id trong các bảng giao dịch (nếu cần)
-  const userIdNum = parseInt(id)
-
   // Lấy danh sách ví của người dùng
   const wallets = LIST_USER_WALLET.filter((wallet) => wallet.userId === id)
 
   // Lấy các giao dịch liên quan
   const deposit = MOCK_DEPOSITS.filter(
-    (transaction) => transaction.user_id === userIdNum
+    (transaction) => transaction.user_id === Number(id)
   )
   const withdrawal = MOCK_WITHDRAWALS.filter(
-    (transaction) => transaction.user_id === userIdNum
+    (transaction) => transaction.user_id === Number(id)
   )
   const buy = MOCK_ORDERS.filter(
     (transaction) =>
-      transaction.user_id === userIdNum && transaction.type === EOrderType.BUY
+      transaction.user_id === id && transaction.side === EOrderSide.BUY
   )
   const sell = MOCK_ORDERS.filter(
     (transaction) =>
-      transaction.user_id === userIdNum && transaction.type === EOrderType.SELL
+      transaction.user_id === id && transaction.side === EOrderSide.SELL
   )
 
   return {

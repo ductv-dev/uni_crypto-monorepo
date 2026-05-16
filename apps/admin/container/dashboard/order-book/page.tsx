@@ -3,6 +3,7 @@ import { BadgeStatus } from "@/components/custom/badge/badge-status"
 import { SidebarInset, SidebarTrigger } from "@/components/layout/sidebar"
 import { useOrderBook } from "@/hooks/transactions/order-book/use-order-book"
 import { useOrderBookOverview } from "@/hooks/transactions/order-book/use-order-book-overview"
+import { formatAmount } from "@/lib/utils/fees"
 import { TPagination } from "@/types/pagination.type"
 import {
   TFilterOrderBook,
@@ -45,6 +46,19 @@ import { useEffect, useMemo, useState } from "react"
 import { OrderBookToolbar } from "./components/order-book-toolbar"
 import { OverviewOrderOverview } from "./components/order-overview"
 import { OrderRowActions } from "./components/order-row-actions"
+
+const formatDateTime = (value: string) =>
+  new Date(value).toLocaleString("vi-VN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+
+const shortId = (value: string) =>
+  value.length > 16 ? `${value.slice(0, 8)}...${value.slice(-6)}` : value
 
 export const OrderBook = () => {
   const [searchQuery, setSearchQuery] = useState("")
@@ -102,26 +116,96 @@ export const OrderBook = () => {
       {
         accessorKey: "user_id",
         header: "User ID",
+        cell: ({ row }) => {
+          const userId = row.original.user_id
+
+          return (
+            <span className="font-mono text-xs" title={userId}>
+              {shortId(userId)}
+            </span>
+          )
+        },
+      },
+      {
+        accessorKey: "user",
+        header: "User",
+        cell: ({ row }) => {
+          const email = row.original.user?.email
+
+          return email ? (
+            <div className="max-w-[180px] truncate" title={email}>
+              {email}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">N/A</span>
+          )
+        },
+      },
+      {
+        accessorKey: "market_id",
+        header: "Market ID",
+        cell: ({ row }) => {
+          const marketId = row.original.market_id
+
+          return (
+            <span className="font-mono text-xs" title={marketId}>
+              {shortId(marketId)}
+            </span>
+          )
+        },
       },
       {
         accessorKey: "pair",
-        header: "Pair",
+        header: "Market",
+        cell: ({ row }) => (
+          <span className="font-medium">
+            {row.original.market?.symbol || row.original.pair}
+          </span>
+        ),
       },
       {
         accessorKey: "type",
         header: "Type",
+        cell: ({ row }) => (
+          <span className="uppercase">{row.original.type}</span>
+        ),
       },
       {
         accessorKey: "side",
         header: "Side",
+        cell: ({ row }) => (
+          <span
+            className={
+              row.original.side === "buy"
+                ? "font-medium text-emerald-600"
+                : "font-medium text-rose-600"
+            }
+          >
+            {row.original.side.toUpperCase()}
+          </span>
+        ),
       },
       {
         accessorKey: "price",
         header: "Price",
+        cell: ({ row }) => <span>{formatAmount(row.original.price)}</span>,
       },
       {
-        accessorKey: "amount",
-        header: "Amount",
+        accessorKey: "quantity",
+        header: "Quantity",
+        cell: ({ row }) => <span>{formatAmount(row.original.quantity)}</span>,
+      },
+      {
+        accessorKey: "filled_qty",
+        header: "Filled",
+        cell: ({ row }) => <span>{formatAmount(row.original.filled_qty)}</span>,
+      },
+      {
+        accessorKey: "remaining_qty",
+        header: "Remaining",
+        cell: ({ row }) => (
+          <span>{formatAmount(row.original.remaining_qty)}</span>
+        ),
       },
       {
         accessorKey: "status",
@@ -129,6 +213,24 @@ export const OrderBook = () => {
         cell: ({ row }) => {
           return <BadgeStatus status={row.original.status} />
         },
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Created At",
+        cell: ({ row }) => (
+          <span className="text-sm">
+            {formatDateTime(row.original.createdAt)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "updatedAt",
+        header: "Updated At",
+        cell: ({ row }) => (
+          <span className="text-sm">
+            {formatDateTime(row.original.updatedAt)}
+          </span>
+        ),
       },
 
       {
@@ -240,7 +342,7 @@ export const OrderBook = () => {
                       colSpan={columns.length}
                       className="h-24 text-center"
                     >
-                      Không tìm thấy nhân sự nào.
+                      Không tìm thấy lệnh nào.
                     </TableCell>
                   </TableRow>
                 )}

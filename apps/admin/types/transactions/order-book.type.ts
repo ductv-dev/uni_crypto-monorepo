@@ -1,13 +1,25 @@
 export type TOrderBook = {
   id: string
   user_id: string
+  market_id: string
   pair: string
+  quantity: number
+  filled_qty: number
+  remaining_qty: number
   side: EOrderSide
   type: EOrderType
   amount: number
   price: number
   status: EOrderStatus
   createdAt: string
+  updatedAt: string
+  market?: {
+    symbol: string
+  }
+  user?: {
+    id?: string
+    email?: string
+  }
 }
 
 export enum EOrderStatus {

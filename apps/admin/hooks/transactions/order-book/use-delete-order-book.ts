@@ -10,7 +10,7 @@ type TDeleteOrderResponse = {
   success: boolean
 }
 
-const deleteOrder = async (id: number): Promise<TDeleteOrderResponse> => {
+const deleteOrder = async (id: string): Promise<TDeleteOrderResponse> => {
   await new Promise((resolve) => setTimeout(resolve, 500))
   return {
     message: `Order #${id} deleted`,
@@ -21,7 +21,7 @@ const deleteOrder = async (id: number): Promise<TDeleteOrderResponse> => {
 export const useDeleteOrderBook = (): UseMutationResult<
   TDeleteOrderResponse,
   Error,
-  number
+  string
 > => {
   const queryClient = useQueryClient()
 

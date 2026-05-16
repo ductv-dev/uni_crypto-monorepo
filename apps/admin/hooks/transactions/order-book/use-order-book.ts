@@ -40,17 +40,26 @@ const getOrderBook = async (
 
   const rawData = await res.json()
 
-  // Map backend data to frontend type
   const mappedData: TOrderBook[] = rawData.data.map((order: any) => ({
     id: order.id,
     user_id: order.user_id,
+    market_id: order.market_id,
     pair: order.market?.symbol || "N/A",
+    quantity: Number(order.quantity),
+    filled_qty: Number(order.filled_qty),
+    remaining_qty: Number(order.remaining_qty),
     side: order.side,
     type: order.type,
     price: Number(order.price),
     amount: Number(order.quantity),
     status: order.status,
     createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+    market: order.market,
+    user: {
+      id: order.user?.id || order.user_id,
+      email: order.user?.email,
+    },
   }))
 
   return {

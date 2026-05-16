@@ -47,6 +47,7 @@ export class OrderBookService {
           },
           user: {
             select: {
+              id: true,
               email: true,
             },
           },

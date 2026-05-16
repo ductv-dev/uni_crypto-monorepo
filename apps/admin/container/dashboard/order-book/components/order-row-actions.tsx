@@ -1,7 +1,9 @@
 "use client"
 
+import { BadgeStatus } from "@/components/custom/badge/badge-status"
 import { useDeleteOrderBook } from "@/hooks/transactions/order-book/use-delete-order-book"
 import { useUpdateOrderBook } from "@/hooks/transactions/order-book/use-update-order-book"
+import { formatAmount } from "@/lib/utils/fees"
 import {
   EOrderSide,
   EOrderStatus,
@@ -32,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { Input } from "@workspace/ui/components/input"
+import { Separator } from "@workspace/ui/components/separator"
 import {
   Select,
   SelectContent,
@@ -40,14 +43,57 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 import { toast } from "@workspace/ui/index"
-import { Edit3, MoreHorizontal, Trash2, Trash2Icon } from "lucide-react"
+import {
+  ArrowUpDown,
+  Clock3,
+  Edit3,
+  Eye,
+  Hash,
+  Mail,
+  MoreHorizontal,
+  RefreshCw,
+  Trash2,
+  Trash2Icon,
+  User,
+} from "lucide-react"
 import { useState } from "react"
 
 type TOrderRowActionsProps = {
   order: TOrderBook
 }
 
+const formatDateTime = (value: string) =>
+  new Date(value).toLocaleString("vi-VN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+
+const InfoItem = ({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string
+  value: React.ReactNode
+  icon: React.ComponentType<{ className?: string }>
+}) => (
+  <div className="flex items-start gap-3 rounded-lg border bg-muted/20 p-3">
+    <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+    <div className="min-w-0 flex-1">
+      <p className="text-xs font-medium text-muted-foreground uppercase">
+        {label}
+      </p>
+      <p className="mt-1 font-medium break-all">{value}</p>
+    </div>
+  </div>
+)
+
 export const OrderRowActions: React.FC<TOrderRowActionsProps> = ({ order }) => {
+  const [isViewOpen, setIsViewOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -55,6 +101,8 @@ export const OrderRowActions: React.FC<TOrderRowActionsProps> = ({ order }) => {
   const { mutateAsync: updateOrderBook, isPending } = useUpdateOrderBook()
   const { mutateAsync: deleteOrderBook, isPending: isDeleting } =
     useDeleteOrderBook()
+  const orderLabel = order.side === EOrderSide.BUY ? "Buy Order" : "Sell Order"
+  const orderTotal = order.price * order.quantity
 
   const handleSave = async () => {
     try {
@@ -90,6 +138,17 @@ export const OrderRowActions: React.FC<TOrderRowActionsProps> = ({ order }) => {
             onSelect={(event) => {
               event.preventDefault()
               setIsDropdownOpen(false)
+              setIsViewOpen(true)
+            }}
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            View Details
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onSelect={(event) => {
+              event.preventDefault()
+              setIsDropdownOpen(false)
               setDraft(order)
               setIsEditOpen(true)
             }}
@@ -110,6 +169,133 @@ export const OrderRowActions: React.FC<TOrderRowActionsProps> = ({ order }) => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{orderLabel} Details</DialogTitle>
+            <DialogDescription>
+              Review full information for order #{order.id}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 pt-2">
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-muted/30 p-4">
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase">
+                  Order Side
+                </p>
+                <p
+                  className={
+                    order.side === EOrderSide.BUY
+                      ? "text-lg font-bold text-emerald-600"
+                      : "text-lg font-bold text-rose-600"
+                  }
+                >
+                  {order.side.toUpperCase()}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase">
+                  Order Type
+                </p>
+                <p className="text-lg font-semibold uppercase">{order.type}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground uppercase">
+                  Status
+                </p>
+                <BadgeStatus status={order.status} />
+              </div>
+              <div className="space-y-1 text-right">
+                <p className="text-xs font-medium text-muted-foreground uppercase">
+                  Est. Total
+                </p>
+                <p className="text-lg font-bold">{formatAmount(orderTotal)}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <InfoItem label="Order ID" value={order.id} icon={Hash} />
+              <InfoItem
+                label="Market"
+                value={order.market?.symbol || order.pair}
+                icon={ArrowUpDown}
+              />
+              <InfoItem
+                label="User ID"
+                value={order.user?.id || order.user_id}
+                icon={User}
+              />
+              <InfoItem
+                label="User Email"
+                value={order.user?.email || "N/A"}
+                icon={Mail}
+              />
+              <InfoItem label="Market ID" value={order.market_id} icon={Hash} />
+              <InfoItem
+                label="Price"
+                value={formatAmount(order.price)}
+                icon={ArrowUpDown}
+              />
+              <InfoItem
+                label="Quantity"
+                value={formatAmount(order.quantity)}
+                icon={ArrowUpDown}
+              />
+              <InfoItem
+                label="Filled Quantity"
+                value={formatAmount(order.filled_qty)}
+                icon={ArrowUpDown}
+              />
+              <InfoItem
+                label="Remaining Quantity"
+                value={formatAmount(order.remaining_qty)}
+                icon={RefreshCw}
+              />
+              <InfoItem
+                label="Created At"
+                value={formatDateTime(order.createdAt)}
+                icon={Clock3}
+              />
+              <InfoItem
+                label="Updated At"
+                value={formatDateTime(order.updatedAt)}
+                icon={Clock3}
+              />
+            </div>
+
+            <Separator />
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="rounded-lg border p-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase">
+                  Quantity
+                </p>
+                <p className="mt-2 text-xl font-bold">
+                  {formatAmount(order.quantity)}
+                </p>
+              </div>
+              <div className="rounded-lg border p-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase">
+                  Filled
+                </p>
+                <p className="mt-2 text-xl font-bold">
+                  {formatAmount(order.filled_qty)}
+                </p>
+              </div>
+              <div className="rounded-lg border p-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase">
+                  Remaining
+                </p>
+                <p className="mt-2 text-xl font-bold">
+                  {formatAmount(order.remaining_qty)}
+                </p>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-md">
@@ -144,8 +330,8 @@ export const OrderRowActions: React.FC<TOrderRowActionsProps> = ({ order }) => {
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={EOrderType.BUY}>Buy</SelectItem>
-                    <SelectItem value={EOrderType.SELL}>Sell</SelectItem>
+                    <SelectItem value={EOrderType.LIMIT}>Limit</SelectItem>
+                    <SelectItem value={EOrderType.MARKET}>Market</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -162,8 +348,8 @@ export const OrderRowActions: React.FC<TOrderRowActionsProps> = ({ order }) => {
                     <SelectValue placeholder="Side" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={EOrderSide.LIMIT}>Limit</SelectItem>
-                    <SelectItem value={EOrderSide.MARKET}>Market</SelectItem>
+                    <SelectItem value={EOrderSide.BUY}>Buy</SelectItem>
+                    <SelectItem value={EOrderSide.SELL}>Sell</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -216,13 +402,13 @@ export const OrderRowActions: React.FC<TOrderRowActionsProps> = ({ order }) => {
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={EOrderStatus.PENDING}>Pending</SelectItem>
+                  <SelectItem value={EOrderStatus.OPEN}>Open</SelectItem>
                   <SelectItem value={EOrderStatus.FILLED}>Filled</SelectItem>
-                  <SelectItem value={EOrderStatus.CANCELED}>
-                    Canceled
+                  <SelectItem value={EOrderStatus.CANCELLED}>
+                    Cancelled
                   </SelectItem>
-                  <SelectItem value={EOrderStatus.PARTIALLY_FILLED}>
-                    Partially filled
+                  <SelectItem value={EOrderStatus.PARTIAL_FILLED}>
+                    Partial filled
                   </SelectItem>
                 </SelectContent>
               </Select>
