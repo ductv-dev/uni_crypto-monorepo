@@ -35,28 +35,30 @@ export class BuySellService {
     });
 
     if (!market) {
-      throw new NotFoundException(`Market ${market_id} not found`);
+      throw new NotFoundException('Market not found');
     }
 
     if (!market.status) {
-      throw new BadRequestException(
-        `Market ${market_id} is currently inactive`,
-      );
+      throw new BadRequestException('Market is currently inactive');
     }
     // Kiểm tra số lượng tối đa, tối thiểu của market quy định
     if (
       quantity < market.min_order_amount.toNumber() ||
       (market.max_order_amount && quantity > market.max_order_amount.toNumber())
     ) {
+      const minAmount = market.min_order_amount.toNumber();
+      const maxAmount = market.max_order_amount?.toNumber();
       throw new BadRequestException(
-        `Order quantity must be between ${market.min_order_amount.toNumber()} and ${market.max_order_amount ? market.max_order_amount.toNumber() : 'unlimited'}`,
+        maxAmount
+          ? `Order quantity must be between ${minAmount} and ${maxAmount}`
+          : `Order quantity must be greater than or equal to ${minAmount}`,
       );
     }
     //Kiểm tra số lượng có đúng định dạng không
-    this.validatePrecision(quantity, market.quantity_precision);
+    this.validatePrecision(quantity, market.quantity_precision, 'quantity');
     //Kiểm tra giá có đúng định dạng không
     if (type === 'limit') {
-      this.validatePrecision(price, market.price_precision);
+      this.validatePrecision(price, market.price_precision, 'price');
 
       // Kiểm tra giá trị tối thiểu của lệnh
       if (
@@ -101,11 +103,11 @@ export class BuySellService {
           blocked_balance: 0,
         },
       });
-      throw new BadRequestException('Insufficient balance');
+      throw new BadRequestException('Insufficient available balance');
     }
 
     if (wallet.available_balance.toNumber() < requiredAmount) {
-      throw new BadRequestException('Insufficient balance');
+      throw new BadRequestException('Insufficient available balance');
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -216,11 +218,14 @@ export class BuySellService {
   private validatePrecision(
     inputValue: string | number,
     maxPrecision: number,
+    fieldName: 'price' | 'quantity',
   ): boolean {
     const normalizedValue = inputValue.toString().replace(',', '.');
     const parts = normalizedValue.split('.');
     if (parts.length === 2 && parts[1].length > maxPrecision) {
-      throw new BadRequestException('Invalid precision');
+      throw new BadRequestException(
+        `Invalid ${fieldName} precision. Maximum ${maxPrecision} decimal places allowed`,
+      );
     }
     return true;
   }
@@ -239,7 +244,7 @@ export class BuySellService {
 
       // So sánh: orderValue >= minOrderValue
       return orderValue.greaterThanOrEqualTo(minVal);
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -267,6 +272,41 @@ export class BuySellService {
     });
 
     return order;
+  }
+
+  async findAvailableMarkets() {
+    return this.prisma.market.findMany({
+      where: {
+        status: true,
+      },
+      select: {
+        id: true,
+        symbol: true,
+        last_price: true,
+        min_order_amount: true,
+        max_order_amount: true,
+        min_order_value: true,
+        price_precision: true,
+        quantity_precision: true,
+        baseAsset: {
+          select: {
+            id: true,
+            symbol: true,
+            name: true,
+          },
+        },
+        quoteAsset: {
+          select: {
+            id: true,
+            symbol: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        symbol: 'asc',
+      },
+    });
   }
 
   findOne(id: number) {

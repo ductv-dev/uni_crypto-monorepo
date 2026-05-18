@@ -1,10 +1,15 @@
 import { LoginSchema } from "@workspace/shared/schemas"
 import { NextResponse } from "next/server"
+import {
+  backendFetch,
+  normalizeAuthTokens,
+  type ApiErrorResponse,
+  type BackendAuthResponse,
+} from "@/lib/api/backend-client"
+import { setAccessTokenCookie, setRefreshTokenCookie } from "@/lib/auth/cookies"
 
-const DEFAULT_API_URL = "http://localhost:8080"
-
-const getApiBaseUrl = () =>
-  (process.env.API_URL || DEFAULT_API_URL).trim().replace(/\/$/, "")
+const getErrorMessage = (payload: ApiErrorResponse | null, fallback: string) =>
+  typeof payload?.message === "string" ? payload.message : fallback
 
 export async function POST(req: Request) {
   try {
@@ -18,8 +23,7 @@ export async function POST(req: Request) {
       )
     }
 
-    // Call Backend API
-    const apiResponse = await fetch(`${getApiBaseUrl()}/auth/signin`, {
+    const apiResponse = await backendFetch("/auth/signin", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -27,21 +31,26 @@ export async function POST(req: Request) {
       body: JSON.stringify(parsedBody.data),
     })
 
-    const responseBody = await apiResponse.json().catch(() => null)
+    const responseBody = (await apiResponse.json().catch(() => null)) as
+      | BackendAuthResponse
+      | ApiErrorResponse
+      | null
 
     if (!apiResponse.ok) {
       return NextResponse.json(
         {
-          message: responseBody?.message || "Đăng nhập thất bại",
+          message: getErrorMessage(
+            responseBody as ApiErrorResponse,
+            "Đăng nhập thất bại"
+          ),
         },
         { status: apiResponse.status }
       )
     }
 
-    const accessToken = responseBody?.access_token
-    const refreshToken = responseBody?.refresh_token
+    const tokens = normalizeAuthTokens(responseBody as BackendAuthResponse)
 
-    if (!accessToken || !refreshToken) {
+    if (!tokens.accessToken || !tokens.refreshToken) {
       return NextResponse.json(
         { message: "API đăng nhập trả về dữ liệu không hợp lệ" },
         { status: 502 }
@@ -55,24 +64,8 @@ export async function POST(req: Request) {
       },
     })
 
-    const isProduction = process.env.NODE_ENV === "production"
-
-    response.cookies.set("access_token", accessToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: isProduction,
-      path: "/",
-      maxAge: 60 * 15,
-    })
-
-    response.cookies.set("refresh_token", refreshToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: isProduction,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    })
-
+    setAccessTokenCookie(response, tokens.accessToken)
+    setRefreshTokenCookie(response, tokens.refreshToken)
     return response
   } catch (error) {
     console.error("Client login route error:", error)

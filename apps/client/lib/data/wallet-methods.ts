@@ -30,7 +30,7 @@ const MOCK_WALLET_METHODS: MethodAddWalletType[] = [
 
 /**
  * Fetch available wallet methods
- * MIGRATION: Replace with apiClient.wallets.methods() when API is ready
+ * MIGRATION: Replace with a domain API module in lib/api when API is ready
  */
 export async function fetchWalletMethods(): Promise<MethodAddWalletType[]> {
   // Mock: simulate API delay

@@ -1,47 +1,115 @@
 "use client"
 
+import { useRequestWithdraw, useWallets } from "@/hooks"
+import { Button } from "@workspace/ui/components/button"
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@workspace/ui/components/input-group"
-import { ScanQrCode, SearchIcon, UserSearch } from "lucide-react"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
+import { toast } from "@workspace/ui/index"
 import { useState } from "react"
 
 export const FormSend: React.FC = () => {
-  const [query, setQuery] = useState("")
+  const { data: wallets } = useWallets()
+  const requestWithdrawMutation = useRequestWithdraw()
+  const [walletId, setWalletId] = useState("")
+  const [amount, setAmount] = useState("")
+  const [network, setNetwork] = useState("")
+  const [toAddress, setToAddress] = useState("")
+
+  const handleSubmit = async () => {
+    try {
+      const amountValue = Number(amount)
+      if (!walletId) {
+        toast.error("Vui lòng chọn ví")
+        return
+      }
+      if (!amountValue || amountValue <= 0) {
+        toast.error("Vui lòng nhập số lượng hợp lệ")
+        return
+      }
+      if (!network.trim()) {
+        toast.error("Vui lòng nhập network")
+        return
+      }
+      if (!toAddress.trim()) {
+        toast.error("Vui lòng nhập địa chỉ nhận")
+        return
+      }
+
+      await requestWithdrawMutation.mutateAsync({
+        walletId,
+        payload: {
+          amount: amountValue,
+          network: network.trim(),
+          to_address: toAddress.trim(),
+        },
+      })
+
+      toast.success("Đã tạo yêu cầu rút tiền")
+      setAmount("")
+      setNetwork("")
+      setToAddress("")
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Không thể tạo yêu cầu rút tiền"
+      )
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
-      <InputGroup className="rounded-xl border-border bg-background">
-        <InputGroupAddon>
-          <SearchIcon className="text-foreground/40" size={18} />
-        </InputGroupAddon>
-        <InputGroupInput
-          placeholder="Nhập địa chỉ hoặc tên người dùng..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="h-12 border-none bg-transparent px-2 text-base outline-none focus-visible:ring-0"
-        />
-        <InputGroupAddon align={"inline-end"}>
-          <button className="p-1 text-foreground/40 transition-colors hover:text-foreground">
-            <ScanQrCode size={20} />
-          </button>
-        </InputGroupAddon>
-      </InputGroup>
+      <Select value={walletId} onValueChange={setWalletId}>
+        <SelectTrigger className="h-12 rounded-xl border-border bg-background">
+          <SelectValue placeholder="Chọn ví muốn rút" />
+        </SelectTrigger>
+        <SelectContent>
+          {wallets?.map((wallet) => (
+            <SelectItem key={wallet.id} value={wallet.id}>
+              {wallet.asset?.symbol || wallet.id}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-      {!query && (
-        <div className="flex w-full flex-col items-center justify-center gap-4 py-16">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-background text-primary shadow-lg shadow-primary/10">
-            <UserSearch strokeWidth={2.5} size={28} />
-          </div>
-          <p className="text-center text-sm text-foreground/50">
-            Nhập địa chỉ, ENS hoặc tên người dùng
-            <br />
-            để bắt đầu gửi tài sản
-          </p>
-        </div>
-      )}
+      <input
+        type="number"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        placeholder="Số lượng rút"
+        className="h-12 rounded-xl border border-border bg-background px-4 text-sm outline-none focus:border-primary/50"
+      />
+
+      <input
+        type="text"
+        value={network}
+        onChange={(e) => setNetwork(e.target.value)}
+        placeholder="Network (ERC20, BEP20...)"
+        className="h-12 rounded-xl border border-border bg-background px-4 text-sm outline-none focus:border-primary/50"
+      />
+
+      <input
+        type="text"
+        value={toAddress}
+        onChange={(e) => setToAddress(e.target.value)}
+        placeholder="Địa chỉ ví nhận"
+        className="h-12 rounded-xl border border-border bg-background px-4 text-sm outline-none focus:border-primary/50"
+      />
+
+      <Button
+        onClick={handleSubmit}
+        disabled={requestWithdrawMutation.isPending}
+        className="w-full"
+      >
+        {requestWithdrawMutation.isPending
+          ? "Đang xử lý..."
+          : "Tạo yêu cầu rút"}
+      </Button>
     </div>
   )
 }

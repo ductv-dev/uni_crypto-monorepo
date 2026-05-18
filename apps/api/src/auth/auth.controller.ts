@@ -63,8 +63,12 @@ export class AuthController {
   // Đăng xuất, xóa token làm mới cụ thể khỏi db dựa trên userId và refreshToken
   @UseGuards(AtGuard)
   @Post('logout')
-  logout(@getCurrentUserId() userId: string, @Body() dto: AuthLogoutDto) {
-    return this.authService.logout(userId, dto.refreshToken);
+  logout(
+    @getCurrentUserId() userId: string,
+    @getCurrentUser('sessionId') sessionId: string,
+    @Body() dto: AuthLogoutDto,
+  ) {
+    return this.authService.logout(userId, sessionId, dto.refreshToken);
   }
   // Đăng xuất khỏi tất cả các phiên đăng nhập, xóa tất cả token làm mới liên quan đến userId
   @UseGuards(AtGuard)

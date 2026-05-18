@@ -1,20 +1,15 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common"
+import { Injectable, Logger } from "@nestjs/common"
 import { PrismaService } from "@workspace/db"
 import { OrderBook } from "./order-book"
 import { BookOrder } from "./type"
 
 @Injectable()
-export class OrderBookManager implements OnModuleInit {
-  private readonly logger = new Logger(OrderBookManager.name)
+export class OrderBookManager {
+  private readonly logger = new Logger("MatchingEngine")
   private books = new Map<string, OrderBook>()
   private isReady = false
 
   constructor(private readonly prisma: PrismaService) {}
-
-  async onModuleInit() {
-    await this.loadOrderBooksFromDb()
-    this.isReady = true
-  }
 
   isEngineReady() {
     return this.isReady
@@ -32,18 +27,46 @@ export class OrderBookManager implements OnModuleInit {
   /**
    * Load dữ liệu từ DB vào bộ nhớ khi app khởi động
    */
-  private async loadOrderBooksFromDb() {
-    this.logger.log("Loading active orders from database...")
+  async initializeForMarket(marketSymbol: string) {
     this.isReady = false
     this.books.clear()
 
+    const market = await this.prisma.market.findFirst({
+      where: {
+        OR: [
+          {
+            symbol: {
+              equals: marketSymbol,
+              mode: "insensitive",
+            },
+          },
+          {
+            symbol: {
+              equals: marketSymbol.replace(/-/g, "/"),
+              mode: "insensitive",
+            },
+          },
+        ],
+      },
+      select: { id: true },
+    })
+
+    if (!market) {
+      this.logger.warn(
+        `[MatchingEngine] Market ${marketSymbol} not found in DB. Starting with empty order book.`
+      )
+      this.isReady = true
+      return
+    }
+
     const orders = await this.prisma.orderBook.findMany({
       where: {
+        market_id: market.id,
         status: {
           in: ["open", "partial_filled"],
         },
       },
-      orderBy: [{ market_id: "asc" }, { createdAt: "asc" }],
+      orderBy: { createdAt: "asc" },
     })
 
     for (const order of orders) {
@@ -66,7 +89,10 @@ export class OrderBookManager implements OnModuleInit {
       book.addOrder(bookOrder)
     }
 
-    this.logger.log(`Loaded ${orders.length} active orders into memory.`)
+    this.isReady = true
+    this.logger.log(
+      `[MatchingEngine] Loaded ${orders.length} active orders for ${marketSymbol}`
+    )
   }
 
   getBookDepth(marketId: string, limit?: number) {

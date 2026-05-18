@@ -1,10 +1,20 @@
 import { LoginSchema } from "@workspace/shared/schemas"
 import { NextResponse } from "next/server"
+import { getAdminAppRole } from "@/lib/auth/admin-access"
+import {
+  setAdminAccessTokenCookie,
+  setAdminRefreshTokenCookie,
+} from "@/lib/auth/cookies"
+import {
+  backendFetch,
+  normalizeAuthTokens,
+  type ApiErrorResponse,
+  type BackendAuthResponse,
+} from "@/lib/api/backend-client"
+import { type BackendAdminUser } from "@/lib/api/users"
 
-const DEFAULT_API_URL = "http://localhost:8080"
-
-const getApiBaseUrl = () =>
-  (process.env.API_URL || DEFAULT_API_URL).trim().replace(/\/$/, "")
+const getErrorMessage = (payload: ApiErrorResponse | null, fallback: string) =>
+  typeof payload?.message === "string" ? payload.message : fallback
 
 export async function POST(req: Request) {
   try {
@@ -18,7 +28,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const apiResponse = await fetch(`${getApiBaseUrl()}/auth/signin`, {
+    const backendLoginResponse = await backendFetch("/auth/signin", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -26,43 +36,60 @@ export async function POST(req: Request) {
       body: JSON.stringify(parsedBody.data),
     })
 
-    const responseBody = await apiResponse.json().catch(() => null)
+    const backendLoginBody = (await backendLoginResponse
+      .json()
+      .catch(() => null)) as BackendAuthResponse | ApiErrorResponse | null
 
-    if (!apiResponse.ok) {
+    if (!backendLoginResponse.ok) {
       return NextResponse.json(
         {
-          message:
-            responseBody &&
-            typeof responseBody === "object" &&
-            "message" in responseBody &&
-            typeof responseBody.message === "string"
-              ? responseBody.message
-              : "Đăng nhập thất bại",
+          message: getErrorMessage(
+            backendLoginBody as ApiErrorResponse,
+            "Đăng nhập thất bại"
+          ),
         },
-        { status: apiResponse.status }
+        { status: backendLoginResponse.status }
       )
     }
 
-    const accessToken =
-      responseBody &&
-      typeof responseBody === "object" &&
-      "access_token" in responseBody &&
-      typeof responseBody.access_token === "string"
-        ? responseBody.access_token
-        : null
-
-    const refreshToken =
-      responseBody &&
-      typeof responseBody === "object" &&
-      "refresh_token" in responseBody &&
-      typeof responseBody.refresh_token === "string"
-        ? responseBody.refresh_token
-        : null
-
-    if (!accessToken || !refreshToken) {
+    const tokens = normalizeAuthTokens(backendLoginBody as BackendAuthResponse)
+    if (!tokens.accessToken || !tokens.refreshToken) {
       return NextResponse.json(
         { message: "API đăng nhập trả về dữ liệu không hợp lệ" },
         { status: 502 }
+      )
+    }
+
+    // Verify lại profile để chặn sớm tài khoản không thuộc admin UX.
+    const meResponse = await backendFetch("/auth/me", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${tokens.accessToken}`,
+      },
+    })
+
+    const meBody = (await meResponse.json().catch(() => null)) as
+      | BackendAdminUser
+      | ApiErrorResponse
+      | null
+
+    if (!meResponse.ok) {
+      return NextResponse.json(
+        {
+          message: getErrorMessage(
+            meBody as ApiErrorResponse,
+            "Không thể xác thực tài khoản admin"
+          ),
+        },
+        { status: meResponse.status }
+      )
+    }
+
+    const adminRole = getAdminAppRole(meBody as BackendAdminUser)
+    if (!adminRole) {
+      return NextResponse.json(
+        { message: "Tài khoản này không có quyền truy cập trang admin" },
+        { status: 403 }
       )
     }
 
@@ -70,27 +97,12 @@ export async function POST(req: Request) {
       success: true,
       user: {
         email: parsedBody.data.email,
+        role: adminRole,
       },
     })
 
-    const isProduction = process.env.NODE_ENV === "production"
-
-    response.cookies.set("admin_access_token", accessToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: isProduction,
-      path: "/",
-      maxAge: 60 * 15,
-    })
-
-    response.cookies.set("admin_refresh_token", refreshToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: isProduction,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    })
-
+    setAdminAccessTokenCookie(response, tokens.accessToken)
+    setAdminRefreshTokenCookie(response, tokens.refreshToken)
     return response
   } catch (error) {
     console.error("Admin login route error:", error)

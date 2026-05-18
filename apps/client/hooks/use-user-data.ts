@@ -1,4 +1,7 @@
-import { fetchCurrentUser, updateUser } from "@/lib/data/user"
+import {
+  fetchCurrentUserProfile,
+  updateUserProfile,
+} from "@/lib/services/user-profile"
 import {
   useMutation,
   useQuery,
@@ -13,7 +16,7 @@ const USER_QUERY_KEY = ["user", "current"]
 export const useUserData = (): UseQueryResult<TUser, Error> => {
   return useQuery({
     queryKey: USER_QUERY_KEY,
-    queryFn: fetchCurrentUser,
+    queryFn: fetchCurrentUserProfile,
     staleTime: 1000 * 60 * 30, // 30 phút - dữ liệu user ít thay đổi
     gcTime: 1000 * 60 * 60, // 60 phút
   })
@@ -28,7 +31,7 @@ export const useUpdateUser = (): UseMutationResult<
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: updateUser,
+    mutationFn: updateUserProfile,
     onSuccess: (data) => {
       // Cập nhật cache với dữ liệu mới
       queryClient.setQueryData(USER_QUERY_KEY, data)

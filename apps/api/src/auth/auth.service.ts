@@ -158,21 +158,43 @@ export class AuthService {
     return user;
   }
   // Đăng xuất trên 1 thiết bị, xóa phiên đăng nhập tương ứng khỏi db dựa trên refreshToken
-  async logout(userId: string, refreshToken: string): Promise<MessageResponse> {
-    const result = await this.prisma.session.updateMany({
+  async logout(
+    userId: string,
+    sessionId: string,
+    refreshToken?: string,
+  ): Promise<MessageResponse> {
+    const session = await this.prisma.session.findFirst({
       where: {
+        id: sessionId,
         user_id: userId,
-        refresh_token: refreshToken,
         revoked_at: null,
       },
+      select: {
+        id: true,
+        refresh_token: true,
+      },
+    });
+
+    if (!session) {
+      throw new UnauthorizedException('Session not found or already revoked');
+    }
+
+    if (refreshToken) {
+      const matchesToken = await bcrypt.compare(
+        refreshToken,
+        session.refresh_token,
+      );
+      if (!matchesToken) {
+        throw new UnauthorizedException('Refresh token is invalid');
+      }
+    }
+
+    await this.prisma.session.update({
+      where: { id: session.id },
       data: {
         revoked_at: new Date(),
       },
     });
-
-    if (result.count === 0) {
-      throw new UnauthorizedException('Session not found or already revoked');
-    }
 
     return { message: 'Logged out successfully' };
   }

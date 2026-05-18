@@ -1,453 +1,174 @@
-# Uni Crypto - Cryptocurrency Wallet Application
+# Uni Crypto Monorepo
 
-A modern, full-stack cryptocurrency wallet application with admin dashboard built with Next.js, React, and NestJS. This monorepo contains both user-facing and admin applications with shared type definitions and UI components.
+Monorepo gồm:
 
-## 🏗️ Architecture Overview
+- `apps/api`: NestJS backend
+- `apps/outbox-worker`: worker publish outbox event lên RabbitMQ
+- `apps/matching-engine`: matching engine theo từng market
+- `apps/admin`: Next.js admin app
+- `apps/client`: Next.js client app
+- `packages/database`: Prisma schema + Prisma service dùng chung
 
-### Monorepo Structure
+## Prerequisites
 
-```
-uni_crypto-monorepo/
-├── apps/
-│   ├── client/          Next.js 16 - User wallet application
-│   ├── admin/           Next.js 16 - Admin dashboard
-│   └── api/             NestJS 11 - Backend API (future)
-├── packages/
-│   ├── ui/              @workspace/ui - shadcn/ui component library
-│   ├── shared/          Shared types & Zod schemas
-│   ├── eslint-config/   Shared ESLint rules
-│   └── typescript-config/
-└── pnpm-workspace.yaml
-```
+- Node.js `>=20`
+- pnpm `9.x`
+- Docker + Docker Compose
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-- **Node.js**: >= 20.x
-- **pnpm**: 9.15.9+
-
-### Installation
+## 1) Cài dependencies
 
 ```bash
-# Install dependencies across all workspaces
 pnpm install
-
-# Install a new package (example)
-pnpm add axios -w
 ```
 
-## 📦 Development Commands
+## 2) Chạy hạ tầng bằng Docker
 
-### Run All Apps in Development Mode
+`docker-compose.yml` hiện tại chạy:
+
+- Postgres
+- Redis
+- RabbitMQ
+- 3 matching engine container:
+  - `matching-btc-usdt`
+  - `matching-eth-usdt`
+  - `matching-bnb-usdt`
+
+Chạy:
 
 ```bash
-# Start all apps simultaneously (Turbo watches for changes)
-pnpm dev
-
-# Start only specific app
-pnpm dev --filter=client
-pnpm dev --filter=admin
-pnpm dev --filter=api
+docker compose up -d --build postgres redis rabbitmq matching-btc-usdt matching-eth-usdt matching-bnb-usdt
 ```
 
-### Build All Apps
+Kiểm tra:
 
 ```bash
-# Build all workspaces
-pnpm build
-
-# Build specific app
-pnpm build --filter=client
-pnpm build --filter=admin
+docker compose ps
+docker compose logs -f matching-btc-usdt matching-eth-usdt matching-bnb-usdt
 ```
 
-### Code Quality
+RabbitMQ management UI:
+
+- http://localhost:15672
+- user/pass: `admin/admin`
+
+## 3) Chạy API + Outbox Worker local
+
+Mở 2 terminal:
 
 ```bash
-# Lint all code
-pnpm lint
-
-# Format code with Prettier
-pnpm format
-
-# Run TypeScript type checking
-pnpm typecheck
+pnpm --filter api dev
 ```
-
-### Testing
 
 ```bash
-# Run API tests
-pnpm test --filter=api
-
-# Watch mode
-pnpm test:watch --filter=api
-
-# Coverage
-pnpm test:cov --filter=api
-
-# E2E tests
-pnpm test:e2e --filter=api
+pnpm --filter outbox-worker dev
 ```
 
-## 🎯 Applications
+API mặc định chạy:
 
-### Client App (`/apps/client`)
+- http://localhost:8080
 
-User-facing cryptocurrency wallet application.
+## 4) Chạy Frontend local
 
-**Key Features:**
-
-- User authentication (login/logout)
-- Wallet management (create, view, manage wallets)
-- Token trading interface
-- Real-time price data from Binance API
-- Transaction history
-- User account settings
-
-**Tech Stack:**
-
-- Next.js 16 with App Router (Turbopack)
-- React 19 + React Hook Form
-- React Query for data fetching
-- Zustand for state management
-- Tailwind CSS 4
-- Lightweight Charts for candlestick charts
-
-**Key Routes:**
-
-- `/` - Welcome page
-- `/login` - User login
-- `/user/home` - Dashboard (protected)
-- `/user/my-wallet` - Wallet management (protected)
-- `/user/account` - User profile (protected)
-- `/user/setting` - Settings (protected)
-- `/token/[id]` - Token details
-
-**Default Login Credentials:**
-
-```
-Email: user@gmail.com
-Password: 12345678
-```
-
-### Admin App (`/apps/admin`)
-
-Administrative dashboard for managing users, transactions, and system settings.
-
-**Key Features:**
-
-- User management (CRUD operations, search, filter)
-- Role-based access control
-- Transaction monitoring (deposits, withdrawals, trades)
-- KYC management
-- Fee & limit settings
-- Hot wallet management
-- Audit logs
-- Dashboard with charts and statistics
-
-**Tech Stack:**
-
-- Next.js 16 with App Router
-- React 19 + React Hook Form
-- React Table for data tables
-- Recharts for analytics
-- Zustand for state management
-- Tailwind CSS 4
-
-**Key Routes:**
-
-- `/login` - Admin login
-- `/dashboard` - Main dashboard (protected)
-- `/users` - User management (protected)
-- `/transactions/*` - Transaction management (protected)
-- `/kyc/*` - KYC management (protected)
-
-**Default Login Credentials:**
-
-```
-Email: admin@gmail.com
-Password: 12345678
-```
-
-### API App (`/apps/api`)
-
-NestJS backend API (scaffold phase - to be completed).
-
-## 🔐 Authentication System
-
-### How It Works
-
-Both client and admin apps use a **httpOnly cookie-based authentication** system with access and refresh tokens.
-
-**Login Flow:**
-
-1. User submits credentials (email/password)
-2. Frontend validates with Zod schema
-3. POST to `/api/auth/login`
-4. Backend returns user data + sets httpOnly cookies
-5. User stored in Zustand store
-6. Redirect to authenticated page
-
-**Protected Routes:**
-The proxy middleware protects routes requiring authentication:
-
-**Client Protected Routes:**
-
-- `/user/*` (all user dashboard pages)
-- `/add-wallet`
-- `/create-wallet`
-- `/token`
-
-**Admin Protected Routes:**
-
-- `/dashboard`
-- All management pages
-
-**Logout Flow:**
-
-1. User clicks logout
-2. Calls `/api/auth/logout`
-3. Clears cookies
-4. Clears Zustand store
-5. Redirects to login
-
-### API Endpoints
-
-#### Authentication
-
-- `POST /api/auth/login` - User login
-
-  ```json
-  {
-    "email": "user@gmail.com",
-    "password": "12345678"
-  }
-  ```
-
-  Response: `{ success: true, user: {...} }`
-
-- `POST /api/auth/logout` - User logout
-  Response: `{ success: true, message: "Đã đăng xuất" }`
-
-## 📦 Shared Package (`/packages/shared`)
-
-Centralized types and validation schemas used across frontend and backend.
-
-### Types
-
-```typescript
-// User
-type TUser = {
-  id: string
-  email: string
-  name: string
-  phone?: string
-  avatar?: string
-  wallet?: TWallet[]
-}
-
-// Wallet
-type TWallet = {
-  id: string
-  address: string
-  name: string
-  balance: number
-}
-
-// Transaction
-type TTransaction = {
-  id: string
-  from: string
-  to: string
-  amount: number
-  status: "pending" | "completed" | "failed"
-  timestamp: Date
-}
-
-// Token
-type TToken = {
-  id: string
-  symbol: string
-  name: string
-  price: number
-  change24h: number
-}
-```
-
-### Schemas
-
-```typescript
-// Login validation
-LoginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8).max(20),
-})
-
-// Register validation
-RegisterSchema = z
-  .object({
-    email: z.string().email(),
-    password: z.string().min(8).max(20),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword)
-```
-
-## 🎨 UI Package (`/packages/ui`)
-
-Reusable component library based on shadcn/ui.
-
-**Components Include:**
-
-- Button, Input, Card, Dialog
-- Form components (Field, Label, etc.)
-- Data display (Table, Pagination, Badge)
-- Navigation (Breadcrumb, Sidebar)
-- Charts integration
-- Custom components (UserAvatar, AnimatedThemeToggler)
-
-**Usage:**
-
-```typescript
-import { Button } from "@workspace/ui/components/button"
-import { Card, CardContent } from "@workspace/ui/components/card"
-import { toast } from "@workspace/ui/index"
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-**Client App (`.env`):**
-
-```
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
-```
-
-**Admin App (`.env`):**
-
-```
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
-```
-
-### Build Configuration
-
-- **Turbo**: Orchestrates builds across workspaces
-- **Prettier**: Code formatting (2 spaces, no semicolons)
-- **ESLint**: Code linting with TypeScript rules
-- **Tailwind CSS 4**: Utility-first CSS framework
-
-## 📊 Git Workflow
-
-### Commit Convention
-
-This project uses semantic commit messages:
-
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `refactor:` - Code refactoring
-- `docs:` - Documentation changes
-- `test:` - Test additions/updates
-- `chore:` - Build, dependencies, etc.
-
-**Example:**
+Mở 2 terminal:
 
 ```bash
-git commit -m "feat: add user authentication with login/logout"
+pnpm --filter admin dev
 ```
 
-### Pre-commit Hooks
+```bash
+pnpm --filter client dev
+```
 
-Using Husky + lint-staged:
+URL:
 
-- Auto-format staged TypeScript/TSX files
-- Auto-lint before commit
-- Prevents commits with linting errors
+- Admin: http://localhost:3000
+- Client: http://localhost:3001
 
-## 🧪 Testing Strategy
+## 5) Biến môi trường cần biết
 
-### Current Status
+### Admin/Client
 
-- Unit tests: ❌ Not implemented
-- Integration tests: ❌ Not implemented
-- E2E tests: ❌ Not implemented
+- `API_URL` (optional khi dev)
+- mặc định fallback `http://localhost:8080`
 
-### Future Plans
+### API
 
-- Add Jest for NestJS API tests
-- Add React Testing Library for component tests
-- Add Playwright/Cypress for E2E tests
+- `DATABASE_URL` (bắt buộc để kết nối Postgres)
 
-## 🚧 Development Progress
+### Outbox Worker
 
-### Completed ✅
+- `DATABASE_URL`
+- `RABBITMQ_URL` (mặc định local)
+- `RABBITMQ_EXCHANGE` (mặc định `orders.exchange`)
 
-- Monorepo setup with Turbo + pnpm
-- Shared types and schemas
-- UI component library (@workspace/ui)
-- Authentication system (client & admin)
-- User management dashboard (admin)
-- Wallet interface (client)
-- Token details page (client)
-- Real-time price data (Binance API)
-- Form validation with Zod
+### Matching Engine (đã set trong docker-compose)
 
-### In Progress 🔄
+- `DATABASE_URL`
+- `RABBITMQ_URL`
+- `RABBITMQ_EXCHANGE`
+- `REDIS_URL`
+- `MATCHING_MARKET`
+- `MATCHING_QUEUE`
 
-- NestJS API backend
-- Database integration
+## 6) Flow đặt lệnh / khớp lệnh
 
-### TODO 📋
+1. Client/Admin gọi API tạo order (`order_book`).
+2. API tạo `outbox_event` (`order_created`).
+3. Outbox worker publish message RabbitMQ theo routing key:
+   - `order.created.${market}`
+4. Matching engine tương ứng market consume queue riêng.
+5. Nếu khớp:
+   - tạo `trade`
+   - update `order_book` (`partial_filled`/`filled`)
+6. Nếu chưa khớp:
+   - order vẫn `open` trong DB (message vẫn được ack, không giữ lại queue).
 
-- User registration flow
-- Password reset
-- Two-factor authentication
-- Real API backend integration
-- Payment processing
-- WebSocket for real-time updates
-- Mobile app
-- Unit tests
-- E2E tests
+## 7) Troubleshooting nhanh
 
-## 📚 Useful Resources
+### `no such service: outbox-worker`
 
-- [Next.js Documentation](https://nextjs.org/docs)
-- [NestJS Documentation](https://docs.nestjs.com)
-- [React Query Documentation](https://tanstack.com/query/latest)
-- [Zod Documentation](https://zod.dev)
-- [Tailwind CSS](https://tailwindcss.com)
-- [shadcn/ui](https://ui.shadcn.com)
-- [Zustand](https://github.com/pmndrs/zustand)
+`docker-compose.yml` hiện chưa khai báo service `outbox-worker`.
+Chạy worker local bằng:
 
-## 🤝 Contributing
+```bash
+pnpm --filter outbox-worker dev
+```
 
-### Code Style
+### Matching log `Market mismatch expected=ETH-USDT actual=ETH/USDT`
 
-- Write clean, readable code
-- Use TypeScript strict mode
-- Avoid comments unless necessary
-- Use descriptive variable/function names
-- Keep components small and focused
+- Đảm bảo đã rebuild image matching mới:
 
-### Pull Request Process
+```bash
+docker compose build --no-cache matching-btc-usdt matching-eth-usdt matching-bnb-usdt
+docker compose up -d matching-btc-usdt matching-eth-usdt matching-bnb-usdt
+```
 
-1. Create a feature branch: `git checkout -b feature/my-feature`
-2. Make changes and commit with semantic messages
-3. Push to remote: `git push origin feature/my-feature`
-4. Create pull request with clear description
-5. Wait for review and CI checks
+- Replay outbox event đã gửi trước khi fix:
 
-## 📝 License
+```bash
+docker compose exec -T postgres psql -U root -d uni_db -c "
+update \"OutboxEvent\" oe
+set status='pending', sent_at=null, retry_count=0
+from \"OrderBook\" ob
+join \"Market\" m on m.id = ob.market_id
+where oe.order_id = ob.id
+  and oe.event_type = 'order_created'
+  and oe.status = 'sent'
+  and m.symbol in ('ETH/USDT','ETH-USDT');
+"
+```
 
-This project is private and for educational purposes.
+### Cảnh báo `docker-compose.yml: version is obsolete`
 
-## 👥 Team
+Không làm fail runtime, chỉ là warning của Compose mới.
 
-- **Developer**: Đức (ductv-dev)
-- **Contact**: vietducdtu@gmail.com
+## 8) Lệnh hữu ích
 
----
-
-**Last Updated**: April 2026
+```bash
+# Build typecheck nhanh các app chính
+pnpm --filter api build
+pnpm --filter outbox-worker build
+pnpm --filter matching-engine build
+pnpm --filter admin typecheck
+pnpm --filter client typecheck
+```

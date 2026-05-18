@@ -16,6 +16,31 @@ type TOrderBookResponse = {
   }
 }
 
+type RawOrderBookItem = {
+  id: string
+  user_id: string
+  market_id: string
+  quantity: number | string
+  filled_qty: number | string
+  remaining_qty: number | string
+  side: TOrderBook["side"]
+  type: TOrderBook["type"]
+  price: number | string
+  status: TOrderBook["status"]
+  createdAt: string
+  updatedAt: string
+  market?: { symbol?: string } & TOrderBook["market"]
+  user?: {
+    id?: string
+    email?: string
+  }
+}
+
+type RawOrderBookResponse = {
+  data: RawOrderBookItem[]
+  pagination: TOrderBookResponse["pagination"]
+}
+
 const getOrderBook = async (
   limit: number,
   offset: number,
@@ -32,15 +57,15 @@ const getOrderBook = async (
   if (filter.type) params.append("type", filter.type)
   if (filter.side) params.append("side", filter.side)
 
-  const res = await fetch(`/api/admin/order-book?${params.toString()}`)
+  const res = await fetch(`/api/proxy/admin/order-book?${params.toString()}`)
 
   if (!res.ok) {
     throw new Error("Failed to fetch order book")
   }
 
-  const rawData = await res.json()
+  const rawData = (await res.json()) as RawOrderBookResponse
 
-  const mappedData: TOrderBook[] = rawData.data.map((order: any) => ({
+  const mappedData: TOrderBook[] = rawData.data.map((order) => ({
     id: order.id,
     user_id: order.user_id,
     market_id: order.market_id,

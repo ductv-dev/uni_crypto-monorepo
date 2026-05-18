@@ -1,37 +1,32 @@
-import { api } from "@/lib/api/api"
+import { mapAdminProfile } from "@/lib/auth/admin-access"
+import { getCurrentAdmin } from "@/lib/api/users"
 import { useAdmin } from "@/store/admin-store"
 import { useQuery } from "@tanstack/react-query"
 import { useEffect } from "react"
 
 export const useMe = () => {
-  const { setAdmin } = useAdmin()
+  const { setAdmin, clearAdmin } = useAdmin()
 
   const query = useQuery({
     queryKey: ["me"],
-    queryFn: api.getMe,
+    queryFn: getCurrentAdmin,
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 
   useEffect(() => {
     if (query.data) {
-      const user = query.data
-      setAdmin({
-        name: user.info?.first_name
-          ? `${user.info.first_name} ${user.info.last_name || ""}`.trim()
-          : user.email,
-        email: user.email,
-        phone: user.info?.phone_number || "",
-        avatar: user.info?.avatar || "",
-        role: user.is_super_admin ? "super_admin" : "admin",
-        status: user.is_blocked
-          ? "banned"
-          : user.is_active
-            ? "active"
-            : "inactive",
-      })
+      // FE chỉ giữ lại shape admin nội bộ sau khi profile BE đã qua bước verify role.
+      const adminProfile = mapAdminProfile(query.data)
+
+      if (adminProfile) {
+        setAdmin(adminProfile)
+      } else {
+        // Trường hợp hiếm: API trả về user nhưng không map được thành admin hợp lệ.
+        clearAdmin()
+      }
     }
-  }, [query.data, setAdmin])
+  }, [clearAdmin, query.data, setAdmin])
 
   return query
 }

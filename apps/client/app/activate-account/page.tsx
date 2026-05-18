@@ -1,6 +1,6 @@
 "use client"
 
-import { api } from "@/lib/api/api"
+import { activateAccount } from "@/lib/api/auth"
 import { Button } from "@workspace/ui/components/button"
 import { useSearchParams } from "next/navigation"
 
@@ -23,7 +23,7 @@ export default function ActivateAccountPage() {
         </p>
         <Button
           onClick={() =>
-            api.activeAccount({ token: token ?? "", email: email ?? "" })
+            activateAccount({ token: token ?? "", email: email ?? "" })
           }
           className="mb-4 w-full"
         >

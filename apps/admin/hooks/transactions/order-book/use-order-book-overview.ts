@@ -8,7 +8,7 @@ export type TOrderOverView = {
 }
 
 const getOrderOverview = async (): Promise<TOrderOverView[]> => {
-  const res = await fetch("/api/admin/order-book/overview")
+  const res = await fetch("/api/proxy/admin/order-book/overview")
   if (!res.ok) throw new Error("Failed to fetch order overview")
 
   const data = await res.json()

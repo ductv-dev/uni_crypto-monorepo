@@ -1,72 +1,132 @@
 "use client"
 
-import { shortenHex } from "@/lib/utils/utils"
-import { useUser } from "@/store/user-store"
+import { useRequestDeposit, useWallets } from "@/hooks"
+import { Button } from "@workspace/ui/components/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
 import { toast } from "@workspace/ui/index"
-import { Coins, Copy } from "lucide-react"
-import { TUser } from "@workspace/shared/types"
+import { useState } from "react"
 
 export const FormReceive: React.FC = () => {
-  const user = useUser((state: { user: TUser }) => state.user)
-  const id = shortenHex(user?.id ?? "")
+  const { data: wallets } = useWallets()
+  const requestDepositMutation = useRequestDeposit()
+  const [walletId, setWalletId] = useState("")
+  const [amount, setAmount] = useState("")
+  const [network, setNetwork] = useState("")
+  const [txHash, setTxHash] = useState("")
+  const [fromAddress, setFromAddress] = useState("")
 
-  const copyToClipboard = () => {
-    if (!user?.id) return
-    navigator.clipboard
-      .writeText(user.id)
-      .then(() => {
-        toast.success("Đã copy vào clipboard", {
-          icon: <Copy className="text-green-700" size={14} />,
-          style: { borderRadius: 100 },
-        })
+  const handleSubmit = async () => {
+    try {
+      const amountValue = Number(amount)
+      if (!walletId) {
+        toast.error("Vui lòng chọn ví")
+        return
+      }
+      if (!amountValue || amountValue <= 0) {
+        toast.error("Vui lòng nhập số lượng hợp lệ")
+        return
+      }
+      if (!network.trim()) {
+        toast.error("Vui lòng nhập network")
+        return
+      }
+      if (!txHash.trim()) {
+        toast.error("Vui lòng nhập tx hash")
+        return
+      }
+      if (!fromAddress.trim()) {
+        toast.error("Vui lòng nhập địa chỉ gửi")
+        return
+      }
+
+      await requestDepositMutation.mutateAsync({
+        walletId,
+        payload: {
+          amount: amountValue,
+          network: network.trim(),
+          tx_hash: txHash.trim(),
+          from_address: fromAddress.trim(),
+        },
       })
-      .catch(() => {
-        toast.error("Có lỗi xảy ra khi copy vào clipboard")
-      })
+
+      toast.success("Đã tạo yêu cầu nạp tiền")
+      setAmount("")
+      setNetwork("")
+      setTxHash("")
+      setFromAddress("")
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Không thể tạo yêu cầu nạp tiền"
+      )
+    }
   }
 
   return (
     <div className="flex flex-col gap-4">
       <p className="pb-2 text-center text-sm text-foreground/60">
-        Nạp tiền vào ví bằng cách chuyển crypto từ ví hoặc tài khoản khác
+        Tạo yêu cầu nạp tiền sau khi bạn đã chuyển coin on-chain.
       </p>
 
-      <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4">
-        <div className="flex items-center justify-between gap-2">
-          <p className="whitespace-nowrapflex-1 overflow-hidden rounded-lg bg-accent/50 px-3 py-1.5 text-lg font-semibold tracking-wider text-ellipsis text-foreground/60">
-            {id}
-          </p>
-          <button
-            onClick={copyToClipboard}
-            className="flex items-center justify-center rounded-lg bg-primary p-2.5 text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            <Copy size={20} />
-          </button>
-        </div>
-      </div>
+      <Select value={walletId} onValueChange={setWalletId}>
+        <SelectTrigger className="h-12 rounded-xl border-border bg-background">
+          <SelectValue placeholder="Chọn ví muốn nạp" />
+        </SelectTrigger>
+        <SelectContent>
+          {wallets?.map((wallet) => (
+            <SelectItem key={wallet.id} value={wallet.id}>
+              {wallet.asset?.symbol || wallet.id}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-      <div className="flex items-center gap-4 py-2">
-        <div className="h-[1px] flex-1 bg-border"></div>
-        <p className="text-xs font-semibold tracking-widest text-foreground/40 uppercase">
-          Từ tài khoản khác
-        </p>
-        <div className="h-[1px] flex-1 bg-border"></div>
-      </div>
+      <input
+        type="number"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        placeholder="Số lượng nạp"
+        className="h-12 rounded-xl border border-border bg-background px-4 text-sm outline-none focus:border-primary/50"
+      />
 
-      <a
-        href="https://www.coinbase.com/fr-fr"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-3.5 rounded-xl border border-border/50 bg-background p-3 transition-colors hover:bg-accent/50"
+      <input
+        type="text"
+        value={network}
+        onChange={(e) => setNetwork(e.target.value)}
+        placeholder="Network (ERC20, BEP20...)"
+        className="h-12 rounded-xl border border-border bg-background px-4 text-sm outline-none focus:border-primary/50"
+      />
+
+      <input
+        type="text"
+        value={txHash}
+        onChange={(e) => setTxHash(e.target.value)}
+        placeholder="Tx hash"
+        className="h-12 rounded-xl border border-border bg-background px-4 text-sm outline-none focus:border-primary/50"
+      />
+
+      <input
+        type="text"
+        value={fromAddress}
+        onChange={(e) => setFromAddress(e.target.value)}
+        placeholder="Địa chỉ gửi"
+        className="h-12 rounded-xl border border-border bg-background px-4 text-sm outline-none focus:border-primary/50"
+      />
+
+      <Button
+        onClick={handleSubmit}
+        disabled={requestDepositMutation.isPending}
+        className="w-full"
       >
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#0052FF] text-white shadow-sm">
-          <Coins strokeWidth={2} />
-        </div>
-        <div className="flex flex-col">
-          <p className="font-semibold text-foreground/80">Coinbase</p>
-          <p className="text-xs text-foreground/50">Kết nối tài khoản</p>
-        </div>
-      </a>
+        {requestDepositMutation.isPending ? "Đang xử lý..." : "Tạo yêu cầu nạp"}
+      </Button>
     </div>
   )
 }

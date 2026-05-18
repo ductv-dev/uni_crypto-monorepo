@@ -10,6 +10,9 @@ import { CreateMarketDto } from './dto/create-market.dto';
 import { FilterMarketDto } from './dto/filter-market.dto';
 import { UpdateMarketDto } from './dto/update-market.dto';
 
+const normalizeMarketSymbol = (symbol: string) =>
+  symbol.trim().toUpperCase().replace(/[\/_]/g, '-').replace(/\s+/g, '');
+
 @Injectable()
 export class MarketService {
   constructor(
@@ -18,6 +21,8 @@ export class MarketService {
   ) {}
 
   async create(dto: CreateMarketDto, adminId: string, ip: string) {
+    const normalizedSymbol = normalizeMarketSymbol(dto.symbol);
+
     const [baseAsset, quoteAsset] = await Promise.all([
       this.prisma.asset.findUnique({ where: { id: dto.base_asset_id } }),
       this.prisma.asset.findUnique({ where: { id: dto.quote_asset_id } }),
@@ -26,8 +31,13 @@ export class MarketService {
     if (!baseAsset) throw new NotFoundException('Base asset not found');
     if (!quoteAsset) throw new NotFoundException('Quote asset not found');
 
-    const existing = await this.prisma.market.findUnique({
-      where: { symbol: dto.symbol },
+    const existing = await this.prisma.market.findFirst({
+      where: {
+        OR: [
+          { symbol: normalizedSymbol },
+          { symbol: normalizedSymbol.replace(/-/g, '/') },
+        ],
+      },
     });
     if (existing) {
       throw new ConflictException('Market with this symbol already exists');
@@ -35,7 +45,7 @@ export class MarketService {
 
     const market = await this.prisma.market.create({
       data: {
-        symbol: dto.symbol,
+        symbol: normalizedSymbol,
         base_asset_id: dto.base_asset_id,
         quote_asset_id: dto.quote_asset_id,
         min_order_amount: dto.min_order_amount,
@@ -61,7 +71,33 @@ export class MarketService {
   }
 
   async findAll(query: FilterMarketDto) {
-    const { page = 1, limit = 10, status, search } = query;
+    const toPositiveInt = (value: unknown, fallback: number) => {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        return fallback;
+      }
+
+      return Math.floor(parsed);
+    };
+
+    const toBoolean = (value: unknown): boolean | undefined => {
+      if (typeof value === 'boolean') {
+        return value;
+      }
+
+      if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        if (normalized === 'true') return true;
+        if (normalized === 'false') return false;
+      }
+
+      return undefined;
+    };
+
+    const page = toPositiveInt(query.page, 1);
+    const limit = toPositiveInt(query.limit, 10);
+    const status = toBoolean(query.status);
+    const { search } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -96,6 +132,20 @@ export class MarketService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async findAssets() {
+    return this.prisma.asset.findMany({
+      select: {
+        id: true,
+        name: true,
+        symbol: true,
+        status: true,
+      },
+      orderBy: {
+        symbol: 'asc',
+      },
+    });
   }
 
   async findOne(id: string) {

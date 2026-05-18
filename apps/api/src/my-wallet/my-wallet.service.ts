@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '@workspace/db';
 import { ClientOnly } from 'src/auth/decorators';
 import { CreateMyWalletDto } from './dto/create-my-wallet.dto';
+import { FilterWalletHistoryDto } from './dto/filter-wallet-history.dto';
 import { RequestDepositDto } from './dto/request-deposit.dto';
 import { RequestWithdrawalDto } from './dto/request-withdrawal.dto';
 
@@ -70,6 +71,68 @@ export class MyWalletService {
     }
 
     return wallet;
+  }
+
+  async findHistory(userId: string, query: FilterWalletHistoryDto) {
+    const page = Number(query.page) > 0 ? Number(query.page) : 1;
+    const limit = Number(query.limit) > 0 ? Number(query.limit) : 20;
+    const skip = (page - 1) * limit;
+
+    const where = {
+      wallet: {
+        user_id: userId,
+      },
+    };
+
+    const [total, rows] = await Promise.all([
+      this.prisma.walletTransaction.count({ where }),
+      this.prisma.walletTransaction.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          wallet: {
+            select: {
+              id: true,
+              asset: {
+                select: {
+                  id: true,
+                  symbol: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+    ]);
+
+    return {
+      data: rows.map((row) => ({
+        id: row.id,
+        wallet_id: row.wallet_id,
+        type: row.type,
+        direction: row.direction,
+        amount: row.amount.toString(),
+        balance_before: row.balance_before.toString(),
+        balance_after: row.balance_after.toString(),
+        reference_type: row.reference_type,
+        reference_id: row.reference_id,
+        status: row.status,
+        description: row.description,
+        createdAt: row.createdAt.toISOString(),
+        wallet: row.wallet,
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(userId: string, id: string) {

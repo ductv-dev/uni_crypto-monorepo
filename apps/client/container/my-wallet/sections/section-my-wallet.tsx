@@ -1,7 +1,7 @@
 "use client"
 
+import { type BackendWallet } from "@/lib/api/wallets"
 import { shortenHex } from "@/lib/utils/utils"
-import { TWallet } from "@workspace/shared/types"
 import { Button } from "@workspace/ui/components/button"
 import {
   Card,
@@ -20,19 +20,36 @@ import {
 import { useState } from "react"
 
 type Props = {
-  data: TWallet
+  data: BackendWallet
+}
+
+const toNumber = (value: number | string | null | undefined) => {
+  if (typeof value === "number") {
+    return value
+  }
+
+  if (typeof value === "string") {
+    const parsedValue = Number(value)
+    return Number.isFinite(parsedValue) ? parsedValue : 0
+  }
+
+  return 0
 }
 
 export const SectionMyWallet = ({ data }: Props) => {
-  const totalBalance =
-    data?.tokens?.reduce((acc, item) => acc + item.amount * item.usdValue, 0) ||
-    0
+  const availableBalance = toNumber(data.available_balance)
+  const blockedBalance = toNumber(data.blocked_balance)
+  const totalBalance = availableBalance + blockedBalance
+  const assetName = data.asset?.name || "Chưa có tài sản"
+  const assetSymbol = data.asset?.symbol || "--"
+  const walletTitle = data.asset?.name ? `Ví ${data.asset.name}` : "Ví cá nhân"
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
-    toast.success("Đã sao chép địa chỉ ví")
+    toast.success("Đã sao chép mã ví")
   }
   const [isHide, setIsHide] = useState(false)
-  const walletAddress = shortenHex(data.address)
+  const walletId = shortenHex(data.id)
+
   return (
     <div className="flex w-full flex-col gap-2.5 lg:flex-row">
       {/* Wallet  */}
@@ -42,7 +59,7 @@ export const SectionMyWallet = ({ data }: Props) => {
             <CardTitle className="flex items-center text-lg font-semibold">
               <span className="flex items-center gap-2">
                 <Wallet2 className="h-5 w-5 text-primary" />
-                {data.name}
+                {walletTitle}
               </span>
             </CardTitle>
           </CardHeader>
@@ -67,13 +84,13 @@ export const SectionMyWallet = ({ data }: Props) => {
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm font-medium">Địa chỉ ví</p>
+              <p className="text-sm font-medium">Mã ví</p>
               <div className="flex items-center justify-between rounded-lg border bg-secondary/20 p-3">
                 <span className="mr-2 truncate font-mono text-sm text-muted-foreground">
-                  {walletAddress}
+                  {walletId}
                 </span>
                 <Button
-                  onClick={() => copyToClipboard(data.address)}
+                  onClick={() => copyToClipboard(data.id)}
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 shrink-0"
@@ -101,69 +118,79 @@ export const SectionMyWallet = ({ data }: Props) => {
           <CardHeader className="mb-4 border-b pb-4">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
               <Activity className="h-5 w-5 text-primary" />
-              Tài sản ({data.tokens?.length || 0})
+              Thông tin ví
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {data.tokens && data.tokens.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {data.tokens.map((item) => {
-                  const itemTotal = item.amount * item.usdValue
-                  return (
-                    <div
-                      key={item.symbol}
-                      className="flex cursor-pointer items-center justify-between rounded-lg border border-transparent p-3 transition-colors hover:border-secondary hover:bg-secondary/20"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-secondary/50 shadow-sm">
-                          {item.logoURI ? (
-                            // Using standard img tag if strict Next/Image domain is not configured yet
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={item.logoURI}
-                              alt={item.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-xs font-bold">
-                              {item.symbol.substring(0, 2)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium">
-                            {item.name}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {item.symbol}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <span className="text-sm font-medium">
-                          $
-                          {itemTotal.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {item.amount.toLocaleString(undefined, {
-                            maximumFractionDigits: 4,
-                          })}{" "}
-                          {item.symbol}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between rounded-lg border border-transparent bg-secondary/20 p-3">
+                <div className="flex items-center gap-3">
+                  <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-secondary/50 shadow-sm">
+                    {data.asset?.logo_url ? (
+                      // Using standard img tag if strict Next/Image domain is not configured yet
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={data.asset.logo_url}
+                        alt={assetName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-xs font-bold">
+                        {assetSymbol.substring(0, 2)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{assetName}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {assetSymbol}
+                    </span>
+                  </div>
+                </div>
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                    data.status
+                      ? "bg-emerald-500/10 text-emerald-600"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {data.status ? "Đang hoạt động" : "Tạm khóa"}
+                </span>
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
-                <Activity className="mb-3 h-10 w-10 opacity-20" />
-                <p className="text-sm">Chưa có tài sản nào</p>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="rounded-lg border bg-secondary/20 p-4">
+                  <p className="text-sm text-muted-foreground">Khả dụng</p>
+                  <p className="mt-2 text-xl font-semibold">
+                    {availableBalance.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 6,
+                    })}{" "}
+                    {assetSymbol}
+                  </p>
+                </div>
+                <div className="rounded-lg border bg-secondary/20 p-4">
+                  <p className="text-sm text-muted-foreground">Đang khóa</p>
+                  <p className="mt-2 text-xl font-semibold">
+                    {blockedBalance.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 6,
+                    })}{" "}
+                    {assetSymbol}
+                  </p>
+                </div>
+                <div className="rounded-lg border bg-secondary/20 p-4">
+                  <p className="text-sm text-muted-foreground">Tổng cộng</p>
+                  <p className="mt-2 text-xl font-semibold">
+                    {totalBalance.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 6,
+                    })}{" "}
+                    {assetSymbol}
+                  </p>
+                </div>
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>

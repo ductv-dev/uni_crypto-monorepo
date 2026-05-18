@@ -4,6 +4,7 @@ import { create } from "zustand"
 type Action = {
   setName: (name: TAdmin["name"]) => void
   setAdmin: (admin: TAdmin) => void
+  clearAdmin: () => void
 }
 
 type AdminStore = {
@@ -20,6 +21,17 @@ export const useAdmin = create<AdminStore>((set) => ({
     status: "active",
   },
   setAdmin: (admin: TAdmin) => set({ admin }),
+  clearAdmin: () =>
+    set({
+      admin: {
+        name: "Super Admin",
+        avatar: "",
+        email: "example@gmail.com",
+        phone: "1234567890",
+        role: "admin",
+        status: "active",
+      },
+    }),
   setName: (name: TAdmin["name"]) =>
     set((state: { admin: TAdmin }) => ({ admin: { ...state.admin, name } })),
 }))

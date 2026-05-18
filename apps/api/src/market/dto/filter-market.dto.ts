@@ -1,15 +1,25 @@
-import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class FilterMarketDto {
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   @IsOptional()
-  @Type(() => Number)
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return 1;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : value;
+  })
   page?: number = 1;
 
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   @IsOptional()
-  @Type(() => Number)
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return 10;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : value;
+  })
   limit?: number = 10;
 
   @IsBoolean()

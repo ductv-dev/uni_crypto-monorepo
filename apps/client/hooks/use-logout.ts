@@ -1,4 +1,4 @@
-import { api } from "@/lib/api/api"
+import { logout } from "@/lib/api/auth"
 import { useUser } from "@/store/user-store"
 import { useMutation } from "@tanstack/react-query"
 import { toast } from "@workspace/ui/index"
@@ -9,7 +9,7 @@ export const useLogout = () => {
   const clearUser = useUser((state) => state.clearUser)
 
   return useMutation({
-    mutationFn: api.logout,
+    mutationFn: logout,
     mutationKey: ["logout"],
     onError: (error) => {
       toast.error(

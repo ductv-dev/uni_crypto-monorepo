@@ -1,15 +1,15 @@
 import {
   Body,
+  Get,
   Controller,
   Delete,
-  Get,
   Param,
   Patch,
   Post,
   UseGuards,
   Ip,
 } from '@nestjs/common';
-import { getCurrentUser } from 'src/auth/decorators';
+import { ClientOnly, getCurrentUser } from 'src/auth/decorators';
 import { AtGuard } from 'src/auth/guards';
 import { BuySellService } from './buy-sell.service';
 import { CreateBuyDto } from './dto/create-buy-sell.dto';
@@ -27,6 +27,12 @@ export class BuySellController {
     @Ip() ip_address: string,
   ) {
     return this.buySellService.create(createBuySellDto, userId, ip_address);
+  }
+
+  @Get('markets')
+  @ClientOnly()
+  findAvailableMarkets() {
+    return this.buySellService.findAvailableMarkets();
   }
 
   @Get()

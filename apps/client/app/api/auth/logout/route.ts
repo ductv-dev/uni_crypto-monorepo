@@ -1,28 +1,40 @@
 import { NextResponse } from "next/server"
+import { backendFetch } from "@/lib/api/backend-client"
+import {
+  clearAuthCookies,
+  getAccessToken,
+  getRefreshToken,
+} from "@/lib/auth/cookies"
 
 export async function POST() {
-  const isProduction = process.env.NODE_ENV === "production"
+  try {
+    const accessToken = await getAccessToken()
+    const refreshToken = await getRefreshToken()
 
-  const response = NextResponse.json({
-    success: true,
-    message: "Đăng xuất thành công",
-  })
+    if (accessToken) {
+      await backendFetch("/auth/logout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refreshToken: refreshToken || "" }),
+      }).catch(() => null)
+    }
 
-  response.cookies.set("access_token", "", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: isProduction,
-    path: "/",
-    maxAge: 0,
-  })
-
-  response.cookies.set("refresh_token", "", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: isProduction,
-    path: "/",
-    maxAge: 0,
-  })
-
-  return response
+    return clearAuthCookies(
+      NextResponse.json({
+        success: true,
+        message: "Đăng xuất thành công",
+      })
+    )
+  } catch (error) {
+    console.error("Client logout route error:", error)
+    return clearAuthCookies(
+      NextResponse.json(
+        { message: "Không thể đăng xuất ở thời điểm hiện tại" },
+        { status: 500 }
+      )
+    )
+  }
 }

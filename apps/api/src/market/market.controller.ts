@@ -44,6 +44,12 @@ export class MarketController {
     return this.marketService.findAll(query);
   }
 
+  @Get('assets/list')
+  @Permissions(PERMISSION_CODES.READ_MARKETS)
+  findAssets() {
+    return this.marketService.findAssets();
+  }
+
   @Get(':id')
   @Permissions(PERMISSION_CODES.READ_MARKETS)
   findOne(@Param('id') id: string) {

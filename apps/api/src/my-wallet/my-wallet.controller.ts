@@ -1,7 +1,16 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ClientOnly, getCurrentUserId } from 'src/auth/decorators';
 import { AtGuard } from 'src/auth/guards';
 import { CreateMyWalletDto } from './dto/create-my-wallet.dto';
+import { FilterWalletHistoryDto } from './dto/filter-wallet-history.dto';
 import { RequestDepositDto } from './dto/request-deposit.dto';
 import { RequestWithdrawalDto } from './dto/request-withdrawal.dto';
 import { MyWalletService } from './my-wallet.service';
@@ -23,6 +32,14 @@ export class MyWalletController {
   @Get()
   findAll(@getCurrentUserId() userId: string) {
     return this.myWalletService.findAll(userId);
+  }
+
+  @Get('history')
+  findHistory(
+    @getCurrentUserId() userId: string,
+    @Query() query: FilterWalletHistoryDto,
+  ) {
+    return this.myWalletService.findHistory(userId, query);
   }
 
   @Get('asset/:assetId')

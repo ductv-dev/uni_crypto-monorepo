@@ -429,6 +429,9 @@ importers:
       '@workspace/db':
         specifier: workspace:*
         version: link:../../packages/database
+      amqplib:
+        specifier: ^2.0.1
+        version: 2.0.1
       ioredis:
         specifier: ^5.10.1
         version: 5.10.1
@@ -438,6 +441,13 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+    devDependencies:
+      '@nestjs/cli':
+        specifier: ^11.0.0
+        version: 11.0.19(@types/node@22.19.17)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   apps/outbox-worker:
     dependencies:

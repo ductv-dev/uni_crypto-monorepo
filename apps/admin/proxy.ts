@@ -1,97 +1,109 @@
 import { NextRequest, NextResponse } from "next/server"
-
-const AUTH_ROUTES = new Set(["/login", "/register"])
-const PUBLIC_ROUTES = new Set(["/welcome", "/wellcome"])
-const DEFAULT_AUTHENTICATED_REDIRECT = "/dashboard"
-const LOGIN_ROUTE = "/login"
+import {
+  ADMIN_ACCESS_TOKEN_COOKIE_NAME,
+  ADMIN_REFRESH_TOKEN_COOKIE_NAME,
+  clearAdminAuthCookies,
+  setAdminAccessTokenCookie,
+  setAdminRefreshTokenCookie,
+} from "@/lib/auth/cookies"
+import { isJwtExpired } from "@/lib/auth/tokens"
+import { refreshAdminAccessToken } from "@/lib/auth/session"
+import {
+  AUTH_ROUTES,
+  DEFAULT_AUTHENTICATED_REDIRECT,
+  LOGIN_ROUTE,
+  PUBLIC_ROUTES,
+} from "@/lib/constants/routes"
+import { getSafeRedirectPath } from "@/lib/utils/safe-redirect"
 
 const isRouteMatch = (pathname: string, routes: Set<string>) =>
   routes.has(pathname)
 
-const isSafeRedirectPath = (pathname: string | null) =>
-  Boolean(pathname && pathname.startsWith("/") && !pathname.startsWith("//"))
+const applyRefreshedCookies = (
+  response: NextResponse,
+  refreshedAccessToken?: string | null,
+  refreshedRefreshToken?: string | null
+) => {
+  if (refreshedAccessToken) {
+    setAdminAccessTokenCookie(response, refreshedAccessToken)
+  }
+
+  if (refreshedRefreshToken) {
+    setAdminRefreshTokenCookie(response, refreshedRefreshToken)
+  }
+
+  return response
+}
 
 export async function proxy(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl
-  const accessToken = req.cookies.get("admin_access_token")?.value
-  const refreshToken = req.cookies.get("admin_refresh_token")?.value
-
-  let isAuthenticated = Boolean(accessToken)
-
-  // Nếu AT hết hạn nhưng vẫn còn RT -> Thử refresh token
-  if (!isAuthenticated && refreshToken) {
-    try {
-      const refreshResponse = await fetch(
-        `${process.env.API_URL}/auth/refresh`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${refreshToken}`,
-          },
-        }
-      )
-
-      if (refreshResponse.ok) {
-        const data = await refreshResponse.json()
-        const newAccessToken = data.access_token
-
-        if (newAccessToken) {
-          isAuthenticated = true
-          // Tạo response và set cookie mới
-          const res = NextResponse.next()
-          const isProduction = process.env.NODE_ENV === "production"
-
-          res.cookies.set("admin_access_token", newAccessToken, {
-            httpOnly: true,
-            sameSite: "lax",
-            secure: isProduction,
-            path: "/",
-            maxAge: 60 * 15,
-          })
-
-          // Vì một số trình duyệt/môi trường middleware có thể không cập nhật ngay
-          // ta return luôn response này nếu đang ở route cần bảo vệ
-          const isAuthRoute = isRouteMatch(pathname, AUTH_ROUTES)
-          const isPublicRoute = isRouteMatch(pathname, PUBLIC_ROUTES)
-
-          if (!isAuthRoute && !isPublicRoute) {
-            return res
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Failed to refresh admin token:", error)
-    }
-  }
-
   const isAuthRoute = isRouteMatch(pathname, AUTH_ROUTES)
   const isPublicRoute = isRouteMatch(pathname, PUBLIC_ROUTES)
+  const isPrivateRoute = !isAuthRoute && !isPublicRoute
+
+  const accessToken = req.cookies.get(ADMIN_ACCESS_TOKEN_COOKIE_NAME)?.value
+  const refreshToken = req.cookies.get(ADMIN_REFRESH_TOKEN_COOKIE_NAME)?.value
+
+  let isAuthenticated = false
+  let shouldClearCookies = false
+  let refreshedAccessToken: string | null = null
+  let refreshedRefreshToken: string | null = null
+
+  if (accessToken && !isJwtExpired(accessToken)) {
+    isAuthenticated = true
+  } else if (refreshToken) {
+    try {
+      // Middleware chỉ làm "nhẹ": refresh theo exp, không gọi /auth/me để verify profile.
+      const refreshedTokens = await refreshAdminAccessToken(refreshToken)
+      if (refreshedTokens) {
+        isAuthenticated = true
+        refreshedAccessToken = refreshedTokens.accessToken
+        refreshedRefreshToken = refreshedTokens.refreshToken || null
+      } else {
+        shouldClearCookies = true
+      }
+    } catch (error) {
+      console.error("Failed to refresh admin token in proxy:", error)
+      shouldClearCookies = true
+    }
+  }
 
   if (isAuthRoute && isAuthenticated) {
-    const nextPath = searchParams.get("next")
-    const redirectPath = isSafeRedirectPath(nextPath)
-      ? nextPath!
-      : DEFAULT_AUTHENTICATED_REDIRECT
-
-    return NextResponse.redirect(new URL(redirectPath, req.url))
+    const redirectPath = getSafeRedirectPath(
+      searchParams.get("next"),
+      DEFAULT_AUTHENTICATED_REDIRECT
+    )
+    const response = NextResponse.redirect(new URL(redirectPath, req.url))
+    applyRefreshedCookies(response, refreshedAccessToken, refreshedRefreshToken)
+    if (shouldClearCookies) {
+      clearAdminAuthCookies(response)
+    }
+    return response
   }
 
-  if (!isAuthenticated && !isAuthRoute && !isPublicRoute) {
+  if (isPrivateRoute && !isAuthenticated) {
     const loginUrl = new URL(LOGIN_ROUTE, req.url)
-    const nextPath = `${pathname}${req.nextUrl.search}`
-
     if (pathname !== LOGIN_ROUTE) {
-      loginUrl.searchParams.set("next", nextPath)
+      loginUrl.searchParams.set("next", `${pathname}${req.nextUrl.search}`)
     }
 
-    return NextResponse.redirect(loginUrl)
+    const response = NextResponse.redirect(loginUrl)
+    if (shouldClearCookies) {
+      clearAdminAuthCookies(response)
+    }
+    return response
   }
 
-  return NextResponse.next()
+  const response = NextResponse.next()
+  applyRefreshedCookies(response, refreshedAccessToken, refreshedRefreshToken)
+  if (shouldClearCookies) {
+    clearAdminAuthCookies(response)
+  }
+  return response
 }
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|manifest.webmanifest|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|webmanifest)$).*)",
   ],
 }

@@ -1,79 +1,32 @@
-import { cookies } from "next/headers"
-import { NextResponse } from "next/server"
+import { proxyBackendRequest } from "@/lib/api/proxy-request"
+import { getAccessToken, getRefreshToken } from "@/lib/auth/cookies"
 
-const DEFAULT_API_URL = "http://localhost:8080"
+export async function GET(req: Request) {
+  const accessToken = await getAccessToken()
+  const refreshToken = await getRefreshToken()
+  const url = new URL(req.url)
 
-const getApiBaseUrl = () =>
-  (process.env.API_URL || DEFAULT_API_URL).trim().replace(/\/$/, "")
-
-export async function GET() {
-  try {
-    const cookieStore = await cookies()
-    const accessToken = cookieStore.get("access_token")?.value
-
-    if (!accessToken) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
-    }
-
-    const apiResponse = await fetch(`${getApiBaseUrl()}/my-wallet`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
-
-    if (!apiResponse.ok) {
-      return NextResponse.json(
-        { message: "Failed to fetch wallets" },
-        { status: apiResponse.status }
-      )
-    }
-
-    const userData = await apiResponse.json()
-    return NextResponse.json(userData)
-  } catch (error) {
-    console.error("Error in /api/user/wallets GET:", error)
-    return NextResponse.json(
-      { message: "Internal Server Error" },
-      { status: 500 }
-    )
-  }
+  return proxyBackendRequest({
+    method: "GET",
+    path: "/my-wallet",
+    search: url.search,
+    accessToken,
+    refreshToken,
+  })
 }
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json()
-    const cookieStore = await cookies()
-    const accessToken = cookieStore.get("access_token")?.value
+  const accessToken = await getAccessToken()
+  const refreshToken = await getRefreshToken()
 
-    if (!accessToken) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
-    }
-
-    const apiResponse = await fetch(`${getApiBaseUrl()}/my-wallet`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(body),
-    })
-
-    const result = await apiResponse.json().catch(() => null)
-
-    if (!apiResponse.ok) {
-      return NextResponse.json(
-        { message: result?.message || "Failed to create wallet" },
-        { status: apiResponse.status }
-      )
-    }
-
-    return NextResponse.json(result)
-  } catch (error) {
-    console.error("Error in /api/user/wallets POST:", error)
-    return NextResponse.json(
-      { message: "Internal Server Error" },
-      { status: 500 }
-    )
-  }
+  return proxyBackendRequest({
+    method: "POST",
+    path: "/my-wallet",
+    headers: {
+      "Content-Type": req.headers.get("content-type") || "application/json",
+    },
+    body: await req.text(),
+    accessToken,
+    refreshToken,
+  })
 }

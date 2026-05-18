@@ -101,7 +101,7 @@ const MOCK_TOKENS: TToken[] = [
 
 /**
  * Fetch token list
- * MIGRATION: Replace with apiClient.tokens.list() when API is ready
+ * MIGRATION: Replace with a domain API module in lib/api when API is ready
  */
 export async function fetchTokens(): Promise<TToken[]> {
   // Mock: simulate API delay

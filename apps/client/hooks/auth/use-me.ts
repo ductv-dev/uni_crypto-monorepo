@@ -1,4 +1,4 @@
-import { api } from "@/lib/api/api"
+import { getCurrentUser } from "@/lib/api/users"
 import { useUser } from "@/store/user-store"
 import { useQuery } from "@tanstack/react-query"
 import { useEffect } from "react"
@@ -8,7 +8,7 @@ export const useMe = () => {
 
   const query = useQuery({
     queryKey: ["me"],
-    queryFn: api.getMe,
+    queryFn: getCurrentUser,
     retry: false,
     staleTime: 1000 * 60 * 5,
   })

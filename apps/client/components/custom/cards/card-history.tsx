@@ -1,14 +1,14 @@
 import { cn } from "@/lib/utils/utils"
+import { type BackendHistoryItem } from "@/lib/api/history"
 import { Badge } from "@workspace/ui/components/badge"
 import { ArrowDown, ArrowDownUp, ArrowUp, Download, Upload } from "lucide-react"
-import { TTransaction } from "@workspace/shared/types"
 
 type TCardHistory = {
-  transaction: TTransaction
+  transaction: BackendHistoryItem
   className?: string
 }
 
-const getTypeConfig = (type: TTransaction["type"]) => {
+const getTypeConfig = (type: BackendHistoryItem["type"]) => {
   const configs = {
     buy: {
       icon: ArrowDown,
@@ -35,11 +35,47 @@ const getTypeConfig = (type: TTransaction["type"]) => {
       label: "Nhận",
       color: "text-green-500",
     },
+    deposit: {
+      icon: Download,
+      label: "Nạp",
+      color: "text-green-500",
+    },
+    withdraw: {
+      icon: Upload,
+      label: "Rút",
+      color: "text-orange-500",
+    },
+    order_lock: {
+      icon: ArrowDownUp,
+      label: "Khóa lệnh",
+      color: "text-violet-500",
+    },
+    order_unlock: {
+      icon: ArrowDownUp,
+      label: "Mở khóa lệnh",
+      color: "text-indigo-500",
+    },
+    trade_buy: {
+      icon: ArrowDown,
+      label: "Khớp mua",
+      color: "text-blue-500",
+    },
+    trade_sell: {
+      icon: ArrowUp,
+      label: "Khớp bán",
+      color: "text-red-500",
+    },
+    fee: {
+      icon: ArrowUp,
+      label: "Phí",
+      color: "text-rose-500",
+    },
   }
-  return configs[type]
+
+  return configs[type as keyof typeof configs] || configs.order_lock
 }
 
-const getStatusConfig = (status: TTransaction["status"]) => {
+const getStatusConfig = (status: BackendHistoryItem["status"]) => {
   const configs = {
     success: {
       label: "Thành công",
@@ -53,8 +89,17 @@ const getStatusConfig = (status: TTransaction["status"]) => {
       label: "Thất bại",
       variant: "destructive" as const,
     },
+    completed: {
+      label: "Hoàn tất",
+      variant: "default" as const,
+    },
+    rejected: {
+      label: "Từ chối",
+      variant: "destructive" as const,
+    },
   }
-  return configs[status]
+
+  return configs[status as keyof typeof configs] || configs.pending
 }
 
 const formatDate = (dateString: string) => {
@@ -76,9 +121,9 @@ export const CardHistory: React.FC<TCardHistory> = ({
   const statusConfig = getStatusConfig(transaction.status)
   const TypeIcon = typeConfig.icon
 
-  const displayText = transaction.toSymbol
-    ? `${transaction.fromSymbol} → ${transaction.toSymbol}`
-    : transaction.fromSymbol
+  const assetSymbol = transaction.wallet?.asset?.symbol || "--"
+  const amount = Number(transaction.amount) || 0
+  const directionSign = transaction.direction === "debit" ? "-" : "+"
 
   return (
     <div
@@ -107,14 +152,20 @@ export const CardHistory: React.FC<TCardHistory> = ({
               {statusConfig.label}
             </Badge>
           </div>
-          <p className="text-xs text-foreground/60">{displayText}</p>
+          <p className="text-xs text-foreground/60">
+            {assetSymbol} • {transaction.reference_type || "wallet"}
+          </p>
         </div>
       </div>
 
       {/* Amount & Date */}
       <div className="flex flex-col items-end gap-1">
         <p className="text-sm font-semibold text-foreground">
-          ${transaction.usdtValue.toFixed(2)}
+          {directionSign}
+          {amount.toLocaleString("en-US", {
+            maximumFractionDigits: 8,
+          })}{" "}
+          {assetSymbol}
         </p>
         <p className="text-xs text-foreground/60">
           {formatDate(transaction.createdAt)}

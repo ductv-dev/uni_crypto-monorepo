@@ -31,6 +31,57 @@ services:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
 
+  # IMPORTANT:
+  # Không scale replicas cho cùng một market nếu chưa có distributed lock.
+  # Mỗi market chỉ nên có đúng 1 matching engine active tại một thời điểm.
+  matching-btc-usdt:
+    build:
+      context: .
+      dockerfile: apps/matching-engine/Dockerfile
+    container_name: matching-btc-usdt
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      DATABASE_URL: postgresql://root:password@postgres:5432/uni_db
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+      RABBITMQ_EXCHANGE: orders.exchange
+      REDIS_URL: redis://redis:6379
+      MATCHING_MARKET: BTC-USDT
+      MATCHING_QUEUE: matching.BTC-USDT
+
+  matching-eth-usdt:
+    build:
+      context: .
+      dockerfile: apps/matching-engine/Dockerfile
+    container_name: matching-eth-usdt
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      DATABASE_URL: postgresql://root:password@postgres:5432/uni_db
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+      RABBITMQ_EXCHANGE: orders.exchange
+      REDIS_URL: redis://redis:6379
+      MATCHING_MARKET: ETH-USDT
+      MATCHING_QUEUE: matching.ETH-USDT
+
+  matching-bnb-usdt:
+    build:
+      context: .
+      dockerfile: apps/matching-engine/Dockerfile
+    container_name: matching-bnb-usdt
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      DATABASE_URL: postgresql://root:password@postgres:5432/uni_db
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+      RABBITMQ_EXCHANGE: orders.exchange
+      REDIS_URL: redis://redis:6379
+      MATCHING_MARKET: BNB-USDT
+      MATCHING_QUEUE: matching.BNB-USDT
+
 volumes:
   postgres_data:
   redis_data:
