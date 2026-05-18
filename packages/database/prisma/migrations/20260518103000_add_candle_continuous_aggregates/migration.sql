@@ -1,3 +1,16 @@
+-- 1. Bật TimescaleDB
+CREATE EXTENSION IF NOT EXISTS timescaledb;
+
+-- 2. Convert Trade thành hypertable
+-- Lưu ý: bảng "Trade" phải có PRIMARY KEY (id, "createdAt")
+SELECT create_hypertable(
+  '"Trade"',
+  'createdAt',
+  if_not_exists => TRUE,
+  migrate_data => TRUE
+);
+
+-- 3. Function tạo candle
 CREATE OR REPLACE FUNCTION create_candle_continuous_aggregate(
   p_view_name TEXT,
   p_bucket_width INTERVAL,
@@ -47,7 +60,7 @@ BEGIN
   );
 
   EXECUTE format(
-    'CREATE INDEX %I ON %I (market_id, bucket DESC)',
+    'CREATE INDEX IF NOT EXISTS %I ON %I (market_id, bucket DESC)',
     p_view_name || '_market_bucket_idx',
     p_view_name
   );
@@ -60,6 +73,8 @@ BEGIN
   );
 END;
 $$;
+
+-- 4. Tạo các candle views
 
 SELECT create_candle_continuous_aggregate(
   'candles_1m',
@@ -86,6 +101,14 @@ SELECT create_candle_continuous_aggregate(
 );
 
 SELECT create_candle_continuous_aggregate(
+  'candles_30m',
+  INTERVAL '30 minutes',
+  INTERVAL '90 days',
+  INTERVAL '30 minutes',
+  INTERVAL '30 minutes'
+);
+
+SELECT create_candle_continuous_aggregate(
   'candles_1h',
   INTERVAL '1 hour',
   INTERVAL '180 days',
@@ -94,21 +117,54 @@ SELECT create_candle_continuous_aggregate(
 );
 
 SELECT create_candle_continuous_aggregate(
-  'candles_4h',
-  INTERVAL '4 hours',
-  INTERVAL '365 days',
-  INTERVAL '4 hours',
-  INTERVAL '4 hours'
-);
-
-SELECT create_candle_continuous_aggregate(
-  'candles_1d',
-  INTERVAL '1 day',
+  'candles_24h',
+  INTERVAL '24 hours',
   INTERVAL '3 years',
   INTERVAL '1 day',
   INTERVAL '1 day'
 );
 
+SELECT create_candle_continuous_aggregate(
+  'candles_1w',
+  INTERVAL '1 week',
+  INTERVAL '5 years',
+  INTERVAL '1 week',
+  INTERVAL '1 week'
+);
+
+SELECT create_candle_continuous_aggregate(
+  'candles_15d',
+  INTERVAL '15 days',
+  INTERVAL '5 years',
+  INTERVAL '15 days',
+  INTERVAL '15 days'
+);
+
+SELECT create_candle_continuous_aggregate(
+  'candles_1mo',
+  INTERVAL '1 month',
+  INTERVAL '10 years',
+  INTERVAL '1 month',
+  INTERVAL '1 month'
+);
+
+SELECT create_candle_continuous_aggregate(
+  'candles_6mo',
+  INTERVAL '6 months',
+  INTERVAL '10 years',
+  INTERVAL '6 months',
+  INTERVAL '6 months'
+);
+
+SELECT create_candle_continuous_aggregate(
+  'candles_1y',
+  INTERVAL '1 year',
+  INTERVAL '10 years',
+  INTERVAL '1 year',
+  INTERVAL '1 year'
+);
+
+-- 5. Xóa helper function sau khi tạo xong
 DROP FUNCTION create_candle_continuous_aggregate(
   TEXT,
   INTERVAL,
