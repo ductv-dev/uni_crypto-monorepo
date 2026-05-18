@@ -1,4 +1,8 @@
-import { MOCK_PERSONAL } from "@/data/mock-data-admin"
+import {
+  buildDisplayName,
+  derivePersonnelStatus,
+  getAdminAccounts,
+} from "@/lib/api/access-control"
 import { TPersonnelResponse } from "@/types/personnel.type"
 import {
   keepPreviousData,
@@ -8,63 +12,6 @@ import {
 
 export const PERSONNEL_LIST_QUERY_KEY = "personnel-list"
 
-const getPersonnel = async (
-  limit: number,
-  offset: number,
-  search?: string,
-  filter?: { status: string; role: string }
-): Promise<TPersonnelResponse> => {
-  await new Promise((resolve) => setTimeout(resolve, 800))
-
-  let filteredPersonnel = MOCK_PERSONAL
-
-  if (search) {
-    const normalizedSearch = search.trim().toLowerCase()
-
-    filteredPersonnel = filteredPersonnel.filter((personnel) => {
-      const searchFields = [
-        personnel.id,
-        personnel.fullName,
-        personnel.email,
-        personnel.role,
-        personnel.status,
-        personnel.lastActive,
-        personnel.joinedDate,
-      ]
-
-      return searchFields.some((field) =>
-        field.toLowerCase().includes(normalizedSearch)
-      )
-    })
-  }
-
-  if (filter?.status) {
-    filteredPersonnel = filteredPersonnel.filter(
-      (personnel) => personnel.status === filter.status
-    )
-  }
-
-  if (filter?.role) {
-    filteredPersonnel = filteredPersonnel.filter(
-      (personnel) => personnel.role === filter.role
-    )
-  }
-
-  const paginatedData = filteredPersonnel.slice(offset, offset + limit)
-  const totalItems = filteredPersonnel.length
-  const totalPages = Math.ceil(totalItems / limit)
-
-  return {
-    data: paginatedData,
-    pagination: {
-      page: Math.floor(offset / limit) + 1,
-      limit,
-      total: totalItems,
-      totalPages,
-    },
-  }
-}
-
 export const usePersonnel = (
   limit: number,
   offset: number,
@@ -73,7 +20,46 @@ export const usePersonnel = (
 ): UseQueryResult<TPersonnelResponse, Error> => {
   return useQuery({
     queryKey: [PERSONNEL_LIST_QUERY_KEY, limit, offset, search, filter],
-    queryFn: () => getPersonnel(limit, offset, search, filter),
+    queryFn: async () => {
+      const response = await getAdminAccounts({
+        limit,
+        offset,
+        search,
+        roleId: filter.role || undefined,
+        status:
+          filter.status === "active" ||
+          filter.status === "inactive" ||
+          filter.status === "blocked"
+            ? filter.status
+            : undefined,
+      })
+
+      return {
+        data: response.data.map((account) => ({
+          id: account.id,
+          fullName: buildDisplayName(
+            account.first_name,
+            account.last_name,
+            account.email
+          ),
+          email: account.email,
+          roleId: account.role_id ?? "",
+          role: account.role_name ?? "Chưa gán vai trò",
+          status: derivePersonnelStatus(account.is_active, account.is_blocked),
+          createdAt: account.createdAt,
+          updatedAt: account.updatedAt,
+          phoneNumber: account.phone_number,
+        })),
+        pagination: {
+          page: Math.floor(response.meta.offset / response.meta.limit) + 1,
+          limit: response.meta.limit,
+          total: response.meta.total,
+          totalPages:
+            response.meta.totalPages ??
+            Math.ceil(response.meta.total / response.meta.limit),
+        },
+      }
+    },
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5,
   })

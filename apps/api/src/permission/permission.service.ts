@@ -12,8 +12,8 @@ export class PermissionService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(dto: GetAllPermissionsDto) {
-    const limit = dto.limit ?? 10;
-    const offset = dto.offset ?? 0;
+    const limit = this.parseLimit(dto.limit);
+    const offset = this.parseOffset(dto.offset);
 
     const data = await this.prisma.permission.findMany({
       skip: offset,
@@ -32,6 +32,27 @@ export class PermissionService {
     };
     return result;
   }
+
+  private parseLimit(value: number | string | undefined): number {
+    const parsedValue = Number(value ?? 10);
+
+    if (!Number.isInteger(parsedValue) || parsedValue < 1) {
+      return 10;
+    }
+
+    return Math.min(parsedValue, 100);
+  }
+
+  private parseOffset(value: number | string | undefined): number {
+    const parsedValue = Number(value ?? 0);
+
+    if (!Number.isInteger(parsedValue) || parsedValue < 0) {
+      return 0;
+    }
+
+    return parsedValue;
+  }
+
   async findOne(id: string) {
     const permission = await this.prisma.permission.findUnique({
       where: {

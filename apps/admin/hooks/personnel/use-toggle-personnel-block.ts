@@ -1,3 +1,4 @@
+import { toggleAdminAccountBlock } from "@/lib/api/access-control"
 import {
   useMutation,
   useQueryClient,
@@ -5,12 +6,7 @@ import {
 } from "@tanstack/react-query"
 import { PERSONNEL_LIST_QUERY_KEY } from "./use-personnel"
 
-const deletePersonnel = async (id: string): Promise<string> => {
-  await new Promise((resolve) => setTimeout(resolve, 800))
-  return id
-}
-
-export const useDeletePersonnel = (): UseMutationResult<
+export const useTogglePersonnelBlock = (): UseMutationResult<
   string,
   Error,
   string
@@ -18,8 +14,11 @@ export const useDeletePersonnel = (): UseMutationResult<
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: deletePersonnel,
-    mutationKey: [PERSONNEL_LIST_QUERY_KEY, "delete"],
+    mutationFn: async (id) => {
+      await toggleAdminAccountBlock(id)
+      return id
+    },
+    mutationKey: [PERSONNEL_LIST_QUERY_KEY, "toggle-block"],
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: [PERSONNEL_LIST_QUERY_KEY],

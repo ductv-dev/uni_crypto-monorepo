@@ -1,14 +1,15 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useGetRoles } from "@/hooks/roles/use-roles"
 import { toast } from "@workspace/ui/index"
 import { useForm } from "react-hook-form"
 import { useState } from "react"
 import { Plus } from "lucide-react"
 
 import {
-  PersonnelSchema,
-  type PersonnelSchemaType,
+  CreatePersonnelSchema,
+  type CreatePersonnelSchemaType,
 } from "@/schema/personnel.schema"
 import { useCreatePersonnel } from "@/hooks/personnel/use-create-personnel"
 import { Button } from "@workspace/ui/components/button"
@@ -37,6 +38,7 @@ import {
 export const FormCreatePersonnel = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { mutate: createPersonnel, isPending } = useCreatePersonnel()
+  const { data: roles = [], isLoading: isRolesLoading } = useGetRoles()
 
   const {
     register,
@@ -45,25 +47,24 @@ export const FormCreatePersonnel = () => {
     watch,
     reset,
     formState: { errors },
-  } = useForm<PersonnelSchemaType>({
-    resolver: zodResolver(PersonnelSchema),
+  } = useForm<CreatePersonnelSchemaType>({
+    resolver: zodResolver(CreatePersonnelSchema),
     defaultValues: {
-      fullName: "",
       email: "",
-      role: "",
-      status: "pending",
+      password: "",
+      roleId: "",
     },
   })
 
-  const onSubmit = (data: PersonnelSchemaType) => {
+  const onSubmit = (data: CreatePersonnelSchemaType) => {
     createPersonnel(data, {
       onSuccess: () => {
-        toast.success("Mời admin mới thành công!")
+        toast.success("Tạo tài khoản quản trị thành công!")
         reset()
         setIsDialogOpen(false)
       },
       onError: () => {
-        toast.error("Có lỗi xảy ra khi mời admin")
+        toast.error("Có lỗi xảy ra khi tạo tài khoản quản trị")
       },
     })
   }
@@ -73,21 +74,15 @@ export const FormCreatePersonnel = () => {
       <DialogTrigger asChild>
         <Button size="sm">
           <Plus className="mr-2 h-4 w-4" />
-          Invite Admin
+          Tạo tài khoản
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Mời Quản Trị Viên (Admin)</DialogTitle>
+          <DialogTitle>Tạo tài khoản quản trị</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup>
-            <Field>
-              <FieldLabel>Họ và tên</FieldLabel>
-              <Input {...register("fullName")} placeholder="Nhập họ và tên" />
-              <FieldError errors={[errors.fullName]} />
-            </Field>
-
             <Field>
               <FieldLabel>Email</FieldLabel>
               <Input
@@ -99,42 +94,33 @@ export const FormCreatePersonnel = () => {
             </Field>
 
             <Field>
+              <FieldLabel>Mật khẩu tạm thời</FieldLabel>
+              <Input
+                {...register("password")}
+                type="password"
+                placeholder="Nhập mật khẩu mạnh"
+              />
+              <FieldError errors={[errors.password]} />
+            </Field>
+
+            <Field>
               <FieldLabel>Vai trò</FieldLabel>
               <Select
-                defaultValue={watch("role")}
-                onValueChange={(value) => setValue("role", value)}
+                defaultValue={watch("roleId")}
+                onValueChange={(value) => setValue("roleId", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn vai trò" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Super Admin">Super Admin</SelectItem>
-                  <SelectItem value="Manager">Manager</SelectItem>
-                  <SelectItem value="Support">Support</SelectItem>
-                  <SelectItem value="Compliance">Compliance</SelectItem>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name} - Level {role.level}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              <FieldError errors={[errors.role]} />
-            </Field>
-
-            <Field>
-              <FieldLabel>Trạng thái</FieldLabel>
-              <Select
-                defaultValue={watch("status")}
-                onValueChange={(value: "active" | "inactive" | "pending") =>
-                  setValue("status", value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn trạng thái" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                </SelectContent>
-              </Select>
-              <FieldError errors={[errors.status]} />
+              <FieldError errors={[errors.roleId]} />
             </Field>
           </FieldGroup>
 
@@ -146,8 +132,8 @@ export const FormCreatePersonnel = () => {
             >
               Hủy
             </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Đang gửi..." : "Mời"}
+            <Button type="submit" disabled={isPending || isRolesLoading}>
+              {isPending ? "Đang tạo..." : "Tạo tài khoản"}
             </Button>
           </div>
         </form>

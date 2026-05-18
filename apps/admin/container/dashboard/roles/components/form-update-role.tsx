@@ -48,6 +48,7 @@ export const FormUpdateRole = ({ role }: { role: TRole }) => {
     defaultValues: {
       name: role.name,
       description: role.description,
+      level: role.level,
       status: role.status,
     },
   })
@@ -95,6 +96,22 @@ export const FormUpdateRole = ({ role }: { role: TRole }) => {
             </Field>
 
             <Field>
+              <FieldLabel>Cấp độ vai trò</FieldLabel>
+              <Input
+                {...register("level", { valueAsNumber: true })}
+                type="number"
+                min={2}
+                max={10}
+                placeholder="Ví dụ: 2"
+              />
+              <p className="text-xs text-muted-foreground">
+                Số càng nhỏ thì quyền càng cao. Cấp 1 được dành riêng cho Super
+                Admin.
+              </p>
+              <FieldError errors={[errors.level]} />
+            </Field>
+
+            <Field>
               <FieldLabel>Trạng thái</FieldLabel>
               <Select
                 defaultValue={watch("status")}
@@ -106,8 +123,8 @@ export const FormUpdateRole = ({ role }: { role: TRole }) => {
                   <SelectValue placeholder="Chọn trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="active">Hoạt động</SelectItem>
+                  <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
                 </SelectContent>
               </Select>
               <FieldError errors={[errors.status]} />

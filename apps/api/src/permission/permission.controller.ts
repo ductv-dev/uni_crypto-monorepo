@@ -5,6 +5,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { AtGuard } from 'src/auth/guards';
@@ -21,10 +22,7 @@ export class PermissionController {
 
   @Get()
   @Permissions(PERMISSION_CODES.READ_PERMISSIONS)
-  findAll(
-    @Body()
-    dto: GetAllPermissionsDto,
-  ) {
+  findAll(@Query() dto: GetAllPermissionsDto) {
     return this.permissionService.findAll(dto);
   }
 

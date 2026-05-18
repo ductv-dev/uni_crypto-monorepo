@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   ServiceUnavailableException,
@@ -26,6 +27,16 @@ export class AccountService {
     private prisma: PrismaService,
     private auditLogService: AuditLogService,
   ) {}
+
+  private ensureAccountIsNotSuperAdmin(target: {
+    is_super_admin?: boolean;
+    role?: { level?: number | null } | null;
+  }) {
+    if (target.is_super_admin === true || target.role?.level === 1) {
+      throw new ForbiddenException('You cannot modify a super admin account');
+    }
+  }
+
   // Tạo mới tài khoản
   async create(
     createAccountDto: CreateAccountDto,
@@ -90,18 +101,21 @@ export class AccountService {
     sortBy?: string,
     sortOrder?: 'asc' | 'desc',
     type?: string,
+    roleId?: string,
+    status?: 'active' | 'inactive' | 'blocked',
     userId?: string,
   ) {
     const safeLimit = !Number.isFinite(limit)
       ? 10
       : Math.min(Math.max(limit, 1), 100);
-    const safeOffset =
-      Number.isFinite(offset) && offset >= 0 && offset < safeLimit ? offset : 0;
+    const safeOffset = Number.isFinite(offset) && offset >= 0 ? offset : 0;
     const safeSortBy =
       sortBy && sortBy in this.sortableFields ? sortBy : 'createdAt';
     const safeSortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
     const normalizedSearch = search?.trim();
     const normalizedType = type?.trim();
+    const normalizedRoleId = roleId?.trim();
+    const normalizedStatus = status?.trim().toLowerCase();
     const sortColumn =
       this.sortableFields[safeSortBy as keyof typeof this.sortableFields];
     const searchPattern = normalizedSearch ? `%${normalizedSearch}%` : null;
@@ -117,13 +131,25 @@ export class AccountService {
           coalesce(ui.phone_number, ''),
           coalesce(ui.address, ''),
           coalesce(ui.city, ''),
-          coalesce(ui.country, '')
+          coalesce(ui.country, ''),
+          coalesce(r.name, '')
         )
       )
     `;
     const typeFilterSql = normalizedType
       ? Prisma.sql`u.type_account = ${normalizedType}`
       : Prisma.sql`TRUE`;
+    const roleFilterSql = normalizedRoleId
+      ? Prisma.sql`u.role_id = ${normalizedRoleId}`
+      : Prisma.sql`TRUE`;
+    const statusFilterSql =
+      normalizedStatus === 'blocked'
+        ? Prisma.sql`u.is_blocked = TRUE`
+        : normalizedStatus === 'active'
+          ? Prisma.sql`u.is_active = TRUE AND u.is_blocked = FALSE`
+          : normalizedStatus === 'inactive'
+            ? Prisma.sql`u.is_active = FALSE AND u.is_blocked = FALSE`
+            : Prisma.sql`TRUE`;
     const searchFilterSql =
       normalizedSearch && searchPattern
         ? Prisma.sql`(
@@ -135,6 +161,8 @@ export class AccountService {
         : Prisma.sql`TRUE`;
     const whereSql = Prisma.sql`
       WHERE ${typeFilterSql}
+        AND ${roleFilterSql}
+        AND ${statusFilterSql}
         AND ${searchFilterSql}
     `;
     const orderBySql =
@@ -152,13 +180,22 @@ export class AccountService {
           `;
 
     const accounts = await this.prisma.$queryRaw<
-      { id: string; email: string; type_account: string; createdAt: Date }[]
+      {
+        id: string;
+        email: string;
+        type_account: string;
+        createdAt: Date;
+        updatedAt: Date;
+        role_id: string | null;
+        role_name: string | null;
+      }[]
     >(Prisma.sql`
       SELECT
         u.id,
         u.email,
         u.type_account,
         u."createdAt",
+        u."updatedAt",
         ui.first_name,
         ui.last_name,
         ui.phone_number,
@@ -166,10 +203,13 @@ export class AccountService {
         u.is_blocked,
         ui.address,
         ui.city,
-        ui.country
+        ui.country,
+        u.role_id,
+        r.name AS role_name
 
       FROM "User" u
       LEFT JOIN "UserInfo" ui ON ui.user_id = u.id
+      LEFT JOIN "Role" r ON r.id = u.role_id
       ${whereSql}
       ${orderBySql}
       LIMIT ${safeLimit}
@@ -191,6 +231,7 @@ export class AccountService {
       SELECT COUNT(*)::bigint AS total
       FROM "User" u
       LEFT JOIN "UserInfo" ui ON ui.user_id = u.id
+      LEFT JOIN "Role" r ON r.id = u.role_id
       ${whereSql}
     `);
     const total = Number(totalResult?.total ?? 0);
@@ -221,12 +262,19 @@ export class AccountService {
       },
       select: {
         id: true,
+        is_super_admin: true,
         role_id: true,
+        role: {
+          select: {
+            level: true,
+          },
+        },
       },
     });
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    this.ensureAccountIsNotSuperAdmin(user);
 
     if (!user.role_id) {
       throw new NotFoundException('User has no assigned role');
@@ -281,11 +329,19 @@ export class AccountService {
         id: true,
         role_id: true,
         is_blocked: true,
+        is_super_admin: true,
+        role: {
+          select: {
+            level: true,
+          },
+        },
       },
     });
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    this.ensureAccountIsNotSuperAdmin(user);
+
     if (!user.role_id) {
       throw new NotFoundException('User has no assigned role');
     }
@@ -332,6 +388,7 @@ export class AccountService {
       },
       select: {
         id: true,
+        is_super_admin: true,
         role_id: true,
         role: {
           select: {
@@ -343,6 +400,8 @@ export class AccountService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    this.ensureAccountIsNotSuperAdmin(user);
+
     if (!user.role?.level) {
       throw new NotFoundException('User has no assigned role');
     }
@@ -442,12 +501,18 @@ export class AccountService {
         'You can not assign a role with equal or higher level than yours',
       );
     }
+    if (role.level === 1) {
+      throw new ForbiddenException(
+        'You cannot assign the super admin role from this flow',
+      );
+    }
     const user = await this.prisma.user.findUnique({
       where: {
         id: id,
       },
       select: {
         id: true,
+        is_super_admin: true,
         role_id: true,
         type_account: true,
         role: {
@@ -460,6 +525,8 @@ export class AccountService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    this.ensureAccountIsNotSuperAdmin(user);
+
     if (user.type_account === 'USER') {
       throw new UnauthorizedException('You can not update role for USER');
     }

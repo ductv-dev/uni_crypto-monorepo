@@ -48,6 +48,7 @@ export const FormCreateRole = () => {
     defaultValues: {
       name: "",
       description: "",
+      level: 2,
       status: "active",
     },
   })
@@ -70,7 +71,7 @@ export const FormCreateRole = () => {
       <DialogTrigger asChild>
         <Button size="sm">
           <Plus className="mr-2 h-4 w-4" />
-          Create Role
+          Tạo vai trò
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
@@ -96,6 +97,22 @@ export const FormCreateRole = () => {
             </Field>
 
             <Field>
+              <FieldLabel>Cấp độ vai trò</FieldLabel>
+              <Input
+                {...register("level", { valueAsNumber: true })}
+                type="number"
+                min={2}
+                max={10}
+                placeholder="Ví dụ: 2"
+              />
+              <p className="text-xs text-muted-foreground">
+                Số càng nhỏ thì quyền càng cao. Cấp 1 được dành riêng cho Super
+                Admin.
+              </p>
+              <FieldError errors={[errors.level]} />
+            </Field>
+
+            <Field>
               <FieldLabel>Trạng thái</FieldLabel>
               <Select
                 defaultValue={watch("status")}
@@ -107,8 +124,8 @@ export const FormCreateRole = () => {
                   <SelectValue placeholder="Chọn trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="active">Hoạt động</SelectItem>
+                  <SelectItem value="inactive">Ngừng hoạt động</SelectItem>
                 </SelectContent>
               </Select>
               <FieldError errors={[errors.status]} />

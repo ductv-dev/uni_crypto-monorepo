@@ -88,6 +88,15 @@ export const Roles = () => {
         header: "Mô tả",
       },
       {
+        accessorKey: "level",
+        header: "Cấp độ",
+        cell: ({ row }) => (
+          <span className="font-medium text-muted-foreground">
+            Level {row.original.level}
+          </span>
+        ),
+      },
+      {
         accessorKey: "usersCount",
         header: "Số người dùng",
         cell: ({ row }) => (
@@ -110,7 +119,7 @@ export const Roles = () => {
                   : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
               }`}
             >
-              {status}
+              {status === "active" ? "Hoạt động" : "Ngừng hoạt động"}
             </span>
           )
         },

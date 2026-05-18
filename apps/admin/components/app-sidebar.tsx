@@ -94,12 +94,12 @@ const data = {
       title: "Assets & Markets",
       items: [
         {
-          title: "Token Management",
+          title: "Assets",
           url: "/assets/tokens",
           icon: <Coins />,
         },
         {
-          title: "Trading Pairs",
+          title: "Market",
           url: "/assets/pairs",
           icon: <Coins />,
         },

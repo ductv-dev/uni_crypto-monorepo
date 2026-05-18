@@ -1,3 +1,4 @@
+import { updateRolePermissions } from "@/lib/api/access-control"
 import {
   useMutation,
   useQueryClient,
@@ -6,14 +7,6 @@ import {
 import { ROLE_LIST_QUERY_KEY } from "./use-roles"
 import { ROLE_PERMISSIONS_QUERY_KEY } from "./use-role-permissions"
 
-const updatePermissions = async (
-  id: string,
-  permissions: string[]
-): Promise<string[]> => {
-  await new Promise((resolve) => setTimeout(resolve, 800))
-  return permissions
-}
-
 export const useUpdatePermissions = (
   id: string
 ): UseMutationResult<string[], Error, string[]> => {
@@ -21,7 +14,10 @@ export const useUpdatePermissions = (
 
   return useMutation({
     mutationKey: [ROLE_LIST_QUERY_KEY, "update-permissions", id],
-    mutationFn: (data) => updatePermissions(id, data),
+    mutationFn: async (permissionIds) => {
+      await updateRolePermissions(id, permissionIds)
+      return permissionIds
+    },
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({

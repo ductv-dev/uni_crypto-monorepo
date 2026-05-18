@@ -1,8 +1,10 @@
 "use client"
 
 import { SidebarInset, SidebarTrigger } from "@/components/layout/sidebar"
-import { useDeletePersonnel } from "@/hooks/personnel/use-delete-personnel"
+import { useTogglePersonnelBlock } from "@/hooks/personnel/use-toggle-personnel-block"
 import { usePersonnel } from "@/hooks/personnel/use-personnel"
+import { useGetRoles } from "@/hooks/roles/use-roles"
+import { formatDateTime } from "@/lib/utils/fees"
 import { TPersonnel } from "@/types/personnel.type"
 import {
   ColumnDef,
@@ -18,7 +20,6 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogMedia,
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
 import {
@@ -74,10 +75,11 @@ import { debounce } from "lodash"
 import {
   Dot,
   Filter,
+  Lock,
+  LockOpen,
   MoreHorizontal,
   Search,
   ShieldAlert,
-  Trash2Icon,
 } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
@@ -107,12 +109,13 @@ export const Personnel = () => {
     searchQuery,
     filter
   )
+  const { data: roles = [] } = useGetRoles()
   const {
-    mutate: deletePersonnel,
+    mutate: togglePersonnelBlock,
     isPending: isDeleting,
     isSuccess: isDeleteSuccess,
     reset: resetDeleteState,
-  } = useDeletePersonnel()
+  } = useTogglePersonnelBlock()
   const [selectedPersonnel, setSelectedPersonnel] = useState<TPersonnel | null>(
     null
   )
@@ -176,12 +179,14 @@ export const Personnel = () => {
         header: "Vai trò",
       },
       {
-        accessorKey: "joinedDate",
-        header: "Ngày tham gia",
+        accessorKey: "createdAt",
+        header: "Ngày tạo",
+        cell: ({ row }) => formatDateTime(row.original.createdAt),
       },
       {
-        accessorKey: "lastActive",
-        header: "Hoạt động gần nhất",
+        accessorKey: "updatedAt",
+        header: "Cập nhật gần nhất",
+        cell: ({ row }) => formatDateTime(row.original.updatedAt),
       },
       {
         accessorKey: "status",
@@ -199,7 +204,12 @@ export const Personnel = () => {
                     : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
               }`}
             >
-              <Dot className="mr-1 h-3 w-3" /> {status}
+              <Dot className="mr-1 h-3 w-3" />{" "}
+              {status === "active"
+                ? "Hoạt động"
+                : status === "inactive"
+                  ? "Ngừng hoạt động"
+                  : "Đã khóa"}
             </span>
           )
         },
@@ -223,7 +233,17 @@ export const Personnel = () => {
                     className="cursor-pointer text-destructive"
                     onClick={() => setSelectedPersonnel(row.original)}
                   >
-                    Xóa Admin
+                    {row.original.status === "blocked" ? (
+                      <>
+                        <LockOpen className="mr-2 h-4 w-4" />
+                        Mở khóa tài khoản
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="mr-2 h-4 w-4" />
+                        Khóa tài khoản
+                      </>
+                    )}
                   </DropdownMenuItem>
                 </div>
               </DropdownMenuContent>
@@ -259,7 +279,7 @@ export const Personnel = () => {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Quản lý nhân sự</BreadcrumbPage>
+                <BreadcrumbPage>Tài khoản quản trị</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -268,7 +288,7 @@ export const Personnel = () => {
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <h1 className="text-2xl font-bold tracking-tight">
-            Nhân sự & phân quyền
+            Tài khoản quản trị & phân quyền
           </h1>
           <div className="flex items-center gap-2">
             <Drawer direction="right">
@@ -317,11 +337,11 @@ export const Personnel = () => {
                         </div>
                         <div className="flex items-center gap-3">
                           <RadioGroupItem
-                            value="pending"
-                            id="personnel-status-pending"
+                            value="blocked"
+                            id="personnel-status-blocked"
                           />
-                          <Label htmlFor="personnel-status-pending">
-                            Chờ duyệt
+                          <Label htmlFor="personnel-status-blocked">
+                            Đã khóa
                           </Label>
                         </div>
                       </RadioGroup>
@@ -340,42 +360,20 @@ export const Personnel = () => {
                           <RadioGroupItem value="" id="personnel-role-all" />
                           <Label htmlFor="personnel-role-all">Tất cả</Label>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <RadioGroupItem
-                            value="Super Admin"
-                            id="personnel-role-super-admin"
-                          />
-                          <Label htmlFor="personnel-role-super-admin">
-                            Super Admin
-                          </Label>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <RadioGroupItem
-                            value="Manager"
-                            id="personnel-role-manager"
-                          />
-                          <Label htmlFor="personnel-role-manager">
-                            Manager
-                          </Label>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <RadioGroupItem
-                            value="Support"
-                            id="personnel-role-support"
-                          />
-                          <Label htmlFor="personnel-role-support">
-                            Support
-                          </Label>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <RadioGroupItem
-                            value="Compliance"
-                            id="personnel-role-compliance"
-                          />
-                          <Label htmlFor="personnel-role-compliance">
-                            Compliance
-                          </Label>
-                        </div>
+                        {roles.map((role) => (
+                          <div
+                            key={role.id}
+                            className="flex items-center gap-3"
+                          >
+                            <RadioGroupItem
+                              value={role.id}
+                              id={`personnel-role-${role.id}`}
+                            />
+                            <Label htmlFor={`personnel-role-${role.id}`}>
+                              {role.name}
+                            </Label>
+                          </div>
+                        ))}
                       </RadioGroup>
                     </div>
                   </div>
@@ -409,7 +407,7 @@ export const Personnel = () => {
             <Input
               value={searchQueryDebounced}
               onChange={(event) => handleSearchChange(event.target.value)}
-              placeholder="Tìm theo tên, email, vai trò, trạng thái..."
+              placeholder="Tìm theo email, tên hiển thị, vai trò..."
               className="pl-8"
             />
           </div>
@@ -467,7 +465,7 @@ export const Personnel = () => {
                       colSpan={columns.length}
                       className="h-24 text-center"
                     >
-                      Không tìm thấy nhân sự nào.
+                      Không tìm thấy tài khoản quản trị nào.
                     </TableCell>
                   </TableRow>
                 )}
@@ -536,16 +534,17 @@ export const Personnel = () => {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
-              <Trash2Icon />
-            </AlertDialogMedia>
             <AlertDialogTitle>
-              Bạn có chắc muốn xóa nhân sự này?
+              {selectedPersonnel?.status === "blocked"
+                ? "Bạn có chắc muốn mở khóa tài khoản này?"
+                : "Bạn có chắc muốn khóa tài khoản này?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {selectedPersonnel
-                ? `Hành động này sẽ xóa vĩnh viễn admin "${selectedPersonnel.fullName}" (${selectedPersonnel.email}).`
-                : "Hành động này sẽ xóa vĩnh viễn nhân sự đã chọn."}
+                ? selectedPersonnel.status === "blocked"
+                  ? `Tài khoản "${selectedPersonnel.fullName}" (${selectedPersonnel.email}) sẽ được mở khóa và có thể đăng nhập trở lại.`
+                  : `Tài khoản "${selectedPersonnel.fullName}" (${selectedPersonnel.email}) sẽ bị khóa tạm thời và không thể sử dụng hệ thống cho đến khi được mở khóa.`
+                : "Trạng thái khóa của tài khoản đã chọn sẽ được cập nhật."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -554,19 +553,27 @@ export const Personnel = () => {
               onClick={(e) => {
                 e.preventDefault()
                 if (!selectedPersonnel) return
-                deletePersonnel(selectedPersonnel.id, {
+                togglePersonnelBlock(selectedPersonnel.id, {
                   onSuccess: () => {
-                    toast.success("Xóa Admin thành công!")
+                    toast.success(
+                      selectedPersonnel.status === "blocked"
+                        ? "Mở khóa tài khoản thành công!"
+                        : "Khóa tài khoản thành công!"
+                    )
                   },
                   onError: () => {
-                    toast.error("Xóa thất bại")
+                    toast.error("Cập nhật trạng thái tài khoản thất bại")
                   },
                 })
               }}
               disabled={isDeleting}
               className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
             >
-              {isDeleting ? "Đang xóa..." : "Xóa"}
+              {isDeleting
+                ? "Đang cập nhật..."
+                : selectedPersonnel?.status === "blocked"
+                  ? "Mở khóa"
+                  : "Khóa tài khoản"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

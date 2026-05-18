@@ -51,6 +51,8 @@ export class AccountController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'asc' | 'desc',
     @Query('type') type?: string,
+    @Query('roleId') roleId?: string,
+    @Query('status') status?: 'active' | 'inactive' | 'blocked',
   ) {
     return this.accountService.findAll(
       limit,
@@ -59,6 +61,8 @@ export class AccountController {
       sortBy,
       sortOrder,
       type,
+      roleId,
+      status,
       userId,
     );
   }

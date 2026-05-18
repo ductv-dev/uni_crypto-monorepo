@@ -1,5 +1,6 @@
 "use client"
 
+import { formatDateTime } from "@/lib/utils/fees"
 import { TPersonnel } from "@/types/personnel.type"
 import {
   Sheet,
@@ -25,7 +26,7 @@ export const PersonnelDetailView = ({
       </SheetTrigger>
       <SheetContent className="flex h-full w-[600px] flex-col px-6 sm:w-[1200px]">
         <SheetHeader>
-          <SheetTitle>Chi tiết Quản Trị Viên</SheetTitle>
+          <SheetTitle>Chi tiết tài khoản quản trị</SheetTitle>
         </SheetHeader>
         <div className="mt-6 space-y-6">
           <div className="flex items-center gap-4">
@@ -65,54 +66,46 @@ export const PersonnelDetailView = ({
                 }`}
               >
                 <Dot className="mr-1 h-3 w-3" />{" "}
-                {personnel.status.charAt(0).toUpperCase() +
-                  personnel.status.slice(1)}
+                {personnel.status === "active"
+                  ? "Hoạt động"
+                  : personnel.status === "inactive"
+                    ? "Ngừng hoạt động"
+                    : "Đã khóa"}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="flex items-center text-sm text-muted-foreground">
-                <Calendar className="mr-2 h-4 w-4" /> Ngày tham gia
+                <Calendar className="mr-2 h-4 w-4" /> Ngày tạo
               </span>
               <span className="text-sm font-medium">
-                {personnel.joinedDate}
+                {formatDateTime(personnel.createdAt)}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="flex items-center text-sm text-muted-foreground">
-                <Activity className="mr-2 h-4 w-4" /> Hoạt động gần nhất
+                <Activity className="mr-2 h-4 w-4" /> Cập nhật gần nhất
               </span>
               <span className="text-sm font-medium">
-                {personnel.lastActive}
+                {formatDateTime(personnel.updatedAt)}
               </span>
             </div>
+            {personnel.phoneNumber ? (
+              <div className="flex items-center justify-between">
+                <span className="flex items-center text-sm text-muted-foreground">
+                  <Activity className="mr-2 h-4 w-4" /> Số điện thoại
+                </span>
+                <span className="text-sm font-medium">
+                  {personnel.phoneNumber}
+                </span>
+              </div>
+            ) : null}
           </div>
 
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold">Nhật ký hoạt động (Demo)</h4>
-            <div className="rounded-lg border p-4 text-sm text-muted-foreground">
-              <ul className="space-y-3">
-                <li className="flex items-start gap-2">
-                  <Dot className="mt-0.5 h-4 w-4 text-primary" />
-                  <div>
-                    <p className="font-medium text-foreground">
-                      Đăng nhập thành công
-                    </p>
-                    <p className="text-xs">
-                      {personnel.lastActive} - 192.168.1.1
-                    </p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Dot className="mt-0.5 h-4 w-4 text-primary" />
-                  <div>
-                    <p className="font-medium text-foreground">
-                      Thay đổi cài đặt hệ thống
-                    </p>
-                    <p className="text-xs">2 ngày trước</p>
-                  </div>
-                </li>
-              </ul>
-            </div>
+          <div className="rounded-lg border p-4 text-sm text-muted-foreground">
+            Dữ liệu chi tiết hiện đang lấy từ danh sách tài khoản quản trị và
+            phản ánh đúng những trường backend đang cung cấp cho màn quản lý.
+            Các thông tin profile sâu hơn có thể được mở rộng sau bằng endpoint
+            `GET /account/info/:id`.
           </div>
         </div>
       </SheetContent>

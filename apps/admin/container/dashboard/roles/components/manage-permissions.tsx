@@ -1,15 +1,11 @@
 "use client"
 
-import {
-  useRolePermissions,
-  PERMISSION_GROUPS,
-} from "@/hooks/roles/use-role-permissions"
+import { useRolePermissions } from "@/hooks/roles/use-role-permissions"
 import { TRole } from "@/types/role.type"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Button } from "@workspace/ui/components/button"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Label } from "@workspace/ui/components/label"
-import { ScrollArea } from "@workspace/ui/components/scroll-area"
 import {
   Sheet,
   SheetClose,
@@ -35,13 +31,13 @@ export const ManagePermissions = ({ role }: { role: TRole }) => {
     setSelectedPermissions(data.permissions)
   }, [data])
 
-  const togglePermission = (permission: string, checked: boolean) => {
+  const togglePermission = (permissionId: string, checked: boolean) => {
     setSelectedPermissions((prev) => {
       if (checked) {
-        return prev.includes(permission) ? prev : [...prev, permission]
+        return prev.includes(permissionId) ? prev : [...prev, permissionId]
       }
 
-      return prev.filter((item) => item !== permission)
+      return prev.filter((item) => item !== permissionId)
     })
   }
 
@@ -65,17 +61,18 @@ export const ManagePermissions = ({ role }: { role: TRole }) => {
           Phân Quyền
         </button>
       </SheetTrigger>
-      <SheetContent className="flex h-full w-[600px] flex-col px-6 sm:w-[1200px]">
-        <SheetHeader>
-          <SheetTitle>Cấu hình Phân Quyền</SheetTitle>
-          <p className="text-sm text-muted-foreground">
-            Thiết lập quyền hạn cho vai trò{" "}
-            <span className="font-semibold text-foreground">{role.name}</span>.
-          </p>
-        </SheetHeader>
+      <SheetContent className="h-full w-[600px] overflow-y-auto px-6 sm:w-[1200px]">
+        <div className="flex min-h-full flex-col py-6">
+          <SheetHeader>
+            <SheetTitle>Cấu hình Phân Quyền</SheetTitle>
+            <p className="text-sm text-muted-foreground">
+              Thiết lập quyền hạn cho vai trò{" "}
+              <span className="font-semibold text-foreground">{role.name}</span>
+              .
+            </p>
+          </SheetHeader>
 
-        <ScrollArea className="-mx-6 mt-6 flex-1 px-6">
-          <div className="space-y-6 pb-6">
+          <div className="mt-6 flex-1 space-y-6 pb-6">
             {isLoading
               ? Array.from({ length: 4 }).map((_, index) => (
                   <div key={index} className="space-y-3">
@@ -93,29 +90,31 @@ export const ManagePermissions = ({ role }: { role: TRole }) => {
                     </div>
                   </div>
                 ))
-              : PERMISSION_GROUPS.map((group) => (
+              : data?.groups.map((group) => (
                   <div key={group.module} className="space-y-3">
                     <h4 className="border-b pb-2 text-sm font-semibold">
                       {group.module}
                     </h4>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      {group.actions.map((action) => (
+                      {group.permissions.map((permission) => (
                         <div
-                          key={action}
+                          key={permission.id}
                           className="flex items-center space-x-2"
                         >
                           <Checkbox
-                            id={`perm-${action.replace(/\s+/g, "-").toLowerCase()}`}
-                            checked={selectedPermissions.includes(action)}
+                            id={`perm-${permission.id}`}
+                            checked={selectedPermissions.includes(
+                              permission.id
+                            )}
                             onCheckedChange={(checked) =>
-                              togglePermission(action, checked === true)
+                              togglePermission(permission.id, checked === true)
                             }
                           />
                           <Label
-                            htmlFor={`perm-${action.replace(/\s+/g, "-").toLowerCase()}`}
+                            htmlFor={`perm-${permission.id}`}
                             className="text-sm leading-none font-normal peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                           >
-                            {action}
+                            {permission.label}
                           </Label>
                         </div>
                       ))}
@@ -123,16 +122,16 @@ export const ManagePermissions = ({ role }: { role: TRole }) => {
                   </div>
                 ))}
           </div>
-        </ScrollArea>
 
-        <SheetFooter className="mt-auto border-t pt-6">
-          <SheetClose asChild>
-            <Button variant="outline">Hủy</Button>
-          </SheetClose>
-          <Button onClick={handleSave} disabled={isPending}>
-            {isPending ? "Đang lưu..." : "Lưu Phân Quyền"}
-          </Button>
-        </SheetFooter>
+          <SheetFooter className="mt-auto border-t pt-6">
+            <SheetClose asChild>
+              <Button variant="outline">Hủy</Button>
+            </SheetClose>
+            <Button onClick={handleSave} disabled={isPending}>
+              {isPending ? "Đang lưu..." : "Lưu Phân Quyền"}
+            </Button>
+          </SheetFooter>
+        </div>
       </SheetContent>
     </Sheet>
   )

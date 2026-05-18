@@ -1,10 +1,20 @@
 import { z } from "zod"
 
-export const PersonnelSchema = z.object({
-  fullName: z.string().min(1, "Họ và tên là bắt buộc"),
+export const CreatePersonnelSchema = z.object({
   email: z.string().email("Email không hợp lệ"),
-  role: z.string().min(1, "Vui lòng chọn vai trò"),
-  status: z.enum(["active", "inactive", "pending"]),
+  password: z
+    .string()
+    .min(8, "Mật khẩu phải có ít nhất 8 ký tự")
+    .regex(
+      /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{8,}$/,
+      "Mật khẩu phải có chữ hoa, chữ thường, số và ký tự đặc biệt"
+    ),
+  roleId: z.string().min(1, "Vui lòng chọn vai trò"),
 })
 
-export type PersonnelSchemaType = z.infer<typeof PersonnelSchema>
+export const UpdatePersonnelSchema = z.object({
+  roleId: z.string().min(1, "Vui lòng chọn vai trò"),
+})
+
+export type CreatePersonnelSchemaType = z.infer<typeof CreatePersonnelSchema>
+export type UpdatePersonnelSchemaType = z.infer<typeof UpdatePersonnelSchema>

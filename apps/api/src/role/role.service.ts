@@ -13,6 +13,18 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 @Injectable()
 export class RoleService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private ensureRoleIsNotSuperAdminRole(role: {
+    level: number;
+    name?: string | null;
+  }) {
+    if (role.level === 1) {
+      throw new ForbiddenException(
+        'You not have permission to modify this role',
+      );
+    }
+  }
+
   async create(createRoleDto: CreateRoleDto, currentRoleLevel: number | null) {
     if (currentRoleLevel == null) {
       throw new UnauthorizedException(
@@ -49,7 +61,18 @@ export class RoleService {
   }
 
   async findAll() {
-    const role = await this.prisma.role.findMany({});
+    const role = await this.prisma.role.findMany({
+      include: {
+        _count: {
+          select: {
+            users: true,
+          },
+        },
+      },
+      orderBy: {
+        level: 'asc',
+      },
+    });
     return role;
   }
 
@@ -76,7 +99,7 @@ export class RoleService {
       );
     }
     // Nếu có update level thì check nếu level mới >= currentRoleLevel thì không cho update.
-    if (updateRoleDto.level && currentRoleLevel >= updateRoleDto.level) {
+    if (updateRoleDto.level && currentRoleLevel > updateRoleDto.level) {
       throw new ForbiddenException(
         'You can only update a role with level lower than your current role level',
       );
@@ -97,6 +120,7 @@ export class RoleService {
     if (!existingRole) {
       throw new NotFoundException('Role not found');
     }
+
     // Nếu không có gì thay đổi thì throw forbidden.
     const isSame =
       (updateRoleDto.name === undefined ||
@@ -125,6 +149,7 @@ export class RoleService {
         throw new ConflictException('Role name already exists');
       }
     }
+    this.ensureRoleIsNotSuperAdminRole(existingRole);
     //
     const updatedRole = await this.prisma.role.update({
       where: {
@@ -249,6 +274,8 @@ export class RoleService {
     if (!role) {
       throw new NotFoundException('Role not found');
     }
+    this.ensureRoleIsNotSuperAdminRole(role);
+
     if (currentRoleLevel >= role.level) {
       throw new ForbiddenException(
         'You can only update a role with level lower than your current role level',

@@ -1,14 +1,15 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useGetRoles } from "@/hooks/roles/use-roles"
 import { toast } from "@workspace/ui/index"
 import { useForm } from "react-hook-form"
 import { useState } from "react"
 import { Edit2 } from "lucide-react"
 
 import {
-  PersonnelSchema,
-  type PersonnelSchemaType,
+  UpdatePersonnelSchema,
+  type UpdatePersonnelSchemaType,
 } from "@/schema/personnel.schema"
 import { TPersonnel } from "@/types/personnel.type"
 import { useUpdatePersonnel } from "@/hooks/personnel/use-update-personnel"
@@ -41,30 +42,27 @@ export const FormUpdatePersonnel = ({
   personnel: TPersonnel
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const { data: roles = [], isLoading: isRolesLoading } = useGetRoles()
   const { mutate: updatePersonnel, isPending } = useUpdatePersonnel(
     personnel.id
   )
 
   const {
-    register,
     handleSubmit,
     setValue,
     watch,
     formState: { errors },
-  } = useForm<PersonnelSchemaType>({
-    resolver: zodResolver(PersonnelSchema),
+  } = useForm<UpdatePersonnelSchemaType>({
+    resolver: zodResolver(UpdatePersonnelSchema),
     defaultValues: {
-      fullName: personnel.fullName,
-      email: personnel.email,
-      role: personnel.role,
-      status: personnel.status,
+      roleId: personnel.roleId,
     },
   })
 
-  const onSubmit = (data: PersonnelSchemaType) => {
+  const onSubmit = (data: UpdatePersonnelSchemaType) => {
     updatePersonnel(data, {
       onSuccess: () => {
-        toast.success("Cập nhật thông tin thành công!")
+        toast.success("Cập nhật vai trò thành công!")
         setIsDialogOpen(false)
       },
       onError: () => {
@@ -78,69 +76,38 @@ export const FormUpdatePersonnel = ({
       <DialogTrigger asChild>
         <button className="relative flex w-full cursor-default items-center rounded-sm px-2 py-1.5 text-sm transition-colors outline-none select-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
           <Edit2 className="mr-2 h-4 w-4" />
-          Chỉnh sửa Admin
+          Cập nhật vai trò
         </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Cập Nhật Thông Tin Admin</DialogTitle>
+          <DialogTitle>Cập nhật vai trò tài khoản</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup>
             <Field>
-              <FieldLabel>Họ và tên</FieldLabel>
-              <Input {...register("fullName")} placeholder="Nhập họ và tên" />
-              <FieldError errors={[errors.fullName]} />
-            </Field>
-
-            <Field>
-              <FieldLabel>Email</FieldLabel>
-              <Input
-                {...register("email")}
-                type="email"
-                placeholder="admin@example.com"
-                disabled
-              />
-              <FieldError errors={[errors.email]} />
+              <FieldLabel>Tài khoản</FieldLabel>
+              <Input value={personnel.email} disabled />
             </Field>
 
             <Field>
               <FieldLabel>Vai trò</FieldLabel>
               <Select
-                defaultValue={watch("role")}
-                onValueChange={(value) => setValue("role", value)}
+                defaultValue={watch("roleId")}
+                onValueChange={(value) => setValue("roleId", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn vai trò" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Super Admin">Super Admin</SelectItem>
-                  <SelectItem value="Manager">Manager</SelectItem>
-                  <SelectItem value="Support">Support</SelectItem>
-                  <SelectItem value="Compliance">Compliance</SelectItem>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name} - Level {role.level}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              <FieldError errors={[errors.role]} />
-            </Field>
-
-            <Field>
-              <FieldLabel>Trạng thái</FieldLabel>
-              <Select
-                defaultValue={watch("status")}
-                onValueChange={(value: "active" | "inactive" | "pending") =>
-                  setValue("status", value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn trạng thái" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                </SelectContent>
-              </Select>
-              <FieldError errors={[errors.status]} />
+              <FieldError errors={[errors.roleId]} />
             </Field>
           </FieldGroup>
 
@@ -152,7 +119,7 @@ export const FormUpdatePersonnel = ({
             >
               Hủy
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending || isRolesLoading}>
               {isPending ? "Đang lưu..." : "Lưu thay đổi"}
             </Button>
           </div>
