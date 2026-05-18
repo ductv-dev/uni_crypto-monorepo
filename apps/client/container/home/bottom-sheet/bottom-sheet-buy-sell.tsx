@@ -32,7 +32,7 @@ export const BottomSheetBuySell: React.FC<Props> = ({ className, trigger }) => {
             <TriggerButton
               className={cn("w-30", className)}
               icon="bank"
-              title="Mua/Bán"
+              title="Đặt lệnh"
             />
           </button>
         )}
@@ -40,7 +40,7 @@ export const BottomSheetBuySell: React.FC<Props> = ({ className, trigger }) => {
       <DrawerContent className="h-[90%] max-h-[90%]">
         <DrawerHeader>
           <DrawerTitle className="h-0 text-center font-medium opacity-0">
-            Mua / Bán
+            Đặt lệnh
           </DrawerTitle>
         </DrawerHeader>
         <div className="no-scrollbar overflow-y-auto px-4 pb-12">

@@ -340,7 +340,7 @@ model OrderBook {
 }
 
 model Trade {
-  id            String @id @default(uuid())
+  id String @default(uuid())
   market_id     String
   buy_order_id  String
   sell_order_id String
@@ -358,6 +358,7 @@ model Trade {
 
   createdAt DateTime @default(now())
 
+  @@id([id, createdAt])
   @@index([market_id])
   @@index([buy_order_id])
   @@index([sell_order_id])

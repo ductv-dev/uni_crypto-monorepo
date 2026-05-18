@@ -8,7 +8,7 @@
     "start": "nest start",
     "start:prod": "node dist/main",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nest start --watch"
+    "devvv": "nest start --watch"
   },
   "keywords": [],
   "author": "",

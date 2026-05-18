@@ -108,7 +108,8 @@ export const TokenInfor: React.FC<Props> = ({ symbol }) => {
                 {/* Khối Mua */}
                 <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4">
                   <div className="flex items-center justify-between text-xs text-foreground/50">
-                    <span>Bạn mua</span>
+                    <span>Số lượng</span>
+                    <span>{data.name}</span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <label className="text-xl font-bold text-foreground">
@@ -129,7 +130,8 @@ export const TokenInfor: React.FC<Props> = ({ symbol }) => {
                 {/* Khối Trả bằng USDT */}
                 <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4">
                   <div className="flex items-center justify-between text-xs text-foreground/50">
-                    <span>Bạn thanh toán</span>
+                    <span>Ước tính thanh toán</span>
+                    <span>Giá trị lệnh</span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <label className="text-xl font-bold text-foreground">
@@ -147,7 +149,8 @@ export const TokenInfor: React.FC<Props> = ({ symbol }) => {
 
                 <div className="rounded-xl border border-border bg-background/50 px-4 py-3 text-sm text-foreground/50">
                   <p>
-                    1 {data.symbol} ≈ {data.usdt.toFixed(2)} USDT
+                    Giá limit tham chiếu: 1 {data.symbol} ≈{" "}
+                    {data.usdt.toFixed(2)} USDT
                   </p>
                 </div>
 
@@ -157,7 +160,7 @@ export const TokenInfor: React.FC<Props> = ({ symbol }) => {
                   disabled={isLoading}
                   className="mt-2 w-full font-semibold"
                 >
-                  {isLoading ? "Đang xử lý..." : `Mua ${data.symbol}`}
+                  {isLoading ? "Đang xử lý..." : `Đặt lệnh mua ${data.symbol}`}
                 </Button>
               </CardContent>
             </Card>
@@ -171,13 +174,13 @@ export const TokenInfor: React.FC<Props> = ({ symbol }) => {
           <DrawerTrigger asChild>
             <ButtonNav classname="w-full">
               <div className="flex items-center justify-center gap-1 font-bold text-primary">
-                <Landmark /> <p>Mua</p>
+                <Landmark /> <p>Đặt lệnh mua</p>
               </div>
             </ButtonNav>
           </DrawerTrigger>
           <DrawerContent>
             <DrawerHeader>
-              <DrawerTitle>Mua {data.symbol}</DrawerTitle>
+              <DrawerTitle>Đặt lệnh mua {data.symbol}</DrawerTitle>
             </DrawerHeader>
 
             <CardHeader className="pb-3 text-center">
@@ -189,7 +192,8 @@ export const TokenInfor: React.FC<Props> = ({ symbol }) => {
               {/* Khối Mua */}
               <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4">
                 <div className="flex items-center justify-between text-xs text-foreground/50">
-                  <span>Bạn mua</span>
+                  <span>Số lượng</span>
+                  <span>{data.name}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <label className="text-xl font-bold text-foreground">
@@ -208,7 +212,8 @@ export const TokenInfor: React.FC<Props> = ({ symbol }) => {
               {/* Khối Trả bằng USDT */}
               <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4">
                 <div className="flex items-center justify-between text-xs text-foreground/50">
-                  <span>Bạn thanh toán</span>
+                  <span>Ước tính thanh toán</span>
+                  <span>Giá trị lệnh</span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <label className="text-xl font-bold text-foreground">
@@ -226,7 +231,8 @@ export const TokenInfor: React.FC<Props> = ({ symbol }) => {
 
               <div className="rounded-xl border border-border bg-background/50 px-4 py-3 text-sm text-foreground/50">
                 <p>
-                  1 {data.symbol} ≈ {data.usdt.toFixed(2)} USDT
+                  Giá limit tham chiếu: 1 {data.symbol} ≈ {data.usdt.toFixed(2)}{" "}
+                  USDT
                 </p>
               </div>
             </CardContent>
@@ -237,7 +243,7 @@ export const TokenInfor: React.FC<Props> = ({ symbol }) => {
                 disabled={isLoading}
                 className="mt-2 w-full font-semibold"
               >
-                {isLoading ? "Đang xử lý..." : `Mua ${data.symbol}`}
+                {isLoading ? "Đang xử lý..." : `Đặt lệnh mua ${data.symbol}`}
               </Button>
             </CardFooter>
           </DrawerContent>

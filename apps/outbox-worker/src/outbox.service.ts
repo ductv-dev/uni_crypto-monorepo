@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '@workspace/db';
-import amqp, { type Channel, type ChannelModel } from 'amqplib';
+import { Prisma, PrismaService } from '@workspace/db';
+import amqp, { type ChannelModel, type ConfirmChannel } from 'amqplib';
 
 type OrderCreatedEventMessage = {
   eventId: string;
@@ -14,6 +14,26 @@ type OrderCreatedEventMessage = {
 const normalizeMarketSymbol = (market: string) =>
   market.trim().toUpperCase().replace(/[\/_]/g, '-').replace(/\s+/g, '');
 
+const buildMatchingConsumerName = (marketSymbol: string) =>
+  `matching-engine:${normalizeMarketSymbol(marketSymbol)}`;
+
+const buildMatchingQueueName = (marketSymbol: string) =>
+  `matching.${normalizeMarketSymbol(marketSymbol)}`;
+
+type OutboxEventRecord = Prisma.OutboxEventGetPayload<{
+  include: {
+    order: {
+      include: {
+        market: {
+          select: {
+            symbol: true;
+          };
+        };
+      };
+    };
+  };
+}>;
+
 @Injectable()
 export class OutboxProcessorService implements OnModuleDestroy {
   private readonly logger = new Logger(OutboxProcessorService.name);
@@ -22,7 +42,7 @@ export class OutboxProcessorService implements OnModuleDestroy {
   private readonly rabbitmqUrl: string;
   private readonly rabbitmqExchange: string;
   private connection: ChannelModel | null = null;
-  private channel: Channel | null = null;
+  private channel: ConfirmChannel | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -35,6 +55,7 @@ export class OutboxProcessorService implements OnModuleDestroy {
       this.configService.get<string>('RABBITMQ_EXCHANGE') || 'orders.exchange';
   }
 
+  // Polling loop đơn giản: lấy batch, publish, rồi ngủ một khoảng ngắn trước vòng tiếp theo.
   async processOutboxEvents() {
     this.logger.log('Started Outbox Processor...');
 
@@ -58,11 +79,12 @@ export class OutboxProcessorService implements OnModuleDestroy {
     }
   }
 
+  // Confirm channel giúp chỉ đánh dấu sent sau khi broker xác nhận đã nhận message.
   private async connectRabbitmq() {
     try {
       const connection = await amqp.connect(this.rabbitmqUrl);
       this.connection = connection;
-      const channel = await connection.createChannel();
+      const channel = await connection.createConfirmChannel();
       this.channel = channel;
       await channel.assertExchange(this.rabbitmqExchange, 'topic', {
         durable: true,
@@ -76,6 +98,50 @@ export class OutboxProcessorService implements OnModuleDestroy {
     }
   }
 
+  // Chủ động đảm bảo queue/binding tồn tại để event không bị rơi khi engine của market chưa kịp lên.
+  private async ensureMarketQueueBinding(
+    marketSymbol: string,
+    routingKey: string,
+  ) {
+    if (!this.channel) {
+      throw new Error('RabbitMQ channel not initialized');
+    }
+
+    const queueName = buildMatchingQueueName(marketSymbol);
+
+    await this.channel.assertQueue(queueName, { durable: true });
+    await this.channel.bindQueue(queueName, this.rabbitmqExchange, routingKey);
+  }
+
+  // Bọc publish callback-style của amqplib thành Promise để await được broker confirm.
+  private async publishWithConfirm(
+    exchange: string,
+    routingKey: string,
+    payload: Buffer,
+  ) {
+    if (!this.channel) {
+      throw new Error('RabbitMQ channel not initialized');
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      this.channel?.publish(
+        exchange,
+        routingKey,
+        payload,
+        { persistent: true },
+        (error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve();
+        },
+      );
+    });
+  }
+
+  // Chỉ lấy các event còn cần xử lý và publish theo thứ tự createdAt để giảm đảo thứ tự.
   private async processBatch() {
     const events = await this.prisma.outboxEvent.findMany({
       where: {
@@ -85,19 +151,37 @@ export class OutboxProcessorService implements OnModuleDestroy {
             status: 'failed',
             retry_count: { lt: this.maxRetries },
           },
+          {
+            status: 'sent',
+          },
         ],
+      },
+      include: {
+        order: {
+          include: {
+            market: {
+              select: {
+                symbol: true,
+              },
+            },
+          },
+        },
       },
       take: 50,
       orderBy: { createdAt: 'asc' },
     });
 
-    if (events.length === 0) {
+    const retryableEvents = await this.filterRetryableEvents(events);
+
+    if (retryableEvents.length === 0) {
       return;
     }
 
-    this.logger.log(`Found ${events.length} outbox events to process.`);
+    this.logger.log(
+      `Found ${retryableEvents.length} outbox events to process.`,
+    );
 
-    for (const event of events) {
+    for (const event of retryableEvents) {
       try {
         await this.prisma.outboxEvent.update({
           where: { id: event.id },
@@ -153,11 +237,11 @@ export class OutboxProcessorService implements OnModuleDestroy {
           throw new Error('RabbitMQ channel not initialized');
         }
 
-        this.channel.publish(
+        await this.ensureMarketQueueBinding(market, routingKey);
+        await this.publishWithConfirm(
           this.rabbitmqExchange,
           routingKey,
           Buffer.from(JSON.stringify(message)),
-          { persistent: true },
         );
 
         await this.prisma.outboxEvent.update({
@@ -188,6 +272,76 @@ export class OutboxProcessorService implements OnModuleDestroy {
         });
       }
     }
+  }
+
+  // Event sent chỉ được republish khi consumer tương ứng chưa ghi success.
+  private async filterRetryableEvents(
+    events: OutboxEventRecord[],
+  ): Promise<OutboxEventRecord[]> {
+    const sentEventsNeedingConsumerCheck = events.filter(
+      (event) => event.status === 'sent',
+    );
+
+    if (sentEventsNeedingConsumerCheck.length === 0) {
+      return events;
+    }
+
+    const consumerPairs = sentEventsNeedingConsumerCheck.flatMap((event) => {
+      const marketSymbol = event.order?.market?.symbol;
+      if (!marketSymbol) {
+        this.logger.warn(
+          `Skip sent event ${event.id}: market symbol is missing, cannot verify consumed status.`,
+        );
+        return [];
+      }
+
+      return [
+        {
+          message_id: event.id,
+          consumer_name: buildMatchingConsumerName(marketSymbol),
+        },
+      ];
+    });
+
+    if (consumerPairs.length === 0) {
+      return events.filter((event) => event.status !== 'sent');
+    }
+
+    const consumedMessages = await this.prisma.consumedMessage.findMany({
+      where: {
+        OR: consumerPairs,
+      },
+      select: {
+        message_id: true,
+        consumer_name: true,
+        status: true,
+      },
+    });
+
+    const consumedStatusMap = new Map(
+      consumedMessages.map((message) => [
+        `${message.message_id}:${message.consumer_name}`,
+        message.status,
+      ]),
+    );
+
+    return events.filter((event) => {
+      if (event.status !== 'sent') {
+        return true;
+      }
+
+      const marketSymbol = event.order?.market?.symbol;
+      if (!marketSymbol) {
+        return false;
+      }
+
+      const consumerName = buildMatchingConsumerName(marketSymbol);
+      const consumedStatus = consumedStatusMap.get(
+        `${event.id}:${consumerName}`,
+      );
+
+      return consumedStatus !== undefined && consumedStatus !== 'success';
+    });
   }
 
   async onModuleDestroy() {

@@ -22,11 +22,11 @@ type Props = {
 }
 
 export const FormBuySell: React.FC<Props> = ({ onSuccess }) => {
-  const inputId = useId()
+  const quantityInputId = useId()
   const priceInputId = useId()
   const [isBuy, setIsBuy] = useState(true)
   const [selectedMarketId, setSelectedMarketId] = useState<string>("")
-  const [amount, setAmount] = useState("")
+  const [quantityInput, setQuantityInput] = useState("")
   const [priceInput, setPriceInput] = useState("")
   const [isTokenPickerOpen, setIsTokenPickerOpen] = useState(false)
   const { data: markets, isLoading: isMarketsLoading } = useTradeMarkets()
@@ -46,7 +46,10 @@ export const FormBuySell: React.FC<Props> = ({ onSuccess }) => {
     [markets, selectedMarketId]
   )
 
-  const amountNumber = useMemo(() => Number(amount) || 0, [amount])
+  const quantityNumber = useMemo(
+    () => Number(quantityInput) || 0,
+    [quantityInput]
+  )
   const priceNumber = useMemo(() => Number(priceInput) || 0, [priceInput])
 
   useEffect(() => {
@@ -59,21 +62,21 @@ export const FormBuySell: React.FC<Props> = ({ onSuccess }) => {
     }
   }, [selectedMarket, priceInput])
 
-  const quantity = useMemo(() => {
-    if (amountNumber <= 0 || priceNumber <= 0) {
+  const orderValue = useMemo(() => {
+    if (quantityNumber <= 0 || priceNumber <= 0) {
       return 0
     }
 
-    return isBuy ? amountNumber / priceNumber : amountNumber
-  }, [amountNumber, isBuy, priceNumber])
+    return quantityNumber * priceNumber
+  }, [priceNumber, quantityNumber])
 
-  const result = useMemo(() => {
-    if (amountNumber <= 0 || priceNumber <= 0) {
+  const estimatedReceive = useMemo(() => {
+    if (quantityNumber <= 0 || priceNumber <= 0) {
       return 0
     }
 
-    return isBuy ? quantity : amountNumber * priceNumber
-  }, [amountNumber, isBuy, priceNumber, quantity])
+    return isBuy ? quantityNumber : orderValue
+  }, [isBuy, orderValue, priceNumber, quantityNumber])
 
   const handleConfirm = async () => {
     try {
@@ -82,9 +85,9 @@ export const FormBuySell: React.FC<Props> = ({ onSuccess }) => {
         return
       }
 
-      if (!amountNumber || amountNumber <= 0 || amountNumber > 9999999) {
+      if (!quantityNumber || quantityNumber <= 0 || quantityNumber > 9999999) {
         const inputElement = document.getElementById(
-          inputId
+          quantityInputId
         ) as HTMLInputElement | null
         inputElement?.focus()
         toast.error("Vui lòng nhập số lượng hợp lệ")
@@ -100,7 +103,7 @@ export const FormBuySell: React.FC<Props> = ({ onSuccess }) => {
         return
       }
 
-      if (!quantity || quantity <= 0) {
+      if (orderValue <= 0) {
         toast.error("Số lượng lệnh không hợp lệ")
         return
       }
@@ -110,20 +113,20 @@ export const FormBuySell: React.FC<Props> = ({ onSuccess }) => {
         type: "limit",
         side: isBuy ? "buy" : "sell",
         price: priceNumber,
-        quantity,
+        quantity: quantityNumber,
       })
 
       if (isBuy) {
         toast.success(
-          `Đã đặt lệnh mua ${quantity.toFixed(6)} ${selectedMarket.baseAsset.symbol}`
+          `Đã đặt lệnh mua ${quantityNumber.toFixed(6)} ${selectedMarket.baseAsset.symbol}`
         )
       } else {
         toast.success(
-          `Đã đặt lệnh bán ${quantity.toFixed(6)} ${selectedMarket.baseAsset.symbol}`
+          `Đã đặt lệnh bán ${quantityNumber.toFixed(6)} ${selectedMarket.baseAsset.symbol}`
         )
       }
 
-      setAmount("")
+      setQuantityInput("")
       if (onSuccess) onSuccess()
     } catch (error) {
       toast.error(
@@ -165,24 +168,18 @@ export const FormBuySell: React.FC<Props> = ({ onSuccess }) => {
 
       <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4">
         <div className="flex items-center justify-between text-xs text-foreground/50">
-          <span>{isBuy ? "Thanh toán" : "Số lượng bán"}</span>
-          <span>
-            {isBuy
-              ? `Bằng ${selectedMarket?.quoteAsset.symbol ?? "QUOTE"}`
-              : `Token ${selectedMarket?.baseAsset.symbol ?? ""}`}
-          </span>
+          <span>Số lượng</span>
+          <span>{selectedMarket?.baseAsset.name ?? "Tài sản cơ sở"}</span>
         </div>
         <div className="flex items-center justify-between gap-2">
           <label className="text-2xl font-bold text-foreground/60">
-            {isBuy
-              ? selectedMarket?.quoteAsset.symbol || "QUOTE"
-              : selectedMarket?.baseAsset.symbol}
+            {selectedMarket?.baseAsset.symbol || "BASE"}
           </label>
           <input
-            id={inputId}
+            id={quantityInputId}
             type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            value={quantityInput}
+            onChange={(e) => setQuantityInput(e.target.value)}
             placeholder="0"
             className="w-full bg-transparent text-end text-xl font-bold [-moz-appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
@@ -213,20 +210,14 @@ export const FormBuySell: React.FC<Props> = ({ onSuccess }) => {
       </div>
 
       <div className="py-2 text-center text-sm text-foreground/60">
-        {isBuy ? "Bạn nhận được" : "Bạn nhận về"}:
+        {isBuy ? "Ước tính thanh toán" : "Ước tính nhận về"}:
         <div className="mt-2 flex items-center justify-center gap-2">
           <span className="text-lg font-semibold text-foreground">
-            {result.toFixed(isBuy ? 6 : 2)}
+            {isBuy ? orderValue.toFixed(2) : estimatedReceive.toFixed(2)}
           </span>
-          {isBuy ? (
-            <span className="font-semibold text-foreground">
-              {selectedMarket?.baseAsset.symbol ?? "BASE"}
-            </span>
-          ) : (
-            <span className="font-semibold text-foreground">
-              {selectedMarket?.quoteAsset.symbol ?? "QUOTE"}
-            </span>
-          )}
+          <span className="font-semibold text-foreground">
+            {selectedMarket?.quoteAsset.symbol ?? "QUOTE"}
+          </span>
           <Drawer open={isTokenPickerOpen} onOpenChange={setIsTokenPickerOpen}>
             <DrawerTrigger asChild>
               <button type="button">
@@ -268,17 +259,15 @@ export const FormBuySell: React.FC<Props> = ({ onSuccess }) => {
       <div className="min-h-[44px]">
         {selectedMarket && (
           <div className="rounded-xl border border-border bg-background/50 px-4 py-3 text-sm text-foreground/50">
-            {isBuy ? (
-              <p>
-                1 {selectedMarket.baseAsset.symbol} = {priceNumber.toFixed(2)}{" "}
-                {selectedMarket.quoteAsset.symbol}
-              </p>
-            ) : (
-              <p>
-                1 {selectedMarket.baseAsset.symbol} bán được{" "}
-                {priceNumber.toFixed(2)} {selectedMarket.quoteAsset.symbol}
-              </p>
-            )}
+            <p>
+              Giá limit: 1 {selectedMarket.baseAsset.symbol} ={" "}
+              {priceNumber.toFixed(2)} {selectedMarket.quoteAsset.symbol}
+            </p>
+            <p className="mt-1">
+              Giá trị lệnh: {quantityNumber.toFixed(6)}{" "}
+              {selectedMarket.baseAsset.symbol} x {priceNumber.toFixed(2)}{" "}
+              {selectedMarket.quoteAsset.symbol}
+            </p>
           </div>
         )}
       </div>
@@ -296,8 +285,8 @@ export const FormBuySell: React.FC<Props> = ({ onSuccess }) => {
           : isMarketsLoading
             ? "Đang tải market..."
             : isBuy
-              ? `Mua ${selectedMarket?.baseAsset.symbol ?? "token"}`
-              : `Bán ${selectedMarket?.baseAsset.symbol ?? "token"}`}
+              ? `Đặt lệnh mua ${selectedMarket?.baseAsset.symbol ?? "token"}`
+              : `Đặt lệnh bán ${selectedMarket?.baseAsset.symbol ?? "token"}`}
       </Button>
     </div>
   )

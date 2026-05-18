@@ -33,6 +33,39 @@ export class OrderBook {
     return trades
   }
 
+  // Rebuild book từ DB mà không chạy matching side effects như tạo trade hay cập nhật ví.
+  restoreOrder(order: BookOrder) {
+    if (order.marketId !== this.marketId) {
+      throw new Error(`Order market mismatch: ${order.marketId}`)
+    }
+
+    if (order.quantity <= order.filledQty) {
+      return
+    }
+
+    if (this.hasOrder(order.id)) {
+      return
+    }
+
+    if (order.side === "buy") {
+      this.bids.push(order)
+      this.sortBids()
+      return
+    }
+
+    this.asks.push(order)
+    this.sortAsks()
+  }
+
+  // Kiểm tra duplicate theo order id giữa 2 phía bid/ask.
+  hasOrder(orderId: string) {
+    return (
+      this.bids.some((order) => order.id === orderId) ||
+      this.asks.some((order) => order.id === orderId)
+    )
+  }
+
+  // Khớp lệnh theo nguyên tắc maker đang đứng đầu book sau khi đã sort price-time.
   private matchOrder(
     takerOrder: BookOrder,
     counterBook: BookOrder[],
@@ -93,6 +126,7 @@ export class OrderBook {
     })
   }
 
+  // Gộp khối lượng theo từng mức giá để trả về market depth.
   getDepth(limit: number = 20) {
     const aggregate = (orders: BookOrder[]) => {
       const map = new Map<number, number>()

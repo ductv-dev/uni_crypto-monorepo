@@ -11,6 +11,7 @@ import { BuySellModule } from './buy-sell/buy-sell.module';
 import { DepositWithdrawalModule } from './deposit-withdrawal/deposit-withdrawal.module';
 import { MailModule } from './mail/mail.module';
 import { MarketModule } from './market/market.module';
+import { CandlesModule } from './modules/candles/candles.module';
 import { MyWalletModule } from './my-wallet/my-wallet.module';
 import { NotificationModule } from './notification/notification.module';
 import { PermissionModule } from './permission/permission.module';
@@ -43,6 +44,7 @@ import { WalletModule } from './wallet/wallet.module';
     MyWalletModule,
     DepositWithdrawalModule,
     MarketModule,
+    CandlesModule,
     BuySellModule,
     OrderBookModule,
   ],

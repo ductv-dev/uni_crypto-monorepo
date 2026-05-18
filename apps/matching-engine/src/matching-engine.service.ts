@@ -252,15 +252,98 @@ export class MatchingEngineService implements OnModuleDestroy {
     })
   }
 
+  // Chuẩn hóa thao tác đánh dấu idempotency để recovery và consume realtime dùng chung một đường.
+  private async markConsumedMessageSuccess(
+    tx: Prisma.TransactionClient | PrismaService,
+    eventId: string,
+    consumerName: string
+  ) {
+    await tx.consumedMessage.upsert({
+      where: {
+        message_id_consumer_name: {
+          message_id: eventId,
+          consumer_name: consumerName,
+        },
+      },
+      update: { status: "success", processed_at: new Date() },
+      create: {
+        message_id: eventId,
+        consumer_name: consumerName,
+        status: "success",
+        processed_at: new Date(),
+      },
+    })
+  }
+
+  // Khi engine khởi động lại, quét các lệnh còn active theo createdAt để khôi phục đúng price-time priority.
+  private async recoverMarketState() {
+    this.orderBookManager.reset()
+
+    const market = await this.prisma.market.findFirst({
+      where: {
+        OR: [
+          {
+            symbol: {
+              equals: this.config.matchingMarket,
+              mode: "insensitive",
+            },
+          },
+          {
+            symbol: {
+              equals: this.config.matchingMarket.replace(/-/g, "/"),
+              mode: "insensitive",
+            },
+          },
+        ],
+      },
+      select: { id: true },
+    })
+
+    if (!market) {
+      this.logger.warn(
+        `[MatchingEngine] Market ${this.config.matchingMarket} not found in DB. Starting with empty order book.`
+      )
+      this.orderBookManager.markReady()
+      return
+    }
+
+    const activeOrders = await this.prisma.orderBook.findMany({
+      where: {
+        market_id: market.id,
+        status: {
+          in: ["open", "partial_filled"],
+        },
+      },
+      select: {
+        id: true,
+      },
+      orderBy: { createdAt: "asc" },
+    })
+
+    for (const order of activeOrders) {
+      await this.processOrder({
+        orderId: order.id,
+        market: this.config.matchingMarket,
+      })
+    }
+
+    this.orderBookManager.markReady()
+    this.logger.log(
+      `[MatchingEngine] Recovered ${activeOrders.length} active orders for ${this.config.matchingMarket}`
+    )
+  }
+
+  // Recovery state trước, rồi mới bật consumer để tránh queue mới chen vào giữa lúc rebuild book.
   async start() {
     this.logger.log(
       `[MatchingEngine] market=${this.config.matchingMarket} queue=${this.config.matchingQueue} exchange=${this.config.rabbitmqExchange}`
     )
 
-    await this.orderBookManager.initializeForMarket(this.config.matchingMarket)
+    await this.recoverMarketState()
     await this.setupConsumer()
   }
 
+  // Tạo consumer riêng cho đúng market queue và xử lý tuần tự từng message bằng prefetch(1).
   private async setupConsumer() {
     const connection = await amqp.connect(this.config.rabbitmqUrl)
     this.connection = connection
@@ -291,6 +374,7 @@ export class MatchingEngineService implements OnModuleDestroy {
     )
   }
 
+  // Parse/validate payload trước khi đưa vào flow matching có transaction.
   private async handleMessage(message: ConsumeMessage | null) {
     if (!message || !this.channel) {
       return
@@ -359,13 +443,32 @@ export class MatchingEngineService implements OnModuleDestroy {
       },
     })
 
-    if (consumedMessage) {
-      this.logger.log(`Message ${event.eventId} already processed. Skipping.`)
+    if (consumedMessage?.status === "success") {
+      this.logger.log(
+        `Message ${event.eventId} already processed successfully. Skipping.`
+      )
       return
     }
 
+    await this.processOrder({
+      orderId: event.orderId,
+      market: event.market,
+      eventId: event.eventId,
+      consumerName,
+    })
+  }
+
+  // Đây là lõi xử lý chung cho cả replay từ queue và recovery từ DB.
+  private async processOrder(params: {
+    orderId: string
+    market: string
+    eventId?: string
+    consumerName?: string
+  }) {
+    const { orderId, market, eventId, consumerName } = params
+
     const orderDB = await this.prisma.orderBook.findUnique({
-      where: { id: event.orderId },
+      where: { id: orderId },
       include: {
         market: {
           select: {
@@ -378,28 +481,40 @@ export class MatchingEngineService implements OnModuleDestroy {
     })
 
     if (!orderDB) {
-      this.logger.warn(`Order ${event.orderId} not found. Skipping.`)
+      this.logger.warn(`Order ${orderId} not found. Skipping.`)
       return
     }
 
-    if (
-      normalizeMarketSymbol(orderDB.market.symbol) !==
-      this.config.matchingMarket
-    ) {
+    if (normalizeMarketSymbol(orderDB.market.symbol) !== market) {
       this.logger.error(
-        `[MatchingEngine] Market mismatch. expected=${this.config.matchingMarket} actual=${orderDB.market.symbol}`
+        `[MatchingEngine] Market mismatch. expected=${market} actual=${orderDB.market.symbol}`
       )
       return
     }
 
     if (orderDB.status === "filled" || orderDB.status === "cancelled") {
-      this.logger.warn(`Order ${event.orderId} already processed. Skipping.`)
+      this.logger.warn(`Order ${orderId} already processed. Skipping.`)
       return
     }
 
     if (orderDB.status !== "open" && orderDB.status !== "partial_filled") {
       this.logger.warn(
-        `Order ${event.orderId} has invalid status: ${orderDB.status}. Skipping.`
+        `Order ${orderId} has invalid status: ${orderDB.status}. Skipping.`
+      )
+      return
+    }
+
+    if (this.orderBookManager.hasOrder(orderDB.market_id, orderDB.id)) {
+      if (eventId && consumerName) {
+        await this.markConsumedMessageSuccess(
+          this.prisma,
+          eventId,
+          consumerName
+        )
+      }
+
+      this.logger.warn(
+        `Order ${orderId} is already present in memory book. Skipping duplicate replay.`
       )
       return
     }
@@ -407,21 +522,9 @@ export class MatchingEngineService implements OnModuleDestroy {
     let marketTradeEvent: MarketTradeCreatedPayload | undefined
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.consumedMessage.upsert({
-        where: {
-          message_id_consumer_name: {
-            message_id: event.eventId,
-            consumer_name: consumerName,
-          },
-        },
-        update: { status: "success", processed_at: new Date() },
-        create: {
-          message_id: event.eventId,
-          consumer_name: consumerName,
-          status: "success",
-          processed_at: new Date(),
-        },
-      })
+      if (eventId && consumerName) {
+        await this.markConsumedMessageSuccess(tx, eventId, consumerName)
+      }
 
       const book = this.orderBookManager.getOrCreateBook(orderDB.market_id)
       const bookOrder: BookOrder = {

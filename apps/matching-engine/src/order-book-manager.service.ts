@@ -11,10 +11,23 @@ export class OrderBookManager {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  // Dùng cho health/readiness check trước khi engine bắt đầu consume queue.
   isEngineReady() {
     return this.isReady
   }
 
+  // Xóa toàn bộ state in-memory để chuẩn bị rebuild lại từ DB.
+  reset() {
+    this.isReady = false
+    this.books.clear()
+  }
+
+  // Đánh dấu engine đã rebuild xong order book và sẵn sàng nhận event mới.
+  markReady() {
+    this.isReady = true
+  }
+
+  // Mỗi market có đúng 1 book in-memory; tạo lười khi cần dùng.
   getOrCreateBook(marketId: string): OrderBook {
     let book = this.books.get(marketId)
     if (!book) {
@@ -28,8 +41,7 @@ export class OrderBookManager {
    * Load dữ liệu từ DB vào bộ nhớ khi app khởi động
    */
   async initializeForMarket(marketSymbol: string) {
-    this.isReady = false
-    this.books.clear()
+    this.reset()
 
     const market = await this.prisma.market.findFirst({
       where: {
@@ -86,7 +98,7 @@ export class OrderBookManager {
       }
 
       const book = this.getOrCreateBook(order.market_id)
-      book.addOrder(bookOrder)
+      book.restoreOrder(bookOrder)
     }
 
     this.isReady = true
@@ -95,6 +107,17 @@ export class OrderBookManager {
     )
   }
 
+  // Tránh replay cùng một order nhiều lần vào book trong các luồng recovery/retry.
+  hasOrder(marketId: string, orderId: string) {
+    const book = this.books.get(marketId)
+    if (!book) {
+      return false
+    }
+
+    return book.hasOrder(orderId)
+  }
+
+  // Trả snapshot độ sâu hiện tại cho API hoặc monitoring.
   getBookDepth(marketId: string, limit?: number) {
     const book = this.books.get(marketId)
     if (!book) return { bids: [], asks: [] }
