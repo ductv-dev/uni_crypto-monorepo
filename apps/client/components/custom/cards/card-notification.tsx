@@ -33,16 +33,16 @@ export const CardNotification: React.FC<TCardNoti> = ({
           </div>
           <div>
             {isRequired ? (
+              <span className="rounded-full bg-red-400 px-2 py-1 text-xs text-background">
+                Bắt buộc
+              </span>
+            ) : (
               <Button
                 onClick={() => setNotification?.(true)}
                 className="flex items-center gap-1 rounded-full bg-primary p-2 text-sm text-background"
               >
                 <X size={12} strokeWidth={2} />
               </Button>
-            ) : (
-              <span className="rounded-full bg-red-400 px-2 py-1 text-xs text-background">
-                Bắt buộc
-              </span>
             )}
           </div>
         </div>

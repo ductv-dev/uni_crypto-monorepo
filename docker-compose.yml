@@ -31,6 +31,18 @@ services:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
 
+  ws-gateway:
+    build:
+      context: .
+      dockerfile: apps/ws-gateway/Dockerfile
+    container_name: ws-gateway
+    depends_on:
+      - redis
+    environment:
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3002:3002"
+
   # IMPORTANT:
   # Không scale replicas cho cùng một market nếu chưa có distributed lock.
   # Mỗi market chỉ nên có đúng 1 matching engine active tại một thời điểm.

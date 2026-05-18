@@ -5,6 +5,7 @@ Monorepo gồm:
 - `apps/api`: NestJS backend
 - `apps/outbox-worker`: worker publish outbox event lên RabbitMQ
 - `apps/matching-engine`: matching engine theo từng market
+- `apps/ws-gateway`: Socket.IO gateway subscribe Redis để push realtime cho client
 - `apps/admin`: Next.js admin app
 - `apps/client`: Next.js client app
 - `packages/database`: Prisma schema + Prisma service dùng chung
@@ -32,18 +33,19 @@ pnpm install
   - `matching-btc-usdt`
   - `matching-eth-usdt`
   - `matching-bnb-usdt`
+- `ws-gateway` (Socket.IO server)
 
 Chạy:
 
 ```bash
-docker compose up -d --build postgres redis rabbitmq matching-btc-usdt matching-eth-usdt matching-bnb-usdt
+docker compose up -d --build postgres redis rabbitmq ws-gateway matching-btc-usdt matching-eth-usdt matching-bnb-usdt
 ```
 
 Kiểm tra:
 
 ```bash
 docker compose ps
-docker compose logs -f matching-btc-usdt matching-eth-usdt matching-bnb-usdt
+docker compose logs -f ws-gateway matching-btc-usdt matching-eth-usdt matching-bnb-usdt
 ```
 
 RabbitMQ management UI:
@@ -90,6 +92,7 @@ URL:
 
 - `API_URL` (optional khi dev)
 - mặc định fallback `http://localhost:8080`
+- `NEXT_PUBLIC_WS_URL` (optional, default `http://localhost:3002`)
 
 ### API
 
@@ -110,7 +113,11 @@ URL:
 - `MATCHING_MARKET`
 - `MATCHING_QUEUE`
 
-## 6) Flow đặt lệnh / khớp lệnh
+### WS Gateway (đã set trong docker-compose)
+
+- `REDIS_URL`
+
+## 6) Flow đặt lệnh / khớp lệnh / thông báo realtime
 
 1. Client/Admin gọi API tạo order (`order_book`).
 2. API tạo `outbox_event` (`order_created`).
@@ -120,8 +127,12 @@ URL:
 5. Nếu khớp:
    - tạo `trade`
    - update `order_book` (`partial_filled`/`filled`)
+   - update ví + wallet transaction cho maker/taker
+   - publish `market.trade.created` lên Redis
 6. Nếu chưa khớp:
    - order vẫn `open` trong DB (message vẫn được ack, không giữ lại queue).
+7. API publish `user.notification` lên Redis khi đặt lệnh / nạp / rút thành công hoặc thất bại.
+8. `ws-gateway` subscribe Redis và emit Socket.IO event `user.notification` tới room `user:{userId}`.
 
 ## 7) Troubleshooting nhanh
 

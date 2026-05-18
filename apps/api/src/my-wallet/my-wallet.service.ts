@@ -6,6 +6,10 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@workspace/db';
 import { ClientOnly } from 'src/auth/decorators';
+import {
+  getErrorMessage,
+  NotificationPublisherService,
+} from 'src/notification/notification.publisher.service';
 import { CreateMyWalletDto } from './dto/create-my-wallet.dto';
 import { FilterWalletHistoryDto } from './dto/filter-wallet-history.dto';
 import { RequestDepositDto } from './dto/request-deposit.dto';
@@ -14,7 +18,10 @@ import { RequestWithdrawalDto } from './dto/request-withdrawal.dto';
 @Injectable()
 @ClientOnly()
 export class MyWalletService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly notificationPublisher: NotificationPublisherService,
+  ) {}
 
   async create(userId: string, createMyWalletDto: CreateMyWalletDto) {
     const { asset_id } = createMyWalletDto;
@@ -159,35 +166,8 @@ export class MyWalletService {
     walletId: string,
     dto: RequestDepositDto,
   ) {
-    const wallet = await this.prisma.wallet.findUnique({
-      where: { id: walletId },
-    });
-
-    if (!wallet || wallet.user_id !== userId) {
-      throw new NotFoundException('Wallet not found');
-    }
-
-    return this.prisma.depositWithdrawal.create({
-      data: {
-        user_id: userId,
-        asset_id: wallet.asset_id,
-        type: 'deposit',
-        amount: dto.amount,
-        network: dto.network,
-        tx_hash: dto.tx_hash,
-        from_address: dto.from_address,
-        status: 'pending',
-      },
-    });
-  }
-
-  async requestWithdrawal(
-    userId: string,
-    walletId: string,
-    dto: RequestWithdrawalDto,
-  ) {
-    return this.prisma.$transaction(async (tx) => {
-      const wallet = await tx.wallet.findUnique({
+    try {
+      const wallet = await this.prisma.wallet.findUnique({
         where: { id: walletId },
       });
 
@@ -195,48 +175,141 @@ export class MyWalletService {
         throw new NotFoundException('Wallet not found');
       }
 
-      if (wallet.available_balance.toNumber() < dto.amount) {
-        throw new BadRequestException('Insufficient available balance');
-      }
-
-      const withdrawRecord = await tx.depositWithdrawal.create({
+      const depositRequest = await this.prisma.depositWithdrawal.create({
         data: {
           user_id: userId,
           asset_id: wallet.asset_id,
-          type: 'withdraw',
+          type: 'deposit',
           amount: dto.amount,
           network: dto.network,
-          to_address: dto.to_address,
+          tx_hash: dto.tx_hash,
+          from_address: dto.from_address,
           status: 'pending',
         },
       });
 
-      const newAvailable = wallet.available_balance.toNumber() - dto.amount;
-      const newBlocked = wallet.blocked_balance.toNumber() + dto.amount;
-
-      await tx.wallet.update({
-        where: { id: walletId },
-        data: {
-          available_balance: newAvailable,
-          blocked_balance: newBlocked,
-        },
-      });
-
-      await tx.walletTransaction.create({
-        data: {
-          wallet_id: walletId,
-          type: 'withdraw',
-          direction: 'debit',
+      await this.notificationPublisher.publishUserNotification({
+        userId,
+        event: 'deposit.request',
+        status: 'success',
+        title: 'Tạo yêu cầu nạp thành công',
+        message: 'Yêu cầu nạp tiền đã được gửi và đang chờ xử lý',
+        metadata: {
+          requestId: depositRequest.id,
+          walletId,
           amount: dto.amount,
-          balance_before: wallet.available_balance,
-          balance_after: newAvailable,
-          reference_type: 'withdrawal_request',
-          reference_id: withdrawRecord.id,
-          status: 'pending',
+          network: dto.network,
+          txHash: dto.tx_hash,
+        },
+      });
+
+      return depositRequest;
+    } catch (error) {
+      await this.notificationPublisher.publishUserNotification({
+        userId,
+        event: 'deposit.request',
+        status: 'failed',
+        title: 'Tạo yêu cầu nạp thất bại',
+        message: getErrorMessage(error, 'Không thể tạo yêu cầu nạp'),
+        metadata: {
+          walletId,
+          amount: dto.amount,
+          network: dto.network,
+        },
+      });
+      throw error;
+    }
+  }
+
+  async requestWithdrawal(
+    userId: string,
+    walletId: string,
+    dto: RequestWithdrawalDto,
+  ) {
+    try {
+      const withdrawRecord = await this.prisma.$transaction(async (tx) => {
+        const wallet = await tx.wallet.findUnique({
+          where: { id: walletId },
+        });
+
+        if (!wallet || wallet.user_id !== userId) {
+          throw new NotFoundException('Wallet not found');
+        }
+
+        if (wallet.available_balance.toNumber() < dto.amount) {
+          throw new BadRequestException('Insufficient available balance');
+        }
+
+        const withdrawRecord = await tx.depositWithdrawal.create({
+          data: {
+            user_id: userId,
+            asset_id: wallet.asset_id,
+            type: 'withdraw',
+            amount: dto.amount,
+            network: dto.network,
+            to_address: dto.to_address,
+            status: 'pending',
+          },
+        });
+
+        const newAvailable = wallet.available_balance.toNumber() - dto.amount;
+        const newBlocked = wallet.blocked_balance.toNumber() + dto.amount;
+
+        await tx.wallet.update({
+          where: { id: walletId },
+          data: {
+            available_balance: newAvailable,
+            blocked_balance: newBlocked,
+          },
+        });
+
+        await tx.walletTransaction.create({
+          data: {
+            wallet_id: walletId,
+            type: 'withdraw',
+            direction: 'debit',
+            amount: dto.amount,
+            balance_before: wallet.available_balance,
+            balance_after: newAvailable,
+            reference_type: 'withdrawal_request',
+            reference_id: withdrawRecord.id,
+            status: 'pending',
+          },
+        });
+
+        return withdrawRecord;
+      });
+
+      await this.notificationPublisher.publishUserNotification({
+        userId,
+        event: 'withdraw.request',
+        status: 'success',
+        title: 'Tạo yêu cầu rút thành công',
+        message: 'Yêu cầu rút tiền đã được gửi và đang chờ duyệt',
+        metadata: {
+          requestId: withdrawRecord.id,
+          walletId,
+          amount: dto.amount,
+          network: dto.network,
+          toAddress: dto.to_address,
         },
       });
 
       return withdrawRecord;
-    });
+    } catch (error) {
+      await this.notificationPublisher.publishUserNotification({
+        userId,
+        event: 'withdraw.request',
+        status: 'failed',
+        title: 'Tạo yêu cầu rút thất bại',
+        message: getErrorMessage(error, 'Không thể tạo yêu cầu rút'),
+        metadata: {
+          walletId,
+          amount: dto.amount,
+          network: dto.network,
+        },
+      });
+      throw error;
+    }
   }
 }

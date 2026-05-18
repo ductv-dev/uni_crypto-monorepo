@@ -11,6 +11,7 @@ import { WsGateway } from './ws-gateway';
 
 const KLINE_UPDATED_CHANNEL = 'kline.updated';
 const MARKET_TRADE_CREATED_CHANNEL = 'market.trade.created';
+const USER_NOTIFICATION_CHANNEL = 'user.notification';
 
 const createRedisClient = () => {
   if (process.env.REDIS_URL) {
@@ -38,6 +39,7 @@ export class RedisSubscriberService implements OnModuleInit, OnModuleDestroy {
     await this.sub.subscribe(
       KLINE_UPDATED_CHANNEL,
       MARKET_TRADE_CREATED_CHANNEL,
+      USER_NOTIFICATION_CHANNEL,
     );
 
     this.sub.on('message', (channel, message) => {
@@ -45,7 +47,7 @@ export class RedisSubscriberService implements OnModuleInit, OnModuleDestroy {
     });
 
     this.logger.log(
-      `Subscribed Redis channels: ${KLINE_UPDATED_CHANNEL}, ${MARKET_TRADE_CREATED_CHANNEL}`,
+      `Subscribed Redis channels: ${KLINE_UPDATED_CHANNEL}, ${MARKET_TRADE_CREATED_CHANNEL}, ${USER_NOTIFICATION_CHANNEL}`,
     );
   }
 
@@ -68,6 +70,11 @@ export class RedisSubscriberService implements OnModuleInit, OnModuleDestroy {
 
       if (channel === MARKET_TRADE_CREATED_CHANNEL) {
         this.handleMarketTradeCreated(payload);
+        return;
+      }
+
+      if (channel === USER_NOTIFICATION_CHANNEL) {
+        this.handleUserNotification(payload);
       }
     } catch (error) {
       const errorMessage =
@@ -114,6 +121,21 @@ export class RedisSubscriberService implements OnModuleInit, OnModuleDestroy {
     }
 
     this.wsGateway.emitMarketTrade(symbol, payload);
+  }
+
+  private handleUserNotification(payload: unknown) {
+    if (!this.isRecord(payload)) {
+      this.logger.warn('Invalid user notification payload: expected object');
+      return;
+    }
+
+    const userId = payload.userId;
+    if (typeof userId !== 'string' || !userId.trim()) {
+      this.logger.warn('Invalid user notification payload: userId is required');
+      return;
+    }
+
+    this.wsGateway.emitUserNotification(userId, payload);
   }
 
   private isRecord(value: unknown): value is Record<string, any> {

@@ -15,6 +15,8 @@ import { Server, Socket } from 'socket.io';
 const normalizeMarketSymbol = (symbol: string) =>
   symbol.trim().replace('/', '').replace('-', '').toUpperCase();
 
+const normalizeUserId = (userId: string) => userId.trim();
+
 @WebSocketGateway({
   cors: {
     origin: ['http://localhost:3000', 'http://localhost:3001'],
@@ -35,6 +37,12 @@ export class WsGateway
 
   handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
+
+    const rawUserId = client.handshake.auth?.userId;
+    if (typeof rawUserId === 'string' && rawUserId.trim()) {
+      const room = `user:${normalizeUserId(rawUserId)}`;
+      void client.join(room);
+    }
   }
 
   handleDisconnect(client: Socket) {
@@ -73,6 +81,31 @@ export class WsGateway
     };
   }
 
+  @SubscribeMessage('notification.join')
+  async handleJoinNotification(
+    @MessageBody() body: { userId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!body?.userId || typeof body.userId !== 'string') {
+      return {
+        event: 'notification.join.error',
+        data: {
+          message: 'userId is required',
+        },
+      };
+    }
+
+    const room = `user:${normalizeUserId(body.userId)}`;
+    await client.join(room);
+
+    return {
+      event: 'notification.joined',
+      data: {
+        room,
+      },
+    };
+  }
+
   emitKlineUpdate(symbol: string, interval: string, data: any) {
     const room = `market:${normalizeMarketSymbol(symbol)}:${interval}`;
 
@@ -95,5 +128,18 @@ export class WsGateway
     }
 
     this.server.to(room).emit('market.trade.created', data);
+  }
+
+  emitUserNotification(userId: string, data: any) {
+    const room = `user:${normalizeUserId(userId)}`;
+
+    if (!this.server) {
+      this.logger.warn(
+        `Cannot emit user.notification before server init: ${room}`,
+      );
+      return;
+    }
+
+    this.server.to(room).emit('user.notification', data);
   }
 }

@@ -5,6 +5,10 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@workspace/db';
 import { AuditLogService } from 'src/audit-log/audit-log.service';
+import {
+  getErrorMessage,
+  NotificationPublisherService,
+} from 'src/notification/notification.publisher.service';
 import { ApproveRequestDto } from './dto/approve-request.dto';
 import { FilterDepositWithdrawalDto } from './dto/filter-deposit-withdrawal.dto';
 import { RejectRequestDto } from './dto/reject-request.dto';
@@ -14,6 +18,7 @@ export class DepositWithdrawalService {
   constructor(
     private prisma: PrismaService,
     private auditLogService: AuditLogService,
+    private readonly notificationPublisher: NotificationPublisherService,
   ) {}
 
   async findAll(query: FilterDepositWithdrawalDto) {
@@ -96,117 +101,157 @@ export class DepositWithdrawalService {
       throw new NotFoundException('Request not found');
     }
 
-    if (record.status !== 'pending') {
-      throw new BadRequestException(
-        `Cannot approve a request with status ${record.status}`,
-      );
-    }
-
-    const result = await this.prisma.$transaction(async (tx) => {
-      let updatedRecord;
-
-      if (record.type === 'deposit') {
-        const wallet = await tx.wallet.findUnique({
-          where: {
-            user_id_asset_id: {
-              user_id: record.user_id,
-              asset_id: record.asset_id,
-            },
-          },
-        });
-
-        if (!wallet) {
-          throw new NotFoundException('User wallet not found for this asset');
-        }
-
-        updatedRecord = await tx.depositWithdrawal.update({
-          where: { id },
-          data: {
-            status: 'completed',
-            admin_id: adminId,
-            completed_at: new Date(),
-            note: dto.note,
-          },
-        });
-
-        const newAvailable =
-          wallet.available_balance.toNumber() + record.amount.toNumber();
-
-        await tx.wallet.update({
-          where: { id: wallet.id },
-          data: { available_balance: newAvailable },
-        });
-
-        await tx.walletTransaction.create({
-          data: {
-            wallet_id: wallet.id,
-            type: 'deposit',
-            direction: 'credit',
-            amount: record.amount,
-            balance_before: wallet.available_balance,
-            balance_after: newAvailable,
-            reference_type: 'deposit_withdrawal',
-            reference_id: id,
-            status: 'success',
-          },
-        });
-      } else if (record.type === 'withdraw') {
-        const wallet = await tx.wallet.findUnique({
-          where: {
-            user_id_asset_id: {
-              user_id: record.user_id,
-              asset_id: record.asset_id,
-            },
-          },
-        });
-
-        if (!wallet) {
-          throw new NotFoundException('User wallet not found for this asset');
-        }
-
-        updatedRecord = await tx.depositWithdrawal.update({
-          where: { id },
-          data: {
-            status: 'completed',
-            admin_id: adminId,
-            completed_at: new Date(),
-            tx_hash: dto.tx_hash || record.tx_hash,
-            note: dto.note,
-          },
-        });
-
-        const newBlocked =
-          wallet.blocked_balance.toNumber() - record.amount.toNumber();
-
-        await tx.wallet.update({
-          where: { id: wallet.id },
-          data: { blocked_balance: newBlocked },
-        });
-
-        const wTx = await tx.walletTransaction.findFirst({
-          where: { reference_id: id, reference_type: 'withdrawal_request' },
-        });
-        if (wTx) {
-          await tx.walletTransaction.update({
-            where: { id: wTx.id },
-            data: { status: 'success' },
-          });
-        }
+    try {
+      if (record.status !== 'pending') {
+        throw new BadRequestException(
+          `Cannot approve a request with status ${record.status}`,
+        );
       }
 
-      return updatedRecord;
-    });
+      const result = await this.prisma.$transaction(async (tx) => {
+        let updatedRecord;
 
-    await this.auditLogService.create({
-      user_id: adminId,
-      action: 'UPDATE',
-      table_name: 'DepositWithdrawal',
-      record_id: id,
-      changes: JSON.stringify({ action: 'approve', result }),
-      ip_address: ip || 'system',
-    });
+        if (record.type === 'deposit') {
+          const wallet = await tx.wallet.findUnique({
+            where: {
+              user_id_asset_id: {
+                user_id: record.user_id,
+                asset_id: record.asset_id,
+              },
+            },
+          });
 
-    return result;
+          if (!wallet) {
+            throw new NotFoundException('User wallet not found for this asset');
+          }
+
+          updatedRecord = await tx.depositWithdrawal.update({
+            where: { id },
+            data: {
+              status: 'completed',
+              admin_id: adminId,
+              completed_at: new Date(),
+              note: dto.note,
+            },
+          });
+
+          const newAvailable =
+            wallet.available_balance.toNumber() + record.amount.toNumber();
+
+          await tx.wallet.update({
+            where: { id: wallet.id },
+            data: { available_balance: newAvailable },
+          });
+
+          await tx.walletTransaction.create({
+            data: {
+              wallet_id: wallet.id,
+              type: 'deposit',
+              direction: 'credit',
+              amount: record.amount,
+              balance_before: wallet.available_balance,
+              balance_after: newAvailable,
+              reference_type: 'deposit_withdrawal',
+              reference_id: id,
+              status: 'success',
+            },
+          });
+        } else if (record.type === 'withdraw') {
+          const wallet = await tx.wallet.findUnique({
+            where: {
+              user_id_asset_id: {
+                user_id: record.user_id,
+                asset_id: record.asset_id,
+              },
+            },
+          });
+
+          if (!wallet) {
+            throw new NotFoundException('User wallet not found for this asset');
+          }
+
+          updatedRecord = await tx.depositWithdrawal.update({
+            where: { id },
+            data: {
+              status: 'completed',
+              admin_id: adminId,
+              completed_at: new Date(),
+              tx_hash: dto.tx_hash || record.tx_hash,
+              note: dto.note,
+            },
+          });
+
+          const newBlocked =
+            wallet.blocked_balance.toNumber() - record.amount.toNumber();
+
+          await tx.wallet.update({
+            where: { id: wallet.id },
+            data: { blocked_balance: newBlocked },
+          });
+
+          const wTx = await tx.walletTransaction.findFirst({
+            where: { reference_id: id, reference_type: 'withdrawal_request' },
+          });
+          if (wTx) {
+            await tx.walletTransaction.update({
+              where: { id: wTx.id },
+              data: { status: 'success' },
+            });
+          }
+        }
+
+        return updatedRecord;
+      });
+
+      await this.auditLogService.create({
+        user_id: adminId,
+        action: 'UPDATE',
+        table_name: 'DepositWithdrawal',
+        record_id: id,
+        changes: JSON.stringify({ action: 'approve', result }),
+        ip_address: ip || 'system',
+      });
+
+      await this.notificationPublisher.publishUserNotification({
+        userId: record.user_id,
+        event:
+          record.type === 'deposit' ? 'deposit.approved' : 'withdraw.approved',
+        status: 'success',
+        title:
+          record.type === 'deposit'
+            ? 'Yêu cầu nạp đã được duyệt'
+            : 'Yêu cầu rút đã được duyệt',
+        message:
+          record.type === 'deposit'
+            ? 'Số dư ví đã được cập nhật sau khi duyệt nạp'
+            : 'Yêu cầu rút của bạn đã được xử lý thành công',
+        metadata: {
+          requestId: id,
+          type: record.type,
+          amount: record.amount.toNumber(),
+          assetId: record.asset_id,
+          adminId,
+        },
+      });
+
+      return result;
+    } catch (error) {
+      await this.notificationPublisher.publishUserNotification({
+        userId: record.user_id,
+        event:
+          record.type === 'deposit' ? 'deposit.approved' : 'withdraw.approved',
+        status: 'failed',
+        title: 'Duyệt yêu cầu thất bại',
+        message: getErrorMessage(error, 'Không thể duyệt yêu cầu nạp/rút'),
+        metadata: {
+          requestId: id,
+          type: record.type,
+          assetId: record.asset_id,
+          adminId,
+        },
+      });
+      throw error;
+    }
   }
 
   async reject(id: string, dto: RejectRequestDto, adminId: string, ip: string) {
@@ -218,86 +263,124 @@ export class DepositWithdrawalService {
       throw new NotFoundException('Request not found');
     }
 
-    if (record.status !== 'pending') {
-      throw new BadRequestException(
-        `Cannot reject a request with status ${record.status}`,
-      );
-    }
-
-    const result = await this.prisma.$transaction(async (tx) => {
-      let updatedRecord;
-
-      if (record.type === 'deposit') {
-        updatedRecord = await tx.depositWithdrawal.update({
-          where: { id },
-          data: {
-            status: 'rejected',
-            admin_id: adminId,
-            rejected_reason: dto.rejected_reason,
-          },
-        });
-      } else if (record.type === 'withdraw') {
-        const wallet = await tx.wallet.findUnique({
-          where: {
-            user_id_asset_id: {
-              user_id: record.user_id,
-              asset_id: record.asset_id,
-            },
-          },
-        });
-
-        if (!wallet) {
-          throw new NotFoundException('User wallet not found for this asset');
-        }
-
-        updatedRecord = await tx.depositWithdrawal.update({
-          where: { id },
-          data: {
-            status: 'rejected',
-            admin_id: adminId,
-            rejected_reason: dto.rejected_reason,
-          },
-        });
-
-        const newAvailable =
-          wallet.available_balance.toNumber() + record.amount.toNumber();
-        const newBlocked =
-          wallet.blocked_balance.toNumber() - record.amount.toNumber();
-
-        await tx.wallet.update({
-          where: { id: wallet.id },
-          data: {
-            available_balance: newAvailable,
-            blocked_balance: newBlocked,
-          },
-        });
-
-        const wTx = await tx.walletTransaction.findFirst({
-          where: { reference_id: id, reference_type: 'withdrawal_request' },
-        });
-        if (wTx) {
-          await tx.walletTransaction.update({
-            where: { id: wTx.id },
-            data: { status: 'failed' },
-          });
-        }
+    try {
+      if (record.status !== 'pending') {
+        throw new BadRequestException(
+          `Cannot reject a request with status ${record.status}`,
+        );
       }
 
-      return updatedRecord;
-    });
+      const result = await this.prisma.$transaction(async (tx) => {
+        let updatedRecord;
 
-    await this.auditLogService.create({
-      user_id: adminId,
-      action: 'UPDATE',
-      table_name: 'DepositWithdrawal',
-      record_id: id,
-      changes: JSON.stringify({
-        action: 'reject',
-        reason: dto.rejected_reason,
-      }),
-      ip_address: ip || 'system',
-    });
+        if (record.type === 'deposit') {
+          updatedRecord = await tx.depositWithdrawal.update({
+            where: { id },
+            data: {
+              status: 'rejected',
+              admin_id: adminId,
+              rejected_reason: dto.rejected_reason,
+            },
+          });
+        } else if (record.type === 'withdraw') {
+          const wallet = await tx.wallet.findUnique({
+            where: {
+              user_id_asset_id: {
+                user_id: record.user_id,
+                asset_id: record.asset_id,
+              },
+            },
+          });
 
-    return result;
+          if (!wallet) {
+            throw new NotFoundException('User wallet not found for this asset');
+          }
+
+          updatedRecord = await tx.depositWithdrawal.update({
+            where: { id },
+            data: {
+              status: 'rejected',
+              admin_id: adminId,
+              rejected_reason: dto.rejected_reason,
+            },
+          });
+
+          const newAvailable =
+            wallet.available_balance.toNumber() + record.amount.toNumber();
+          const newBlocked =
+            wallet.blocked_balance.toNumber() - record.amount.toNumber();
+
+          await tx.wallet.update({
+            where: { id: wallet.id },
+            data: {
+              available_balance: newAvailable,
+              blocked_balance: newBlocked,
+            },
+          });
+
+          const wTx = await tx.walletTransaction.findFirst({
+            where: { reference_id: id, reference_type: 'withdrawal_request' },
+          });
+          if (wTx) {
+            await tx.walletTransaction.update({
+              where: { id: wTx.id },
+              data: { status: 'failed' },
+            });
+          }
+        }
+
+        return updatedRecord;
+      });
+
+      await this.auditLogService.create({
+        user_id: adminId,
+        action: 'UPDATE',
+        table_name: 'DepositWithdrawal',
+        record_id: id,
+        changes: JSON.stringify({
+          action: 'reject',
+          reason: dto.rejected_reason,
+        }),
+        ip_address: ip || 'system',
+      });
+
+      await this.notificationPublisher.publishUserNotification({
+        userId: record.user_id,
+        event:
+          record.type === 'deposit' ? 'deposit.rejected' : 'withdraw.rejected',
+        status: 'success',
+        title:
+          record.type === 'deposit'
+            ? 'Yêu cầu nạp đã bị từ chối'
+            : 'Yêu cầu rút đã bị từ chối',
+        message:
+          dto.rejected_reason || 'Yêu cầu đã bị từ chối bởi quản trị viên',
+        metadata: {
+          requestId: id,
+          type: record.type,
+          amount: record.amount.toNumber(),
+          assetId: record.asset_id,
+          adminId,
+        },
+      });
+
+      return result;
+    } catch (error) {
+      await this.notificationPublisher.publishUserNotification({
+        userId: record.user_id,
+        event:
+          record.type === 'deposit' ? 'deposit.rejected' : 'withdraw.rejected',
+        status: 'failed',
+        title: 'Từ chối yêu cầu thất bại',
+        message: getErrorMessage(error, 'Không thể từ chối yêu cầu nạp/rút'),
+        metadata: {
+          requestId: id,
+          type: record.type,
+          assetId: record.asset_id,
+          adminId,
+        },
+      });
+      throw error;
+    }
   }
 }

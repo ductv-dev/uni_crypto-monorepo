@@ -12,6 +12,7 @@ import { DepositWithdrawalModule } from './deposit-withdrawal/deposit-withdrawal
 import { MailModule } from './mail/mail.module';
 import { MarketModule } from './market/market.module';
 import { MyWalletModule } from './my-wallet/my-wallet.module';
+import { NotificationModule } from './notification/notification.module';
 import { PermissionModule } from './permission/permission.module';
 import { ProfileModule } from './profile/profile.module';
 import { RoleModule } from './role/role.module';
@@ -29,6 +30,7 @@ import { WalletModule } from './wallet/wallet.module';
       },
     }),
     PrismaModule,
+    NotificationModule,
     AuthModule,
     MailModule,
     UsersModule,

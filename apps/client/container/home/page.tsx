@@ -1,9 +1,8 @@
 "use client"
 import { useTokens } from "@/hooks"
+import { useNotificationStore } from "@/store/notification-store"
 import { useUser } from "@/store/user-store"
 import { TUser } from "@workspace/shared/types"
-import { Wallet } from "lucide-react"
-import { useState } from "react"
 import { DesktopActionTabs } from "./desktop/desktop-action-tabs"
 import { SectionAccount } from "./sections/section-account"
 import { SectionAction } from "./sections/section-action"
@@ -13,28 +12,10 @@ import { SectionNotifications } from "./sections/section-notifications"
 
 export const Home = () => {
   const user = useUser((state: { user: TUser }) => state.user)
+  const notifications = useNotificationStore((state) => state.notifications)
+  const markAsRead = useNotificationStore((state) => state.markAsRead)
   const { data: tokens, isLoading, isError } = useTokens()
   const displayTokens = (tokens ?? []).slice(0, 8)
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: "Nhận token đầu tiên của bạn",
-      description:
-        "Hãy nhận token đầu tiên của bạn để bắt đầu hành trình khám phá thế giới DeFi!",
-      icon: <Wallet strokeWidth={3} size={20} />,
-      is_repuired: true,
-      read: false,
-    },
-    {
-      id: 2,
-      title: "Thiết lập tên người dùng",
-      description:
-        "Hãy thiết lập tên người dùng của bạn để hoàn thành quá trình đăng ký!",
-      icon: <Wallet strokeWidth={3} size={20} />,
-      is_repuired: false,
-      read: false,
-    },
-  ])
 
   const totalBalance = 10032432
   const numberChanges = 2.2
@@ -50,11 +31,7 @@ export const Home = () => {
         <SectionAction />
         <SectionNotifications
           notifications={notifications}
-          onMarkRead={(id, read) =>
-            setNotifications((prev) =>
-              prev.map((item) => (item.id === id ? { ...item, read } : item))
-            )
-          }
+          onMarkRead={(id, read) => read && markAsRead(id)}
         />
         <SectionListToken
           isLoading={isLoading}
@@ -73,11 +50,7 @@ export const Home = () => {
           />
           <SectionNotifications
             notifications={notifications}
-            onMarkRead={(id, read) =>
-              setNotifications((prev) =>
-                prev.map((item) => (item.id === id ? { ...item, read } : item))
-              )
-            }
+            onMarkRead={(id, read) => read && markAsRead(id)}
           />
 
           <SectionListToken

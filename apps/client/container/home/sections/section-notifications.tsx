@@ -1,60 +1,28 @@
 import { CardNotification } from "@/components/custom/cards/card-notification"
-import { Wallet } from "lucide-react"
-import { useState } from "react"
+import { type UserNotificationItem } from "@/types/notification"
+import { Bell, CircleAlert, CircleCheck } from "lucide-react"
 
-type TNotification = {
-  id: number
-  title: string
-  description: string
-  icon: React.ReactNode
-  is_repuired: boolean
-  read?: boolean
-}
+const getNotificationIcon = (status: "success" | "failed") =>
+  status === "failed" ? (
+    <CircleAlert strokeWidth={2.2} size={20} />
+  ) : (
+    <CircleCheck strokeWidth={2.2} size={20} />
+  )
 
 type Props = {
-  notifications?: TNotification[]
-  onMarkRead?: (id: number, read: boolean) => void
+  notifications?: UserNotificationItem[]
+  onMarkRead?: (id: string, read: boolean) => void
 }
 
 export const SectionNotifications: React.FC<Props> = ({
   notifications,
   onMarkRead,
 }) => {
-  const [internalNotifications, setInternalNotifications] = useState<
-    TNotification[]
-  >([
-    {
-      id: 1,
-      title: "Nhận token đầu tiên của bạn",
-      description:
-        "Hãy nhận token đầu tiên của bạn để bắt đầu hành trình khám phá thế giới DeFi!",
-      icon: <Wallet strokeWidth={3} size={20} />,
-      is_repuired: true,
-      read: false,
-    },
-    {
-      id: 2,
-      title: "Thiết lập tên người dùng",
-      description:
-        "Hãy thiết lập tên người dùng của bạn để hoàn thành quá trình đăng ký!",
-      icon: <Wallet strokeWidth={3} size={20} />,
-      is_repuired: false,
-      read: false,
-    },
-  ])
-
-  const data = notifications || internalNotifications
+  const data = notifications || []
   const unreadNotifications = data.filter((noti) => !noti.read)
 
-  const handleSetNotification = (id: number, read: boolean) => {
-    if (onMarkRead) {
-      onMarkRead(id, read)
-    } else {
-      setInternalNotifications((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, read } : item))
-      )
-    }
-  }
+  const handleSetNotification = (id: string, read: boolean) =>
+    onMarkRead?.(id, read)
 
   if (unreadNotifications.length === 0) {
     return null
@@ -70,9 +38,15 @@ export const SectionNotifications: React.FC<Props> = ({
           <CardNotification
             key={noti.id}
             title={noti.title}
-            description={noti.description}
-            icon={noti.icon}
-            isRequired={noti.is_repuired}
+            description={noti.message}
+            icon={
+              noti.status === "success" || noti.status === "failed" ? (
+                getNotificationIcon(noti.status)
+              ) : (
+                <Bell strokeWidth={2.2} size={20} />
+              )
+            }
+            isRequired={false}
             setNotification={(read: boolean) =>
               handleSetNotification(noti.id, read)
             }
