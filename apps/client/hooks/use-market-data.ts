@@ -5,6 +5,9 @@ import { useCallback, useEffect, useRef, useState } from "react"
 
 const INTERVAL_MAP: Record<string, string> = {
   "1S": "1s",
+  "1MIN": "1m",
+  "5MIN": "5m",
+  "15MIN": "15m",
   "1H": "1h",
   "1D": "1d",
   "1W": "1w",

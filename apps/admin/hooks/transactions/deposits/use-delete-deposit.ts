@@ -1,36 +1,40 @@
+import { DEPOSIT_OVERVIEW_QUERY_KEY } from "@/hooks/transactions/deposits/use-deposit-overview"
 import { DEPOSITS_LIST_QUERY_KEY } from "@/hooks/transactions/deposits/use-deposits"
+import { rejectDepositWithdrawal } from "@/lib/api/deposit-withdrawals"
 import {
   useMutation,
   useQueryClient,
   type UseMutationResult,
 } from "@tanstack/react-query"
 
-type TDeleteDepositResponse = {
-  message: string
-  success: boolean
+export type TRejectDepositPayload = {
+  id: string
+  rejected_reason: string
 }
 
-const deleteDeposit = async (id: number): Promise<TDeleteDepositResponse> => {
-  await new Promise((resolve) => setTimeout(resolve, 500))
-  return {
-    message: `Deposit #${id} deleted`,
-    success: true,
-  }
-}
+const rejectDeposit = async (payload: TRejectDepositPayload) =>
+  rejectDepositWithdrawal(payload.id, {
+    rejected_reason: payload.rejected_reason,
+  })
 
 export const useDeleteDeposit = (): UseMutationResult<
-  TDeleteDepositResponse,
+  unknown,
   Error,
-  number
+  TRejectDepositPayload
 > => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: deleteDeposit,
+    mutationFn: rejectDeposit,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: [DEPOSITS_LIST_QUERY_KEY],
-      })
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [DEPOSITS_LIST_QUERY_KEY],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: DEPOSIT_OVERVIEW_QUERY_KEY,
+        }),
+      ])
     },
   })
 }

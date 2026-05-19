@@ -1,7 +1,13 @@
 "use client"
 
-import { useDeleteWithdrawal } from "@/hooks/transactions/withdrawals/use-delete-withdrawal"
-import { useUpdateWithdrawal } from "@/hooks/transactions/withdrawals/use-update-withdrawal"
+import {
+  useDeleteWithdrawal,
+  type TRejectWithdrawalPayload,
+} from "@/hooks/transactions/withdrawals/use-delete-withdrawal"
+import {
+  useUpdateWithdrawal,
+  type TApproveWithdrawalPayload,
+} from "@/hooks/transactions/withdrawals/use-update-withdrawal"
 import {
   EWithdrawStatus,
   TWithdrawals,
@@ -30,15 +36,9 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { Input } from "@workspace/ui/components/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select"
+import { Textarea } from "@workspace/ui/components/textarea"
 import { toast } from "@workspace/ui/index"
-import { Edit3, MoreHorizontal, Trash2, Trash2Icon } from "lucide-react"
+import { CheckCircle2, MoreHorizontal, XCircle } from "lucide-react"
 import { useState } from "react"
 
 type TWithdrawalRowActionsProps = {
@@ -48,31 +48,42 @@ type TWithdrawalRowActionsProps = {
 export const WithdrawalRowActions: React.FC<TWithdrawalRowActionsProps> = ({
   withdrawal,
 }) => {
-  const [isEditOpen, setIsEditOpen] = useState(false)
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isApproveOpen, setIsApproveOpen] = useState(false)
+  const [isRejectOpen, setIsRejectOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [draft, setDraft] = useState<TWithdrawals>(withdrawal)
-  const { mutateAsync: updateWithdrawal, isPending } = useUpdateWithdrawal()
-  const { mutateAsync: deleteWithdrawal, isPending: isDeleting } =
+  const [approveDraft, setApproveDraft] = useState<TApproveWithdrawalPayload>({
+    id: String(withdrawal.id),
+    tx_hash: withdrawal.tx_hash ?? "",
+    note: withdrawal.note ?? "",
+  })
+  const [rejectDraft, setRejectDraft] = useState<TRejectWithdrawalPayload>({
+    id: String(withdrawal.id),
+    rejected_reason: withdrawal.rejected_reason ?? "",
+  })
+  const { mutateAsync: approveWithdrawal, isPending: isApproving } =
+    useUpdateWithdrawal()
+  const { mutateAsync: rejectWithdrawal, isPending: isRejecting } =
     useDeleteWithdrawal()
 
-  const handleSave = async () => {
+  const isPendingWithdrawal = withdrawal.status === EWithdrawStatus.PENDING
+
+  const handleApprove = async () => {
     try {
-      await updateWithdrawal(draft)
-      setIsEditOpen(false)
-      toast.success(`Withdrawal #${withdrawal.id} updated`)
+      await approveWithdrawal(approveDraft)
+      setIsApproveOpen(false)
+      toast.success(`Withdrawal #${withdrawal.id} approved`)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Update failed")
+      toast.error(error instanceof Error ? error.message : "Approve failed")
     }
   }
 
-  const handleDelete = async () => {
+  const handleReject = async () => {
     try {
-      await deleteWithdrawal(withdrawal.id)
-      setIsDeleteOpen(false)
-      toast.success(`Withdrawal #${withdrawal.id} deleted`)
+      await rejectWithdrawal(rejectDraft)
+      setIsRejectOpen(false)
+      toast.success(`Withdrawal #${withdrawal.id} rejected`)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Delete failed")
+      toast.error(error instanceof Error ? error.message : "Reject failed")
     }
   }
 
@@ -84,174 +95,143 @@ export const WithdrawalRowActions: React.FC<TWithdrawalRowActionsProps> = ({
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuContent align="end" className="w-52">
           <DropdownMenuItem
             className="cursor-pointer"
+            disabled={!isPendingWithdrawal}
             onSelect={(event) => {
               event.preventDefault()
               setIsDropdownOpen(false)
-              setDraft(withdrawal)
-              setIsEditOpen(true)
+              setApproveDraft({
+                id: String(withdrawal.id),
+                tx_hash: withdrawal.tx_hash ?? "",
+                note: withdrawal.note ?? "",
+              })
+              setIsApproveOpen(true)
             }}
           >
-            <Edit3 className="mr-2 h-4 w-4" />
-            Edit
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+            Approve
           </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer text-red-500 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30"
+            disabled={!isPendingWithdrawal}
             onSelect={(event) => {
               event.preventDefault()
               setIsDropdownOpen(false)
-              setIsDeleteOpen(true)
+              setRejectDraft({
+                id: String(withdrawal.id),
+                rejected_reason: "",
+              })
+              setIsRejectOpen(true)
             }}
           >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete
+            <XCircle className="mr-2 h-4 w-4" />
+            Reject
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+      <Dialog open={isApproveOpen} onOpenChange={setIsApproveOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Withdrawal #{withdrawal.id}</DialogTitle>
+            <DialogTitle>Approve Withdrawal #{withdrawal.id}</DialogTitle>
             <DialogDescription>
-              Update withdrawal details for this request.
+              Confirm this withdrawal request and provide transaction hash when
+              available.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Asset</label>
+              <label className="text-sm font-medium">User</label>
               <Input
-                value={draft.asset}
-                onChange={(event) =>
-                  setDraft((prev) => ({ ...prev, asset: event.target.value }))
-                }
+                value={withdrawal.user_email ?? withdrawal.user_id}
+                disabled
               />
             </div>
-
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Asset</label>
+              <Input value={withdrawal.asset} disabled />
+            </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Amount</label>
+              <Input value={String(withdrawal.amount)} disabled />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Tx Hash</label>
               <Input
-                type="number"
-                step="0.0001"
-                value={draft.amount}
+                value={approveDraft.tx_hash ?? ""}
                 onChange={(event) =>
-                  setDraft((prev) => ({
+                  setApproveDraft((prev) => ({
                     ...prev,
-                    amount: Number(event.target.value) || 0,
+                    tx_hash: event.target.value,
                   }))
                 }
+                placeholder="Blockchain transaction hash"
               />
             </div>
-
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Fee</label>
-              <Input
-                type="number"
-                step="0.0001"
-                value={draft.fee}
+              <label className="text-sm font-medium">Note</label>
+              <Textarea
+                value={approveDraft.note ?? ""}
                 onChange={(event) =>
-                  setDraft((prev) => ({
+                  setApproveDraft((prev) => ({
                     ...prev,
-                    fee: Number(event.target.value) || 0,
+                    note: event.target.value,
                   }))
                 }
+                placeholder="Optional approval note"
               />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Network</label>
-              <Input
-                value={draft.network}
-                onChange={(event) =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    network: event.target.value,
-                  }))
-                }
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Approved by</label>
-              <Input
-                value={draft.approved_by}
-                onChange={(event) =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    approved_by: event.target.value,
-                  }))
-                }
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Status</label>
-              <Select
-                value={draft.status}
-                onValueChange={(value) =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    status: value as EWithdrawStatus,
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={EWithdrawStatus.PENDING}>
-                    Pending
-                  </SelectItem>
-                  <SelectItem value={EWithdrawStatus.APPROVED}>
-                    Approved
-                  </SelectItem>
-                  <SelectItem value={EWithdrawStatus.REJECTED}>
-                    Rejected
-                  </SelectItem>
-                  <SelectItem value={EWithdrawStatus.COMPLETED}>
-                    Completed
-                  </SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+            <Button variant="outline" onClick={() => setIsApproveOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isPending}>
-              {isPending ? "Saving..." : "Save"}
+            <Button onClick={handleApprove} disabled={isApproving}>
+              {isApproving ? "Approving..." : "Approve"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+      <AlertDialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
-              <Trash2Icon />
+              <XCircle />
             </AlertDialogMedia>
-            <AlertDialogTitle>Delete withdrawal?</AlertDialogTitle>
+            <AlertDialogTitle>Reject withdrawal?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete withdrawal #{withdrawal.id}?
+              Provide a reason before rejecting withdrawal #{withdrawal.id}.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
+          <div className="space-y-3">
+            <Textarea
+              value={rejectDraft.rejected_reason}
+              onChange={(event) =>
+                setRejectDraft((prev) => ({
+                  ...prev,
+                  rejected_reason: event.target.value,
+                }))
+              }
+              placeholder="Reason for rejection"
+            />
+          </div>
+
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
+            <Button variant="outline" onClick={() => setIsRejectOpen(false)}>
               Cancel
             </Button>
             <Button
               variant="destructive"
-              onClick={handleDelete}
-              disabled={isDeleting}
+              onClick={handleReject}
+              disabled={isRejecting || !rejectDraft.rejected_reason.trim()}
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {isRejecting ? "Rejecting..." : "Reject"}
             </Button>
           </div>
         </AlertDialogContent>

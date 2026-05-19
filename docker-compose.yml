@@ -93,6 +93,52 @@ services:
       MATCHING_MARKET: BNB-USDT
       MATCHING_QUEUE: matching.BNB-USDT
 
+  outbox-worker:
+    build:
+      context: .
+      dockerfile: apps/outbox-worker/Dockerfile
+    container_name: outbox-worker
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      DATABASE_URL: postgresql://root:password@postgres:5432/uni_db
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+      RABBITMQ_EXCHANGE: orders.exchange
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        API_URL: http://api:8080
+        NEXT_PUBLIC_API_URL: http://localhost:3000
+    container_name: uni-admin
+    depends_on:
+      - postgres
+    environment:
+      NODE_ENV: production
+      API_URL: http://api:8080
+    ports:
+      - "3000:3000"
+
+  client:
+    build:
+      context: .
+      dockerfile: apps/client/Dockerfile
+      args:
+        API_URL: http://api:8080
+        NEXT_PUBLIC_API_URL: http://localhost:3001
+    container_name: uni-client
+    depends_on:
+      - postgres
+    environment:
+      NODE_ENV: production
+      API_URL: http://api:8080
+    ports:
+      - "3001:3001"
+
 volumes:
   postgres_data:
   redis_data:
+

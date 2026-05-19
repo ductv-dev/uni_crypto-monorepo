@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common"
 import Redis from "ioredis"
 
 export const MARKET_TRADE_CREATED_CHANNEL = "market.trade.created"
+export const USER_NOTIFICATION_CHANNEL = "user.notification"
 
 export type MarketTradeCreatedPayload = {
   symbol: string
@@ -20,6 +21,18 @@ export type MarketTradeCreatedPayload = {
     side: "buy" | "sell"
     createdAt: string
   }>
+}
+
+export type UserNotificationPayload = {
+  id: string
+  userId: string
+  event: string
+  status: "success" | "failed"
+  title: string
+  message: string
+  createdAt: string
+  read: boolean
+  metadata?: Record<string, unknown>
 }
 
 const createRedisClient = () => {
@@ -54,6 +67,19 @@ export class RedisPublisherService implements OnModuleDestroy {
       const message = error instanceof Error ? error.message : String(error)
 
       this.logger.error(`Failed to publish market trade event: ${message}`)
+    }
+  }
+
+  async publishUserNotification(payload: UserNotificationPayload) {
+    try {
+      await this.redis.publish(
+        USER_NOTIFICATION_CHANNEL,
+        JSON.stringify(payload)
+      )
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+
+      this.logger.error(`Failed to publish user notification event: ${message}`)
     }
   }
 

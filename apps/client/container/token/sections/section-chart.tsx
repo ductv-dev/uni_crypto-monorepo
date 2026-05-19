@@ -16,6 +16,9 @@ import { useMemo, useState } from "react"
 
 const TIMEFRAMES: { label: string; value: Timeframe }[] = [
   { label: "Giây", value: "1S" },
+  { label: "1 phút", value: "1MIN" },
+  { label: "5 phút", value: "5MIN" },
+  { label: "15 phút", value: "15MIN" },
   { label: "Giờ", value: "1H" },
   { label: "Ngày", value: "1D" },
   { label: "Tuần", value: "1W" },

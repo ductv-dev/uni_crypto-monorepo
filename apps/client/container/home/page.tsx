@@ -1,5 +1,5 @@
 "use client"
-import { useTokens } from "@/hooks"
+import { useMarkNotificationAsRead, useTokens } from "@/hooks"
 import { useNotificationStore } from "@/store/notification-store"
 import { useUser } from "@/store/user-store"
 import { TUser } from "@workspace/shared/types"
@@ -13,7 +13,7 @@ import { SectionNotifications } from "./sections/section-notifications"
 export const Home = () => {
   const user = useUser((state: { user: TUser }) => state.user)
   const notifications = useNotificationStore((state) => state.notifications)
-  const markAsRead = useNotificationStore((state) => state.markAsRead)
+  const { mutate: markNotificationAsRead } = useMarkNotificationAsRead()
   const { data: tokens, isLoading, isError } = useTokens()
   const displayTokens = (tokens ?? []).slice(0, 8)
 
@@ -31,7 +31,7 @@ export const Home = () => {
         <SectionAction />
         <SectionNotifications
           notifications={notifications}
-          onMarkRead={(id, read) => read && markAsRead(id)}
+          onMarkRead={(id, read) => read && markNotificationAsRead(id)}
         />
         <SectionListToken
           isLoading={isLoading}
@@ -50,7 +50,7 @@ export const Home = () => {
           />
           <SectionNotifications
             notifications={notifications}
-            onMarkRead={(id, read) => read && markAsRead(id)}
+            onMarkRead={(id, read) => read && markNotificationAsRead(id)}
           />
 
           <SectionListToken

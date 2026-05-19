@@ -2,6 +2,7 @@ export type NotificationStatus = "success" | "failed"
 
 export type NotificationEvent =
   | "order.place"
+  | "order.matched"
   | "deposit.request"
   | "withdraw.request"
   | "deposit.approved"
@@ -10,16 +11,17 @@ export type NotificationEvent =
   | "withdraw.rejected"
 
 export type UserRealtimeNotificationPayload = {
+  id: string
   userId: string
   event: NotificationEvent
   status: NotificationStatus
   title: string
   message: string
   createdAt: string
+  read?: boolean
   metadata?: Record<string, unknown>
 }
 
 export type UserNotificationItem = UserRealtimeNotificationPayload & {
-  id: string
-  read?: boolean
+  read: boolean
 }

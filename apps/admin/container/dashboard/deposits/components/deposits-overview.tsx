@@ -25,9 +25,9 @@ const getColors = (title: string) => {
       return "bg-blue-500/10 text-blue-600 dark:text-blue-400"
     case "Pending Deposits":
       return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
-    case "Confirmed Deposits":
+    case "Completed Deposits":
       return "bg-green-500/10 text-green-600 dark:text-green-400"
-    case "Failed Deposits":
+    case "Rejected Deposits":
       return "bg-red-500/10 text-red-600 dark:text-red-400"
     default:
       return "bg-gray-500/10 text-gray-600 dark:text-gray-400"
@@ -39,9 +39,9 @@ const getIcon = (title: string) => {
       return <HelpCircleIcon className="h-4 w-4 text-muted-foreground" />
     case "Pending Deposits":
       return <ClockIcon className="h-4 w-4 text-yellow-500" />
-    case "Confirmed Deposits":
+    case "Completed Deposits":
       return <CheckCircle2Icon className="h-4 w-4 text-green-500" />
-    case "Failed Deposits":
+    case "Rejected Deposits":
       return <XCircleIcon className="h-4 w-4 text-red-500" />
     default:
       return null

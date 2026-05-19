@@ -86,6 +86,34 @@ export class DepositWithdrawalService {
 
     return record;
   }
+
+  async getOverview(type: 'deposit' | 'withdraw') {
+    const [total, pending, completed, rejected, failed] = await Promise.all([
+      this.prisma.depositWithdrawal.count({
+        where: { type },
+      }),
+      this.prisma.depositWithdrawal.count({
+        where: { type, status: 'pending' },
+      }),
+      this.prisma.depositWithdrawal.count({
+        where: { type, status: 'completed' },
+      }),
+      this.prisma.depositWithdrawal.count({
+        where: { type, status: 'rejected' },
+      }),
+      this.prisma.depositWithdrawal.count({
+        where: { type, status: 'failed' },
+      }),
+    ]);
+
+    return {
+      total,
+      pending,
+      completed,
+      rejected,
+      failed,
+    };
+  }
   // Duyệt
   async approve(
     id: string,

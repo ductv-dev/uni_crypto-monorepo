@@ -81,6 +81,15 @@ export const DialogCreateToken: React.FC<TDialogCreateToken> = ({
     onOpenChange(newOpen)
   }
 
+  const setNetworkValue = (value: TokenCreateSchemaType["network"]) => {
+    ;(
+      setValue as unknown as (
+        name: "network",
+        fieldValue: TokenCreateSchemaType["network"]
+      ) => void
+    )("network", value)
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -126,7 +135,7 @@ export const DialogCreateToken: React.FC<TDialogCreateToken> = ({
               <FieldLabel>Mạng lưới hỗ trợ</FieldLabel>
               <Select
                 defaultValue={watch("network")}
-                onValueChange={(value) => setValue("network", value)}
+                onValueChange={setNetworkValue}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn mạng lưới" />

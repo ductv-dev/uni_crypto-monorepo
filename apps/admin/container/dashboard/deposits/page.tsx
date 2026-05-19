@@ -57,6 +57,7 @@ export const Deposits = () => {
       {
         accessorKey: "user_id",
         header: "User ID",
+        cell: ({ row }) => row.original.user_email || row.original.user_id,
       },
       {
         accessorKey: "asset",
@@ -75,6 +76,9 @@ export const Deposits = () => {
         header: "Tx Hash",
         cell: ({ row }) => {
           const hash = row.original.tx_hash
+          if (!hash) {
+            return <span className="text-muted-foreground">-</span>
+          }
           return (
             <span className="font-mono text-xs">
               {hash.slice(0, 10)}...{hash.slice(-10)}

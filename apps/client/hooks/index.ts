@@ -6,6 +6,11 @@ export { useWalletMethods } from "./use-wallet-methods"
 export { useWallets } from "./use-wallets"
 export { useTradeMarkets, useCreateOrder } from "./use-trading"
 export { useRequestDeposit, useRequestWithdraw } from "./use-wallet-transfers"
+export {
+  useNotifications,
+  useMarkNotificationAsRead,
+  useMarkAllNotificationsAsRead,
+} from "./use-notifications"
 
 // Hook giao diện
 export { useIsMobile } from "./use-is-mobile"

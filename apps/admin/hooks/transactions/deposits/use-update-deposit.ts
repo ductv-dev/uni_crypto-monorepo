@@ -1,29 +1,40 @@
+import { DEPOSIT_OVERVIEW_QUERY_KEY } from "@/hooks/transactions/deposits/use-deposit-overview"
 import { DEPOSITS_LIST_QUERY_KEY } from "@/hooks/transactions/deposits/use-deposits"
-import { TDeposits } from "@/types/transactions/deposits.type"
+import { approveDepositWithdrawal } from "@/lib/api/deposit-withdrawals"
 import {
   useMutation,
   useQueryClient,
   type UseMutationResult,
 } from "@tanstack/react-query"
 
-const updateDeposit = async (deposit: TDeposits): Promise<TDeposits> => {
-  await new Promise((resolve) => setTimeout(resolve, 600))
-  return deposit
+export type TApproveDepositPayload = {
+  id: string
+  note?: string
 }
 
+const approveDeposit = async (payload: TApproveDepositPayload) =>
+  approveDepositWithdrawal(payload.id, {
+    note: payload.note,
+  })
+
 export const useUpdateDeposit = (): UseMutationResult<
-  TDeposits,
+  unknown,
   Error,
-  TDeposits
+  TApproveDepositPayload
 > => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: updateDeposit,
+    mutationFn: approveDeposit,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: [DEPOSITS_LIST_QUERY_KEY],
-      })
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [DEPOSITS_LIST_QUERY_KEY],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: DEPOSIT_OVERVIEW_QUERY_KEY,
+        }),
+      ])
     },
   })
 }

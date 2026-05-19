@@ -1,8 +1,13 @@
 "use client"
 
+import {
+  useNotifications,
+  NOTIFICATIONS_QUERY_KEY,
+} from "@/hooks/use-notifications"
 import { useMe } from "@/hooks/auth/use-me"
 import { useNotificationStore } from "@/store/notification-store"
 import { type UserRealtimeNotificationPayload } from "@/types/notification"
+import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "@workspace/ui/index"
 import { useEffect, useRef } from "react"
 import { io, type Socket } from "socket.io-client"
@@ -18,6 +23,7 @@ const isValidPayload = (
 
   const candidate = payload as Partial<UserRealtimeNotificationPayload>
   return (
+    typeof candidate.id === "string" &&
     typeof candidate.userId === "string" &&
     typeof candidate.title === "string" &&
     typeof candidate.message === "string" &&
@@ -29,7 +35,18 @@ const isValidPayload = (
 export function UserNotificationInit() {
   const socketRef = useRef<Socket | null>(null)
   const { data: currentUser, isSuccess } = useMe()
+  const queryClient = useQueryClient()
   const addNotification = useNotificationStore((state) => state.addNotification)
+  const setNotifications = useNotificationStore(
+    (state) => state.setNotifications
+  )
+  const notificationsQuery = useNotifications({ page: 1, limit: 30 })
+
+  useEffect(() => {
+    if (notificationsQuery.data?.data) {
+      setNotifications(notificationsQuery.data.data)
+    }
+  }, [notificationsQuery.data, setNotifications])
 
   useEffect(() => {
     if (!isSuccess || !currentUser?.id) {
@@ -58,7 +75,9 @@ export function UserNotificationInit() {
       addNotification({
         ...payload,
         createdAt: payload.createdAt || new Date().toISOString(),
+        read: payload.read ?? false,
       })
+      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_QUERY_KEY })
 
       if (payload.status === "failed") {
         toast.error(payload.message || payload.title)
@@ -72,7 +91,7 @@ export function UserNotificationInit() {
       socket.disconnect()
       socketRef.current = null
     }
-  }, [addNotification, currentUser?.id, isSuccess])
+  }, [addNotification, currentUser?.id, isSuccess, queryClient])
 
   return null
 }

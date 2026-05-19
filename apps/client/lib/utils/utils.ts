@@ -17,7 +17,16 @@ export function shortenHex(str: string, start = 6, end = 4) {
   return `${s.slice(0, start)}...${s.slice(-end)}`
 }
 
-export type Timeframe = "1S" | "1H" | "1D" | "1W" | "1M" | "1Y"
+export type Timeframe =
+  | "1S"
+  | "1MIN"
+  | "5MIN"
+  | "15MIN"
+  | "1H"
+  | "1D"
+  | "1W"
+  | "1M"
+  | "1Y"
 
 export function generateOHLC(
   count = 150,
@@ -32,6 +41,15 @@ export function generateOHLC(
   switch (timeframe) {
     case "1S":
       volatility = 1
+      break
+    case "1MIN":
+      volatility = 2
+      break
+    case "5MIN":
+      volatility = 3
+      break
+    case "15MIN":
+      volatility = 4
       break
     case "1H":
       volatility = 100
@@ -54,6 +72,12 @@ export function generateOHLC(
   const currentTime = new Date()
   if (timeframe === "1S")
     currentTime.setSeconds(currentTime.getSeconds() - count)
+  if (timeframe === "1MIN")
+    currentTime.setMinutes(currentTime.getMinutes() - count)
+  if (timeframe === "5MIN")
+    currentTime.setMinutes(currentTime.getMinutes() - count * 5)
+  if (timeframe === "15MIN")
+    currentTime.setMinutes(currentTime.getMinutes() - count * 15)
   if (timeframe === "1H") currentTime.setHours(currentTime.getHours() - count)
   if (timeframe === "1D") currentTime.setDate(currentTime.getDate() - count)
   if (timeframe === "1W") currentTime.setDate(currentTime.getDate() - count * 7)
@@ -65,6 +89,12 @@ export function generateOHLC(
   for (let i = 0; i < count; i++) {
     // Cộng thêm thời gian cho cây nến tiếp theo
     if (timeframe === "1S") currentTime.setSeconds(currentTime.getSeconds() + 1)
+    if (timeframe === "1MIN")
+      currentTime.setMinutes(currentTime.getMinutes() + 1)
+    if (timeframe === "5MIN")
+      currentTime.setMinutes(currentTime.getMinutes() + 5)
+    if (timeframe === "15MIN")
+      currentTime.setMinutes(currentTime.getMinutes() + 15)
     if (timeframe === "1H") currentTime.setHours(currentTime.getHours() + 1)
     if (timeframe === "1D") currentTime.setDate(currentTime.getDate() + 1)
     if (timeframe === "1W") currentTime.setDate(currentTime.getDate() + 7)

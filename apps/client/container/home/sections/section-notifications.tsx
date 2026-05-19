@@ -30,9 +30,17 @@ export const SectionNotifications: React.FC<Props> = ({
 
   return (
     <div className="flex w-full flex-col md:gap-2">
-      <p className="hidden px-1 text-xs font-semibold tracking-wider text-foreground/40 uppercase md:block">
-        Thông báo
-      </p>
+      <div className="hidden items-center justify-between px-1 md:flex">
+        <p className="text-xs font-semibold tracking-wider text-foreground/40 uppercase">
+          Thông báo
+        </p>
+        <a
+          href="/user/notifications"
+          className="text-xs font-medium text-primary transition-opacity hover:opacity-80"
+        >
+          Xem tất cả
+        </a>
+      </div>
       <div className="no-scrollbar flex w-full gap-2.5 overflow-x-auto py-5 md:gap-3 md:py-0 md:pb-1">
         {unreadNotifications.map((noti) => (
           <CardNotification

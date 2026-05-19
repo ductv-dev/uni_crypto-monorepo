@@ -30,7 +30,7 @@ export const WithdrawalsOverview: React.FC<TWithdrawalsOverviewProps> = ({
         return <HelpCircleIcon className="h-4 w-4 text-muted-foreground" />
       case "Pending Withdrawals":
         return <ClockIcon className="h-4 w-4 text-yellow-500" />
-      case "Approved Withdrawals":
+      case "Completed Withdrawals":
         return <CheckCircle2Icon className="h-4 w-4 text-green-500" />
       case "Rejected Withdrawals":
         return <XCircleIcon className="h-4 w-4 text-red-500" />
@@ -44,7 +44,7 @@ export const WithdrawalsOverview: React.FC<TWithdrawalsOverviewProps> = ({
         return "bg-blue-500/10 text-blue-600 dark:text-blue-400"
       case "Pending Withdrawals":
         return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
-      case "Approved Withdrawals":
+      case "Completed Withdrawals":
         return "bg-green-500/10 text-green-600 dark:text-green-400"
       case "Rejected Withdrawals":
         return "bg-red-500/10 text-red-600 dark:text-red-400"

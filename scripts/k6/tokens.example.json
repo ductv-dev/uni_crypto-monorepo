@@ -1,0 +1,12 @@
+[
+  {
+    "label": "load-user-01",
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example-access-user-01",
+    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example-refresh-user-01"
+  },
+  {
+    "label": "load-user-02",
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example-access-user-02",
+    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.example-refresh-user-02"
+  }
+]

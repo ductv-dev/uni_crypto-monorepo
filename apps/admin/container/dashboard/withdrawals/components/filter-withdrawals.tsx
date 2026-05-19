@@ -79,15 +79,13 @@ export const FilterWithdrawals: React.FC<TFilterWithdrawalsProps> = ({
               <SelectContent>
                 <SelectItem value="ALL">All Status</SelectItem>
                 <SelectItem value={EWithdrawStatus.PENDING}>Pending</SelectItem>
-                <SelectItem value={EWithdrawStatus.APPROVED}>
-                  Approved
-                </SelectItem>
                 <SelectItem value={EWithdrawStatus.REJECTED}>
                   Rejected
                 </SelectItem>
                 <SelectItem value={EWithdrawStatus.COMPLETED}>
                   Completed
                 </SelectItem>
+                <SelectItem value={EWithdrawStatus.FAILED}>Failed</SelectItem>
               </SelectContent>
             </Select>
           </Field>

@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma, PrismaService } from '@workspace/db';
-import { CANDLE_VIEW_MAP } from './constants/candle-view-map';
 import { GetCandlesDto } from './dto/get-candles.dto';
 import { CandleInterval } from './enums/candle-interval.enum';
 import { Candle } from './interfaces/candle.interface';
@@ -27,6 +26,14 @@ interface ResolvedCandleQuery {
 const DEFAULT_LIMIT = 500;
 const MAX_LIMIT = 1000;
 const DEFAULT_LOOKBACK_IN_MS = 24 * 60 * 60 * 1000;
+const GAPFILL_BUCKET_MAP: Record<CandleInterval, string> = {
+  [CandleInterval.ONE_MINUTE]: '1 minute',
+  [CandleInterval.FIVE_MINUTES]: '5 minutes',
+  [CandleInterval.FIFTEEN_MINUTES]: '15 minutes',
+  [CandleInterval.ONE_HOUR]: '1 hour',
+  [CandleInterval.FOUR_HOURS]: '4 hours',
+  [CandleInterval.ONE_DAY]: '1 day',
+} as const;
 
 @Injectable()
 export class CandlesService {
@@ -34,23 +41,53 @@ export class CandlesService {
 
   async getCandles(marketId: string, dto: GetCandlesDto): Promise<Candle[]> {
     const { interval, from, to, limit } = this.resolveQuery(dto);
-    const viewName = CANDLE_VIEW_MAP[interval];
+    const bucketWidth = GAPFILL_BUCKET_MAP[interval];
 
     const rows = await this.prisma.$queryRaw<CandleQueryRow[]>(Prisma.sql`
+      WITH gapfill_cte AS (
+        SELECT
+          time_bucket_gapfill(
+            ${Prisma.raw(`INTERVAL '${bucketWidth}'`)},
+            "createdAt",
+            ${from},
+            ${to}
+          ) AS bucket,
+          FIRST(price, "createdAt") AS open,
+          MAX(price) AS high,
+          MIN(price) AS low,
+          LAST(price, "createdAt") AS close,
+          locf(LAST(price, "createdAt")) AS close_filled,
+          SUM(quantity) AS volume,
+          SUM(total) AS "quoteVolume"
+        FROM "Trade"
+        WHERE market_id = ${marketId}
+          AND "createdAt" >= ${from}
+          AND "createdAt" <= ${to}
+        GROUP BY bucket
+      ),
+      limited_candles AS (
+        SELECT
+          bucket,
+          COALESCE(open, close_filled, 0)::text AS open,
+          COALESCE(high, close_filled, 0)::text AS high,
+          COALESCE(low, close_filled, 0)::text AS low,
+          COALESCE(close_filled, 0)::text AS close,
+          COALESCE(volume, 0)::text AS volume,
+          COALESCE("quoteVolume", 0)::text AS "quoteVolume"
+        FROM gapfill_cte
+        ORDER BY bucket DESC
+        LIMIT ${limit}
+      )
       SELECT
         bucket,
-        open::text AS open,
-        high::text AS high,
-        low::text AS low,
-        close::text AS close,
-        volume::text AS volume,
-        quote_volume::text AS "quoteVolume"
-      FROM ${Prisma.raw(viewName)}
-      WHERE market_id = ${marketId}
-        AND bucket >= ${from}
-        AND bucket <= ${to}
+        open,
+        high,
+        low,
+        close,
+        volume,
+        "quoteVolume"
+      FROM limited_candles
       ORDER BY bucket ASC
-      LIMIT ${limit}
     `);
 
     return rows.map((row) => ({

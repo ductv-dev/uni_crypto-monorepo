@@ -1,14 +1,11 @@
 "use client"
 import { CandlestickChart } from "@/components/custom/charts/charts-candle"
-import { useDataToken } from "@/hooks/token/use-data-token"
-import { useBinanceTicker } from "@/hooks/use-market-data"
+import { useMarkets } from "@/hooks/market/use-markets"
+import { useMarketTicker } from "@/hooks/use-market-data"
 import { Timeframe } from "@/lib/utils/utils"
+import { TMarket } from "@/types/market.type"
 import { TTypeChart } from "@/types/type-chart.type"
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@workspace/ui/components/avatar"
+import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { Badge } from "@workspace/ui/components/badge"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import {
@@ -28,7 +25,6 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select"
 
-import { TToken } from "@workspace/shared/types"
 import {
   ChartCandlestick,
   ChartLine,
@@ -41,6 +37,9 @@ import { useEffect, useMemo, useState } from "react"
 
 const TIMEFRAMES: { label: string; value: Timeframe }[] = [
   { label: "Giây", value: "1S" },
+  { label: "1 phút", value: "1MIN" },
+  { label: "5 phút", value: "5MIN" },
+  { label: "15 phút", value: "15MIN" },
   { label: "Giờ", value: "1H" },
   { label: "Ngày", value: "1D" },
   { label: "Tuần", value: "1W" },
@@ -54,22 +53,36 @@ const TYPE_CHART: TTypeChart[] = [
 ]
 
 export const SectionChart: React.FC = () => {
-  const { data: tokenResponse } = useDataToken()
+  const { data: marketResponse } = useMarkets({
+    page: 1,
+    limit: 1000,
+    status: "active",
+  })
   const { resolvedTheme } = useTheme()
   const [typeChart, setTypeChart] = useState<TTypeChart>(TYPE_CHART[0]!)
   const [activeTimeframe, setActiveTimeframe] = useState<Timeframe>("1D")
-  const [symbol, setSymbol] = useState<TToken | null>(null)
+  const [selectedMarket, setSelectedMarket] = useState<TMarket | null>(null)
   const [open, setOpen] = useState(false)
-  const tokenList = tokenResponse?.data ?? []
+  const marketList = marketResponse?.data ?? []
 
   useEffect(() => {
-    if (!symbol && tokenList.length > 0) {
-      setSymbol(tokenList[0]!)
+    if (marketList.length === 0) {
+      setSelectedMarket(null)
+      return
     }
-  }, [symbol, tokenList])
 
-  const { currentPrice, priceChange, percentageChange } = useBinanceTicker(
-    symbol?.symbol ?? ""
+    setSelectedMarket((current) => {
+      if (!current) {
+        return marketList[0]!
+      }
+
+      return marketList.find((item) => item.id === current.id) ?? marketList[0]!
+    })
+  }, [marketList])
+
+  const { currentPrice, priceChange, percentageChange } = useMarketTicker(
+    selectedMarket?.id,
+    selectedMarket?.symbol
   )
 
   const colors = useMemo(
@@ -90,26 +103,23 @@ export const SectionChart: React.FC = () => {
     <div className="shrink-0">
       <Card className="">
         <CardContent>
-          {!symbol ? null : (
+          {!selectedMarket ? null : (
             <div className="flex flex-col gap-2.5">
               <div className="flex flex-col gap-2.5 lg:flex-row lg:items-end">
-                {/* Khối thông tin token */}
+                {/* Khối thông tin market */}
                 <div className="flex gap-2.5 p-2.5 md:mt-0">
                   <div className="flex gap-2.5">
                     <Avatar className="h-12 w-12">
-                      <AvatarImage
-                        src={symbol.logoURI}
-                        alt="token image"
-                        className=""
-                      />
                       <AvatarFallback>
-                        {symbol.symbol.charAt(0) || "U"}
+                        {selectedMarket.baseAsset?.symbol?.charAt(0) ??
+                          selectedMarket.symbol.charAt(0) ??
+                          "M"}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <p className="text-xl font-semibold text-foreground/60">
-                          {symbol.name}
+                          {selectedMarket.symbol}
                         </p>
                         <Popover open={open} onOpenChange={setOpen}>
                           <PopoverTrigger asChild>
@@ -119,35 +129,33 @@ export const SectionChart: React.FC = () => {
                           </PopoverTrigger>
                           <PopoverContent align="start">
                             <PopoverHeader>
-                              <PopoverTitle>Chọn token</PopoverTitle>
+                              <PopoverTitle>Chọn market</PopoverTitle>
                             </PopoverHeader>
                             <ScrollArea className="h-[300px]">
                               <div className="flex flex-col">
-                                {tokenList.map((token) => (
+                                {marketList.map((market) => (
                                   <button
                                     onClick={() => {
-                                      setSymbol(token)
+                                      setSelectedMarket(market)
                                       setOpen(false)
                                     }}
-                                    key={token.address}
-                                    className={`flex cursor-pointer items-center gap-2 rounded-lg p-2.5 ${token.address === symbol.address ? "bg-primary/15" : ""}`}
+                                    key={market.id}
+                                    className={`flex cursor-pointer items-center gap-2 rounded-lg p-2.5 ${market.id === selectedMarket.id ? "bg-primary/15" : ""}`}
                                   >
                                     <Avatar className="h-12 w-12">
-                                      <AvatarImage
-                                        src={token.logoURI}
-                                        alt="token image"
-                                        className=""
-                                      />
                                       <AvatarFallback>
-                                        {token.symbol.charAt(0) || "U"}
+                                        {market.baseAsset?.symbol?.charAt(0) ??
+                                          market.symbol.charAt(0) ??
+                                          "M"}
                                       </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 text-start">
                                       <p className="text-sm font-semibold text-foreground/60">
-                                        {token.name}
+                                        {market.symbol}
                                       </p>
                                       <p className="text-sm text-foreground/60">
-                                        {token.symbol}
+                                        {market.baseAsset?.symbol ?? "?"}/
+                                        {market.quoteAsset?.symbol ?? "?"}
                                       </p>
                                     </div>
                                   </button>
@@ -158,7 +166,9 @@ export const SectionChart: React.FC = () => {
                         </Popover>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-foreground/60">
-                        <p>{symbol.symbol}</p>
+                        <p>{selectedMarket.baseAsset?.name ?? "Base"}</p>
+                        <p>/</p>
+                        <p>{selectedMarket.quoteAsset?.name ?? "Quote"}</p>
                       </div>
                     </div>
                   </div>
@@ -238,7 +248,8 @@ export const SectionChart: React.FC = () => {
                 <div className="h-[600px] w-full overflow-hidden border">
                   <CandlestickChart
                     type={typeChart}
-                    symbol={symbol.symbol}
+                    marketId={selectedMarket.id}
+                    symbol={selectedMarket.symbol}
                     interval={activeTimeframe}
                     colors={colors}
                   />

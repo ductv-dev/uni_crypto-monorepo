@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnApplicationBootstrap,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma, PrismaService } from '@workspace/db';
 import amqp, { type ChannelModel, type ConfirmChannel } from 'amqplib';
@@ -11,8 +16,17 @@ type OrderCreatedEventMessage = {
   createdAt: string;
 };
 
+const POLL_INTERVAL_MS = 3000;
+const RECONNECT_BASE_DELAY_MS = 1000;
+const MAX_RECONNECT_DELAY_MS = 30000;
+const BATCH_SIZE = 50;
+
 const normalizeMarketSymbol = (market: string) =>
-  market.trim().toUpperCase().replace(/[\/_]/g, '-').replace(/\s+/g, '');
+  market
+    .trim()
+    .toUpperCase()
+    .replace(/[\\/_]/g, '-')
+    .replace(/\s+/g, '');
 
 const buildMatchingConsumerName = (marketSymbol: string) =>
   `matching-engine:${normalizeMarketSymbol(marketSymbol)}`;
@@ -35,14 +49,18 @@ type OutboxEventRecord = Prisma.OutboxEventGetPayload<{
 }>;
 
 @Injectable()
-export class OutboxProcessorService implements OnModuleDestroy {
+export class OutboxProcessorService
+  implements OnApplicationBootstrap, OnModuleDestroy
+{
   private readonly logger = new Logger(OutboxProcessorService.name);
-  private isProcessing = false;
   private readonly maxRetries = 3;
   private readonly rabbitmqUrl: string;
   private readonly rabbitmqExchange: string;
+  private readonly processingTimeoutMs: number;
+  private readonly processorId: string;
   private connection: ChannelModel | null = null;
   private channel: ConfirmChannel | null = null;
+  private shouldStop = false;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -53,30 +71,40 @@ export class OutboxProcessorService implements OnModuleDestroy {
       'amqp://admin:admin@localhost:5672';
     this.rabbitmqExchange =
       this.configService.get<string>('RABBITMQ_EXCHANGE') || 'orders.exchange';
+    this.processingTimeoutMs = Number(
+      this.configService.get<string>('OUTBOX_PROCESSING_TIMEOUT_MS') || 30000,
+    );
+    this.processorId = `outbox-worker:${process.pid}`;
   }
 
-  // Polling loop đơn giản: lấy batch, publish, rồi ngủ một khoảng ngắn trước vòng tiếp theo.
-  async processOutboxEvents() {
+  // NestJS gọi hook này sau khi tất cả module đã khởi tạo xong → an toàn để bắt đầu polling.
+  onApplicationBootstrap() {
+    this.startPollingLoop().catch((error) => {
+      this.logger.error('Outbox processor crashed fatally', error);
+      process.exit(1);
+    });
+  }
+
+  // Polling loop: lấy batch → publish → ngủ trước vòng tiếp theo. Dừng khi shouldStop = true.
+  private async startPollingLoop() {
     this.logger.log('Started Outbox Processor...');
 
     await this.connectRabbitmq();
 
-    while (true) {
+    while (!this.shouldStop) {
       try {
-        if (!this.isProcessing) {
-          this.isProcessing = true;
-          await this.processBatch();
-          this.isProcessing = false;
-        }
+        await this.ensureConnection();
+        await this.processBatch();
       } catch (error) {
         this.logger.error(
           `Error in outbox processing loop: ${error instanceof Error ? error.message : String(error)}`,
         );
-        this.isProcessing = false;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await this.sleep(POLL_INTERVAL_MS);
     }
+
+    this.logger.log('Outbox Processor stopped gracefully.');
   }
 
   // Confirm channel giúp chỉ đánh dấu sent sau khi broker xác nhận đã nhận message.
@@ -84,17 +112,68 @@ export class OutboxProcessorService implements OnModuleDestroy {
     try {
       const connection = await amqp.connect(this.rabbitmqUrl);
       this.connection = connection;
+
+      // Đặt channel/connection = null khi mất kết nối, buộc reconnect ở vòng poll tiếp.
+      connection.on('close', () => {
+        this.logger.warn('RabbitMQ connection closed.');
+        this.channel = null;
+        this.connection = null;
+      });
+
+      connection.on('error', (error: Error) => {
+        this.logger.error(`RabbitMQ connection error: ${error.message}`);
+      });
+
       const channel = await connection.createConfirmChannel();
       this.channel = channel;
+
+      channel.on('close', () => {
+        this.logger.warn('RabbitMQ channel closed.');
+        this.channel = null;
+      });
+
+      channel.on('error', (error: Error) => {
+        this.logger.error(`RabbitMQ channel error: ${error.message}`);
+      });
+
       await channel.assertExchange(this.rabbitmqExchange, 'topic', {
         durable: true,
       });
+
       this.logger.log(
         `Connected to RabbitMQ exchange=${this.rabbitmqExchange}`,
       );
     } catch (error) {
-      this.logger.error('Failed to connect to RabbitMQ on startup', error);
+      this.logger.error('Failed to connect to RabbitMQ', error);
       throw error;
+    }
+  }
+
+  /** Tự reconnect khi connection/channel bị mất, sử dụng exponential backoff. */
+  private async ensureConnection() {
+    if (this.channel && this.connection) {
+      return;
+    }
+
+    this.logger.warn('RabbitMQ connection lost. Attempting to reconnect...');
+
+    let attempt = 0;
+    while (!this.shouldStop) {
+      try {
+        await this.connectRabbitmq();
+        this.logger.log('RabbitMQ reconnected successfully.');
+        return;
+      } catch {
+        attempt++;
+        const delay = Math.min(
+          RECONNECT_BASE_DELAY_MS * Math.pow(2, attempt),
+          MAX_RECONNECT_DELAY_MS,
+        );
+        this.logger.warn(
+          `Reconnect attempt ${attempt} failed. Retrying in ${delay}ms...`,
+        );
+        await this.sleep(delay);
+      }
     }
   }
 
@@ -143,10 +222,25 @@ export class OutboxProcessorService implements OnModuleDestroy {
 
   // Chỉ lấy các event còn cần xử lý và publish theo thứ tự createdAt để giảm đảo thứ tự.
   private async processBatch() {
+    const staleProcessingCutoff = new Date(
+      Date.now() - this.processingTimeoutMs,
+    );
+
     const events = await this.prisma.outboxEvent.findMany({
       where: {
         OR: [
           { status: 'pending' },
+          {
+            status: 'processing',
+            OR: [
+              { locked_at: null },
+              {
+                locked_at: {
+                  lte: staleProcessingCutoff,
+                },
+              },
+            ],
+          },
           {
             status: 'failed',
             retry_count: { lt: this.maxRetries },
@@ -167,11 +261,11 @@ export class OutboxProcessorService implements OnModuleDestroy {
           },
         },
       },
-      take: 50,
+      take: BATCH_SIZE,
       orderBy: { createdAt: 'asc' },
     });
 
-    const retryableEvents = await this.filterRetryableEvents(events);
+    const retryableEvents = await this.filterAndCompleteEvents(events);
 
     if (retryableEvents.length === 0) {
       return;
@@ -183,10 +277,11 @@ export class OutboxProcessorService implements OnModuleDestroy {
 
     for (const event of retryableEvents) {
       try {
-        await this.prisma.outboxEvent.update({
-          where: { id: event.id },
-          data: { status: 'processing' },
-        });
+        // Atomic claim: chỉ 1 worker có thể claim event, tránh duplicate publish khi scale nhiều instance.
+        const claimed = await this.claimEvent(event.id, event.status);
+        if (!claimed) {
+          continue;
+        }
 
         if (event.event_type !== 'order_created') {
           this.logger.warn(
@@ -195,8 +290,10 @@ export class OutboxProcessorService implements OnModuleDestroy {
           await this.prisma.outboxEvent.update({
             where: { id: event.id },
             data: {
-              status: 'sent',
+              status: 'completed',
               sent_at: new Date(),
+              locked_by: null,
+              locked_at: null,
             },
           });
           continue;
@@ -206,24 +303,15 @@ export class OutboxProcessorService implements OnModuleDestroy {
           throw new Error(`Missing order_id for outbox event ${event.id}`);
         }
 
-        const order = await this.prisma.orderBook.findUnique({
-          where: { id: event.order_id },
-          include: {
-            market: {
-              select: {
-                symbol: true,
-              },
-            },
-          },
-        });
-
-        if (!order?.market?.symbol) {
+        // Sử dụng dữ liệu order đã include sẵn từ query ban đầu, không cần query lại DB.
+        const orderMarketSymbol = event.order?.market?.symbol;
+        if (!orderMarketSymbol) {
           throw new Error(
             `Order or market not found for outbox event ${event.id}`,
           );
         }
 
-        const market = normalizeMarketSymbol(order.market.symbol);
+        const market = normalizeMarketSymbol(orderMarketSymbol);
         const routingKey = `order.created.${market}`;
         const message: OrderCreatedEventMessage = {
           eventId: event.id,
@@ -249,6 +337,8 @@ export class OutboxProcessorService implements OnModuleDestroy {
           data: {
             status: 'sent',
             sent_at: new Date(),
+            locked_by: null,
+            locked_at: null,
           },
         });
 
@@ -268,25 +358,52 @@ export class OutboxProcessorService implements OnModuleDestroy {
             status: 'failed',
             error_message: errorMessage,
             retry_count: { increment: 1 },
+            locked_by: null,
+            locked_at: null,
           },
         });
       }
     }
   }
 
-  // Event sent chỉ được republish khi consumer tương ứng chưa ghi success.
-  private async filterRetryableEvents(
+  /**
+   * Atomic claim: dùng updateMany với WHERE status phù hợp để chỉ 1 worker claim được event.
+   * Trả về true nếu claim thành công, false nếu event đã bị worker khác claim.
+   */
+  private async claimEvent(
+    eventId: string,
+    currentStatus: string,
+  ): Promise<boolean> {
+    const result = await this.prisma.outboxEvent.updateMany({
+      where: {
+        id: eventId,
+        status: currentStatus as Prisma.EnumOutboxEventStatusFilter,
+      },
+      data: {
+        status: 'processing',
+        locked_by: this.processorId,
+        locked_at: new Date(),
+        error_message: null,
+      },
+    });
+
+    return result.count > 0;
+  }
+
+  /**
+   * Kiểm tra các event `sent`: nếu consumer đã xử lý thành công → đánh dấu `completed`.
+   * Chỉ trả về các event còn cần publish/republish.
+   */
+  private async filterAndCompleteEvents(
     events: OutboxEventRecord[],
   ): Promise<OutboxEventRecord[]> {
-    const sentEventsNeedingConsumerCheck = events.filter(
-      (event) => event.status === 'sent',
-    );
+    const sentEvents = events.filter((event) => event.status === 'sent');
 
-    if (sentEventsNeedingConsumerCheck.length === 0) {
+    if (sentEvents.length === 0) {
       return events;
     }
 
-    const consumerPairs = sentEventsNeedingConsumerCheck.flatMap((event) => {
+    const consumerPairs = sentEvents.flatMap((event) => {
       const marketSymbol = event.order?.market?.symbol;
       if (!marketSymbol) {
         this.logger.warn(
@@ -325,7 +442,10 @@ export class OutboxProcessorService implements OnModuleDestroy {
       ]),
     );
 
-    return events.filter((event) => {
+    // Tách event đã hoàn thành (consumer xác nhận success) ra khỏi danh sách cần xử lý.
+    const completedEventIds: string[] = [];
+
+    const retryableEvents = events.filter((event) => {
       if (event.status !== 'sent') {
         return true;
       }
@@ -340,11 +460,35 @@ export class OutboxProcessorService implements OnModuleDestroy {
         `${event.id}:${consumerName}`,
       );
 
-      return consumedStatus !== undefined && consumedStatus !== 'success';
+      if (consumedStatus === 'success') {
+        completedEventIds.push(event.id);
+        return false;
+      }
+
+      return true;
     });
+
+    // Batch update các event đã confirmed → completed, loại khỏi polling vĩnh viễn.
+    if (completedEventIds.length > 0) {
+      await this.prisma.outboxEvent.updateMany({
+        where: { id: { in: completedEventIds } },
+        data: { status: 'completed' },
+      });
+      this.logger.log(
+        `Marked ${completedEventIds.length} events as completed.`,
+      );
+    }
+
+    return retryableEvents;
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async onModuleDestroy() {
+    this.shouldStop = true;
+
     try {
       await this.channel?.close();
     } catch {

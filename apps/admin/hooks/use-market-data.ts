@@ -1,15 +1,93 @@
+"use client"
+import { requestJson } from "@/lib/api/client"
+import { Timeframe } from "@/lib/utils/utils"
 import { CandlestickData, HistogramData, Time } from "lightweight-charts"
+import { io, type Socket } from "socket.io-client"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Timeframe } from "../lib/utils/utils"
 
 const INTERVAL_MAP: Record<string, string> = {
   "1S": "1s",
+  "1MIN": "1m",
+  "5MIN": "5m",
+  "15MIN": "15m",
   "1H": "1h",
   "1D": "1d",
   "1W": "1w",
   "1M": "1M",
   "1Y": "1M",
 }
+
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? "http://localhost:3002"
+const MARKET_INTERVAL_MAP = {
+  "1S": "1m",
+  "1MIN": "1m",
+  "5MIN": "5m",
+  "15MIN": "15m",
+  "1H": "1h",
+  "1D": "1d",
+  "1W": "1d",
+  "1M": "1d",
+  "1Y": "1d",
+} as const
+
+type MarketRealtimeInterval = (typeof MARKET_INTERVAL_MAP)[Timeframe]
+
+type MarketCandleResponse = {
+  bucket: string
+  open: string
+  high: string
+  low: string
+  close: string
+  volume: string
+  quoteVolume: string
+}
+
+type MarketKlineUpdatePayload = {
+  marketId: string
+  symbol: string
+  interval: MarketRealtimeInterval
+  bucket: string
+  open: number
+  high: number
+  low: number
+  close: number
+  volume: number
+  quoteVolume: number
+  lastTradeAt: string | null
+  hasTrade: boolean
+  emittedAt: string
+}
+
+type MarketTickerPoint = {
+  time: number
+  open: number
+  high: number
+  low: number
+  close: number
+  value: number
+}
+
+const candleColor = (open: number, close: number) =>
+  close >= open ? "#26a69a" : "#ef5350"
+
+const toChartTime = (value: string): Time =>
+  Math.floor(new Date(value).getTime() / 1000) as Time
+
+const getMarketInterval = (timeframe: Timeframe): MarketRealtimeInterval =>
+  MARKET_INTERVAL_MAP[timeframe]
+
+const getMarketCandles = async (
+  marketId: string,
+  interval: MarketRealtimeInterval,
+  limit: number
+): Promise<MarketCandleResponse[]> =>
+  requestJson<MarketCandleResponse[]>(
+    `/api/proxy/markets/${marketId}/candles?interval=${interval}&limit=${limit}`,
+    {
+      method: "GET",
+      defaultErrorMessage: "Failed to fetch market candles",
+    }
+  )
 
 /**
  * Hook chuyên biệt quản lý dữ liệu cho Biểu đồ Nến & Volume từ Binance (REST + WebSocket)
@@ -114,7 +192,7 @@ export function useBinanceKline(symbol: string, timeframe: Timeframe) {
         }
 
         ws.onerror = (e) => {
-          console.error("WebSocket Kline Error:", e)
+          console.error("Lỗi WebSocket Kline:", e)
         }
       } catch (err) {
         if (!ignore) {
@@ -175,7 +253,7 @@ export function useBinanceTicker(symbol: string) {
           setPercentageChange(parseFloat(data.priceChangePercent))
         }
 
-        // Fetch 24h historical data for mini chart
+        // Lấy dữ liệu lịch sử 24h cho mini chart
         const klineRes = await fetch(
           `https://api.binance.com/api/v3/klines?symbol=${symbol.toUpperCase()}&interval=1h&limit=24`
         )
@@ -226,6 +304,273 @@ export function useBinanceTicker(symbol: string) {
       if (ws && ws.readyState === WebSocket.OPEN) ws.close()
     }
   }, [symbol])
+
+  return { currentPrice, priceChange, percentageChange, data24h }
+}
+
+export function useMarketKline(
+  marketId: string | undefined,
+  symbol: string | undefined,
+  timeframe: Timeframe
+) {
+  const [historicalData, setHistoricalData] = useState<CandlestickData<Time>[]>(
+    []
+  )
+  const [volumeData, setVolumeData] = useState<HistogramData<Time>[]>([])
+  const [isLoadingChart, setIsLoadingChart] = useState(true)
+  const [errorChart, setErrorChart] = useState<Error | null>(null)
+  const realtimeCallback = useRef<
+    | ((candle: CandlestickData<Time>, volume: HistogramData<Time>) => void)
+    | null
+  >(null)
+
+  const subscribeRealtime = useCallback(
+    (
+      callback: (
+        candle: CandlestickData<Time>,
+        volume: HistogramData<Time>
+      ) => void
+    ) => {
+      realtimeCallback.current = callback
+    },
+    []
+  )
+
+  useEffect(() => {
+    let ignore = false
+    let socket: Socket | null = null
+
+    const load = async () => {
+      if (!marketId || !symbol) {
+        setHistoricalData([])
+        setVolumeData([])
+        setErrorChart(null)
+        setIsLoadingChart(false)
+        return
+      }
+
+      setIsLoadingChart(true)
+      setErrorChart(null)
+
+      try {
+        const interval = getMarketInterval(timeframe)
+        const candles = await getMarketCandles(marketId, interval, 500)
+        if (ignore) return
+
+        const formattedCandles = candles.map<CandlestickData<Time>>((item) => ({
+          time: toChartTime(item.bucket),
+          open: Number(item.open),
+          high: Number(item.high),
+          low: Number(item.low),
+          close: Number(item.close),
+        }))
+        const formattedVolumes = candles.map<HistogramData<Time>>((item) => {
+          const open = Number(item.open)
+          const close = Number(item.close)
+
+          return {
+            time: toChartTime(item.bucket),
+            value: Number(item.volume),
+            color: candleColor(open, close),
+          }
+        })
+
+        setHistoricalData(formattedCandles)
+        setVolumeData(formattedVolumes)
+
+        socket = io(WS_URL, {
+          transports: ["websocket"],
+          reconnection: true,
+        })
+
+        socket.on("connect", () => {
+          socket?.emit("market.join", { symbol, interval })
+        })
+
+        socket.on("kline.update", (payload: MarketKlineUpdatePayload) => {
+          if (
+            ignore ||
+            payload.marketId !== marketId ||
+            payload.interval !== interval
+          ) {
+            return
+          }
+
+          const nextCandle: CandlestickData<Time> = {
+            time: toChartTime(payload.bucket),
+            open: payload.open,
+            high: payload.high,
+            low: payload.low,
+            close: payload.close,
+          }
+          const nextVolume: HistogramData<Time> = {
+            time: toChartTime(payload.bucket),
+            value: payload.volume,
+            color: candleColor(payload.open, payload.close),
+          }
+
+          realtimeCallback.current?.(nextCandle, nextVolume)
+        })
+      } catch (error) {
+        if (!ignore) {
+          setErrorChart(
+            error instanceof Error
+              ? error
+              : new Error("Failed to load market kline")
+          )
+          setHistoricalData([])
+          setVolumeData([])
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoadingChart(false)
+        }
+      }
+    }
+
+    void load()
+
+    return () => {
+      ignore = true
+      socket?.disconnect()
+    }
+  }, [marketId, symbol, timeframe])
+
+  return {
+    historicalData,
+    volumeData,
+    isLoadingChart,
+    errorChart,
+    subscribeRealtime,
+  }
+}
+
+export function useMarketTicker(
+  marketId: string | undefined,
+  symbol: string | undefined
+) {
+  const [currentPrice, setCurrentPrice] = useState(0)
+  const [priceChange, setPriceChange] = useState(0)
+  const [percentageChange, setPercentageChange] = useState(0)
+  const [data24h, setData24h] = useState<MarketTickerPoint[]>([])
+
+  useEffect(() => {
+    let ignore = false
+    let socket: Socket | null = null
+
+    const load = async () => {
+      if (!marketId || !symbol) {
+        setCurrentPrice(0)
+        setPriceChange(0)
+        setPercentageChange(0)
+        setData24h([])
+        return
+      }
+
+      try {
+        const interval: MarketRealtimeInterval = "1h"
+        const candles = await getMarketCandles(marketId, interval, 24)
+        if (ignore) return
+
+        const points = candles.map<MarketTickerPoint>((item) => ({
+          time: new Date(item.bucket).getTime(),
+          open: Number(item.open),
+          high: Number(item.high),
+          low: Number(item.low),
+          close: Number(item.close),
+          value: Number(item.close),
+        }))
+
+        const firstPoint = points[0]
+        const lastPoint = points[points.length - 1]
+        const nextCurrentPrice = lastPoint?.close ?? 0
+        const nextPriceChange = nextCurrentPrice - (firstPoint?.open ?? 0)
+        const nextPercentageChange =
+          firstPoint && firstPoint.open > 0
+            ? (nextPriceChange / firstPoint.open) * 100
+            : 0
+
+        setData24h(points)
+        setCurrentPrice(nextCurrentPrice)
+        setPriceChange(nextPriceChange)
+        setPercentageChange(nextPercentageChange)
+
+        socket = io(WS_URL, {
+          transports: ["websocket"],
+          reconnection: true,
+        })
+
+        socket.on("connect", () => {
+          socket?.emit("market.join", { symbol, interval })
+        })
+
+        socket.on("kline.update", (payload: MarketKlineUpdatePayload) => {
+          if (
+            ignore ||
+            payload.marketId !== marketId ||
+            payload.interval !== interval
+          ) {
+            return
+          }
+
+          setCurrentPrice(payload.close)
+          setData24h((previous) => {
+            const nextPoint: MarketTickerPoint = {
+              time: new Date(payload.bucket).getTime(),
+              open: payload.open,
+              high: payload.high,
+              low: payload.low,
+              close: payload.close,
+              value: payload.close,
+            }
+
+            if (previous.length === 0) {
+              const nextPrice = payload.close - payload.open
+              setPriceChange(nextPrice)
+              setPercentageChange(
+                payload.open > 0 ? (nextPrice / payload.open) * 100 : 0
+              )
+              return [nextPoint]
+            }
+
+            const next = [...previous]
+            const lastPoint = next[next.length - 1]
+            if (lastPoint && lastPoint.time === nextPoint.time) {
+              next[next.length - 1] = nextPoint
+            } else {
+              next.push(nextPoint)
+            }
+
+            const trimmed = next.slice(-24)
+            const openingPrice = trimmed[0]?.open ?? payload.open
+            const nextPrice = payload.close - openingPrice
+            setPriceChange(nextPrice)
+            setPercentageChange(
+              openingPrice > 0 ? (nextPrice / openingPrice) * 100 : 0
+            )
+
+            return trimmed
+          })
+        })
+      } catch (error) {
+        console.error("Failed to load market ticker:", error)
+
+        if (!ignore) {
+          setCurrentPrice(0)
+          setPriceChange(0)
+          setPercentageChange(0)
+          setData24h([])
+        }
+      }
+    }
+
+    void load()
+
+    return () => {
+      ignore = true
+      socket?.disconnect()
+    }
+  }, [marketId, symbol])
 
   return { currentPrice, priceChange, percentageChange, data24h }
 }

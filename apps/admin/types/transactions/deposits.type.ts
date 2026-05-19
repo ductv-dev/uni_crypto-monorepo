@@ -1,21 +1,33 @@
-export type TDeposits = {
-  id: number
-  user_id: number
-  asset: string //BTC,ETH,USDT
-  amount: number // số coin nạp
-  network: string //chọn blockchain nạp
-  from_address: string //địa chỉ ví nạp
-  tx_hash: string //mã giao dịch
-  confirmations: number //số xác nhận
-  status: EDepositStatus //trạng thái nạp
-  created_at: string //thời gian tạo giao dịch
-}
 export enum EDepositStatus {
   PENDING = "pending",
+  COMPLETED = "completed",
   CONFIRMED = "confirmed",
+  REJECTED = "rejected",
   FAILED = "failed",
 }
 
+export type TDeposits = {
+  id: string | number
+  user_id: string | number
+  asset_id?: string
+  asset: string
+  asset_name?: string
+  amount: number
+  fee?: number
+  network: string
+  from_address: string
+  tx_hash: string
+  confirmations: number
+  status: EDepositStatus | string
+  admin_id?: string
+  admin_email?: string
+  user_email?: string
+  note?: string
+  rejected_reason?: string
+  created_at: string
+  updated_at?: string
+}
+
 export type TDepositFilter = {
-  status?: EDepositStatus
+  status?: EDepositStatus | string
 }

@@ -108,19 +108,16 @@ export class RedisSubscriberService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    const symbol =
-      typeof payload.symbol === 'string'
-        ? payload.symbol
-        : typeof payload.marketId === 'string'
-          ? payload.marketId
-          : undefined;
+    const hasSymbol =
+      typeof payload.symbol === 'string' ||
+      typeof payload.marketId === 'string';
 
-    if (!symbol) {
+    if (!hasSymbol) {
       this.logger.warn('Invalid market trade payload: symbol is required');
       return;
     }
 
-    this.wsGateway.emitMarketTrade(symbol, payload);
+    this.wsGateway.handleMarketTradeEvent(payload);
   }
 
   private handleUserNotification(payload: unknown) {

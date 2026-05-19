@@ -9,6 +9,7 @@ import { OrderBookManager } from "./order-book-manager.service"
 import {
   MarketTradeCreatedPayload,
   RedisPublisherService,
+  type UserNotificationPayload,
 } from "./redis-publisher.service"
 import { BookOrder } from "./type"
 import {
@@ -35,6 +36,18 @@ type WalletTransactionInput = {
   referenceType: "trade"
   referenceId: string
   description: string
+}
+
+type MatchNotificationIntent = {
+  userId: string
+  orderId: string
+  marketId: string
+  marketSymbol: string
+  side: "buy" | "sell"
+  matchedQuantity: number
+  matchedTotalValue: number
+  lastTradePrice: number
+  orderStatus: "filled" | "partial_filled"
 }
 
 @Injectable()
@@ -113,6 +126,40 @@ export class MatchingEngineService implements OnModuleDestroy {
         description: input.description,
       },
     })
+  }
+
+  private buildOrderMatchedNotification(
+    input: MatchNotificationIntent
+  ): Omit<UserNotificationPayload, "id" | "createdAt" | "read"> {
+    const isFilled = input.orderStatus === "filled"
+    const sideLabel = input.side === "buy" ? "mua" : "bán"
+    const averagePrice =
+      input.matchedQuantity > 0
+        ? this.toFixedDecimal(input.matchedTotalValue / input.matchedQuantity)
+        : input.lastTradePrice
+
+    return {
+      userId: input.userId,
+      event: "order.matched",
+      status: "success",
+      title: isFilled
+        ? `Lệnh ${sideLabel} đã khớp hoàn tất`
+        : `Lệnh ${sideLabel} đã khớp một phần`,
+      message: isFilled
+        ? `Lệnh ${sideLabel} ${input.marketSymbol} đã khớp toàn bộ ${this.toFixedDecimal(input.matchedQuantity)} với giá trung bình ${averagePrice}.`
+        : `Lệnh ${sideLabel} ${input.marketSymbol} vừa khớp ${this.toFixedDecimal(input.matchedQuantity)} với giá trung bình ${averagePrice}.`,
+      metadata: {
+        orderId: input.orderId,
+        marketId: input.marketId,
+        marketSymbol: input.marketSymbol,
+        side: input.side,
+        matchedQuantity: this.toFixedDecimal(input.matchedQuantity),
+        matchedTotalValue: this.toFixedDecimal(input.matchedTotalValue),
+        averagePrice,
+        lastTradePrice: input.lastTradePrice,
+        orderStatus: input.orderStatus,
+      },
+    }
   }
 
   private async settleWalletsForTrade(
@@ -520,6 +567,7 @@ export class MatchingEngineService implements OnModuleDestroy {
     }
 
     let marketTradeEvent: MarketTradeCreatedPayload | undefined
+    const userNotificationEvents: UserNotificationPayload[] = []
 
     await this.prisma.$transaction(async (tx) => {
       if (eventId && consumerName) {
@@ -547,6 +595,7 @@ export class MatchingEngineService implements OnModuleDestroy {
         )
 
         const persistedTrades: MarketTradeCreatedPayload["trades"] = []
+        const makerNotificationMap = new Map<string, MatchNotificationIntent>()
 
         for (const trade of trades) {
           const tradeRecord = await tx.trade.create({
@@ -610,24 +659,52 @@ export class MatchingEngineService implements OnModuleDestroy {
 
             const newFilled = Number(makerOrderDB.filled_qty) + trade.quantity
             const remaining = Number(makerOrderDB.quantity) - newFilled
+            const makerStatus: MatchNotificationIntent["orderStatus"] =
+              remaining <= 0 ? "filled" : "partial_filled"
             await tx.orderBook.update({
               where: { id: trade.makerOrderId },
               data: {
                 filled_qty: newFilled,
                 remaining_qty: remaining,
-                status: remaining <= 0 ? "filled" : "partial_filled",
+                status: makerStatus,
               },
             })
+
+            const makerKey = `${makerOrderDB.user_id}:${makerOrderDB.id}`
+            const existingMakerNotification = makerNotificationMap.get(makerKey)
+            if (existingMakerNotification) {
+              existingMakerNotification.matchedQuantity += trade.quantity
+              existingMakerNotification.matchedTotalValue +=
+                trade.price * trade.quantity
+              existingMakerNotification.lastTradePrice = trade.price
+              existingMakerNotification.orderStatus = makerStatus
+            } else {
+              makerNotificationMap.set(makerKey, {
+                userId: makerOrderDB.user_id,
+                orderId: makerOrderDB.id,
+                marketId: orderDB.market_id,
+                marketSymbol: orderDB.market.symbol,
+                side: trade.side === "buy" ? "sell" : "buy",
+                matchedQuantity: trade.quantity,
+                matchedTotalValue: trade.price * trade.quantity,
+                lastTradePrice: trade.price,
+                orderStatus: makerStatus,
+              })
+            }
           }
         }
 
+        const takerMatchedQuantity =
+          bookOrder.filledQty - Number(orderDB.filled_qty)
         const takerRemaining = Number(orderDB.quantity) - bookOrder.filledQty
+        const takerStatus: MatchNotificationIntent["orderStatus"] =
+          takerRemaining <= 0 ? "filled" : "partial_filled"
         await tx.orderBook.update({
           where: { id: orderDB.id },
           data: {
             filled_qty: bookOrder.filledQty,
             remaining_qty: takerRemaining,
-            status: takerRemaining <= 0 ? "filled" : "partial_filled",
+            status: takerStatus,
           },
         })
 
@@ -654,6 +731,46 @@ export class MatchingEngineService implements OnModuleDestroy {
           takerOrderId: orderDB.id,
           trades: persistedTrades,
         }
+
+        const notificationIntents: MatchNotificationIntent[] = [
+          {
+            userId: orderDB.user_id,
+            orderId: orderDB.id,
+            marketId: orderDB.market_id,
+            marketSymbol: orderDB.market.symbol,
+            side: orderDB.side as "buy" | "sell",
+            matchedQuantity: takerMatchedQuantity,
+            matchedTotalValue: persistedTrades.reduce(
+              (sum, trade) => sum + trade.total,
+              0
+            ),
+            lastTradePrice: latestTrade.price,
+            orderStatus: takerStatus,
+          },
+          ...makerNotificationMap.values(),
+        ].filter((intent) => intent.matchedQuantity > 0)
+
+        for (const intent of notificationIntents) {
+          const notificationPayload = this.buildOrderMatchedNotification(intent)
+          const notification = await tx.notification.create({
+            data: {
+              user_id: notificationPayload.userId,
+              event: notificationPayload.event,
+              status: notificationPayload.status,
+              title: notificationPayload.title,
+              message: notificationPayload.message,
+              metadata: notificationPayload.metadata as Prisma.InputJsonValue,
+              is_read: false,
+            },
+          })
+
+          userNotificationEvents.push({
+            ...notificationPayload,
+            id: notification.id,
+            createdAt: notification.createdAt.toISOString(),
+            read: notification.is_read,
+          })
+        }
       } else {
         this.logger.log(
           `Order ${orderDB.id} added to OrderBook memory without immediate match. side=${orderDB.side} price=${orderDB.price} quantity=${orderDB.quantity}`
@@ -663,6 +780,10 @@ export class MatchingEngineService implements OnModuleDestroy {
 
     if (marketTradeEvent) {
       await this.redisPublisher.publishMarketTrade(marketTradeEvent)
+    }
+
+    for (const notification of userNotificationEvents) {
+      await this.redisPublisher.publishUserNotification(notification)
     }
   }
 

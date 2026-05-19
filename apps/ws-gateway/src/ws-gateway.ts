@@ -9,13 +9,78 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleDestroy } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 
 const normalizeMarketSymbol = (symbol: string) =>
   symbol.trim().replace('/', '').replace('-', '').toUpperCase();
 
 const normalizeUserId = (userId: string) => userId.trim();
+const KLINE_INTERVALS = ['1m', '5m', '15m', '1h', '4h', '1d'] as const;
+
+type KlineInterval = (typeof KLINE_INTERVALS)[number];
+
+type MarketTradeCreatedPayload = {
+  symbol?: string;
+  marketId?: string;
+  lastPrice?: number;
+  totalQuantity?: number;
+  takerOrderId?: string;
+  trades?: Array<{
+    id?: string;
+    marketId?: string;
+    price?: number;
+    quantity?: number;
+    total?: number;
+    side?: 'buy' | 'sell';
+    createdAt?: string;
+  }>;
+};
+
+type KlineState = {
+  marketId: string;
+  symbol: string;
+  interval: KlineInterval;
+  bucket: Date;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  quoteVolume: number;
+  lastTradeAt: string | null;
+  hasTrade: boolean;
+};
+
+const toIntervalMs = (interval: KlineInterval) => {
+  switch (interval) {
+    case '1m':
+      return 60_000;
+    case '5m':
+      return 5 * 60_000;
+    case '15m':
+      return 15 * 60_000;
+    case '1h':
+      return 60 * 60_000;
+    case '4h':
+      return 4 * 60 * 60_000;
+    case '1d':
+      return 24 * 60 * 60_000;
+  }
+};
+
+const normalizeKlineInterval = (
+  interval: string,
+): KlineInterval | undefined => {
+  const normalized = interval.trim().toLowerCase();
+
+  return KLINE_INTERVALS.find((item) => item === normalized);
+};
+
+const getBucketStart = (date: Date, interval: KlineInterval) => {
+  const intervalMs = toIntervalMs(interval);
+  return new Date(Math.floor(date.getTime() / intervalMs) * intervalMs);
+};
 
 @WebSocketGateway({
   cors: {
@@ -24,15 +89,27 @@ const normalizeUserId = (userId: string) => userId.trim();
   },
 })
 export class WsGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+  implements
+    OnGatewayInit,
+    OnGatewayConnection,
+    OnGatewayDisconnect,
+    OnModuleDestroy
 {
   private readonly logger = new Logger(WsGateway.name);
+  private readonly klineStateByMarket = new Map<
+    string,
+    Map<KlineInterval, KlineState>
+  >();
+  private klineHeartbeat?: NodeJS.Timeout;
 
   @WebSocketServer()
   server!: Server;
 
   afterInit() {
     this.logger.log('WebSocket gateway initialized');
+    this.klineHeartbeat = setInterval(() => {
+      this.emitRealtimeKlines();
+    }, 1000);
   }
 
   handleConnection(client: Socket) {
@@ -67,7 +144,17 @@ export class WsGateway
     const rooms = [`market:${symbol}`];
 
     if (body.interval) {
-      rooms.push(`market:${symbol}:${body.interval}`);
+      const interval = normalizeKlineInterval(body.interval);
+      if (!interval) {
+        return {
+          event: 'market.join.error',
+          data: {
+            message: 'unsupported interval',
+          },
+        };
+      }
+
+      rooms.push(`market:${symbol}:${interval}`);
     }
 
     await client.join(rooms);
@@ -79,6 +166,13 @@ export class WsGateway
         rooms,
       },
     };
+  }
+
+  onModuleDestroy() {
+    if (this.klineHeartbeat) {
+      clearInterval(this.klineHeartbeat);
+      this.klineHeartbeat = undefined;
+    }
   }
 
   @SubscribeMessage('notification.join')
@@ -130,6 +224,27 @@ export class WsGateway
     this.server.to(room).emit('market.trade.created', data);
   }
 
+  handleMarketTradeEvent(payload: MarketTradeCreatedPayload) {
+    const symbol =
+      typeof payload.symbol === 'string' && payload.symbol.trim()
+        ? payload.symbol
+        : undefined;
+    const marketId =
+      typeof payload.marketId === 'string' && payload.marketId.trim()
+        ? payload.marketId
+        : undefined;
+
+    if (!symbol || !marketId) {
+      this.logger.warn(
+        'Skipping kline update for market trade payload missing symbol/marketId',
+      );
+      return;
+    }
+
+    this.updateKlineStateFromTrades(symbol, marketId, payload.trades ?? []);
+    this.emitMarketTrade(symbol, payload);
+  }
+
   emitUserNotification(userId: string, data: any) {
     const room = `user:${normalizeUserId(userId)}`;
 
@@ -141,5 +256,122 @@ export class WsGateway
     }
 
     this.server.to(room).emit('user.notification', data);
+  }
+
+  private updateKlineStateFromTrades(
+    symbol: string,
+    marketId: string,
+    trades: NonNullable<MarketTradeCreatedPayload['trades']>,
+  ) {
+    if (trades.length === 0) {
+      return;
+    }
+
+    const marketState =
+      this.klineStateByMarket.get(marketId) ??
+      new Map<KlineInterval, KlineState>();
+    this.klineStateByMarket.set(marketId, marketState);
+
+    for (const trade of trades) {
+      if (
+        typeof trade.price !== 'number' ||
+        typeof trade.quantity !== 'number' ||
+        typeof trade.total !== 'number' ||
+        typeof trade.createdAt !== 'string'
+      ) {
+        continue;
+      }
+
+      const tradeTime = new Date(trade.createdAt);
+      if (Number.isNaN(tradeTime.getTime())) {
+        continue;
+      }
+
+      for (const interval of KLINE_INTERVALS) {
+        const bucket = getBucketStart(tradeTime, interval);
+        const current = marketState.get(interval);
+
+        if (!current || bucket.getTime() > current.bucket.getTime()) {
+          const nextState: KlineState = {
+            marketId,
+            symbol,
+            interval,
+            bucket,
+            open: trade.price,
+            high: trade.price,
+            low: trade.price,
+            close: trade.price,
+            volume: trade.quantity,
+            quoteVolume: trade.total,
+            lastTradeAt: trade.createdAt,
+            hasTrade: true,
+          };
+
+          marketState.set(interval, nextState);
+          continue;
+        }
+
+        if (bucket.getTime() < current.bucket.getTime()) {
+          continue;
+        }
+
+        current.high = Math.max(current.high, trade.price);
+        current.low = Math.min(current.low, trade.price);
+        current.close = trade.price;
+        current.volume += trade.quantity;
+        current.quoteVolume += trade.total;
+        current.lastTradeAt = trade.createdAt;
+        current.hasTrade = true;
+      }
+    }
+  }
+
+  private emitRealtimeKlines() {
+    const now = new Date();
+
+    for (const marketIntervals of this.klineStateByMarket.values()) {
+      for (const [interval, state] of marketIntervals.entries()) {
+        this.rollKlineStateForward(state, now);
+        this.emitKlineUpdate(state.symbol, interval, {
+          marketId: state.marketId,
+          symbol: state.symbol,
+          interval,
+          bucket: state.bucket.toISOString(),
+          open: state.open,
+          high: state.high,
+          low: state.low,
+          close: state.close,
+          volume: state.volume,
+          quoteVolume: state.quoteVolume,
+          lastTradeAt: state.lastTradeAt,
+          hasTrade: state.hasTrade,
+          emittedAt: now.toISOString(),
+        });
+      }
+    }
+  }
+
+  private rollKlineStateForward(state: KlineState, now: Date) {
+    const currentBucket = getBucketStart(now, state.interval);
+    if (currentBucket.getTime() <= state.bucket.getTime()) {
+      return;
+    }
+
+    while (state.bucket.getTime() < currentBucket.getTime()) {
+      const nextBucket = new Date(
+        state.bucket.getTime() + toIntervalMs(state.interval),
+      );
+      const previousClose = state.close;
+
+      state.bucket = nextBucket;
+      state.open = previousClose;
+      state.high = previousClose;
+      state.low = previousClose;
+      state.close = previousClose;
+      state.volume = 0;
+      state.quoteVolume = 0;
+      state.lastTradeAt = null;
+      state.hasTrade = false;
+    }
   }
 }

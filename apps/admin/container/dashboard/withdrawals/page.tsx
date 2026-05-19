@@ -63,6 +63,7 @@ export const WithdrawalsPage = () => {
       {
         accessorKey: "user_id",
         header: "User ID",
+        cell: ({ row }) => row.original.user_email || row.original.user_id,
       },
       {
         accessorKey: "asset",
@@ -85,6 +86,9 @@ export const WithdrawalsPage = () => {
         header: "To Address",
         cell: ({ row }) => {
           const address = row.original.to_address
+          if (!address) {
+            return <span className="text-muted-foreground">-</span>
+          }
           return (
             <span className="font-mono text-xs">
               {address.slice(0, 8)}...{address.slice(-8)}
@@ -97,6 +101,9 @@ export const WithdrawalsPage = () => {
         header: "Tx Hash",
         cell: ({ row }) => {
           const hash = row.original.tx_hash
+          if (!hash) {
+            return <span className="text-muted-foreground">-</span>
+          }
           return (
             <span className="font-mono text-xs">
               {hash.slice(0, 10)}...{hash.slice(-10)}

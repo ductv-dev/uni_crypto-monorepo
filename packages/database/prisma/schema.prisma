@@ -27,6 +27,7 @@ model User {
 
   sessions  Session[]
   auditLogs AuditLog[]
+  notifications Notification[]
 
   wallets             Wallet[]
   orders              OrderBook[]
@@ -136,6 +137,28 @@ model AuditLog {
   @@index([user_id])
   @@index([table_name])
   @@index([record_id])
+  @@index([createdAt])
+}
+
+model Notification {
+  id      String @id @default(uuid())
+  user_id String
+
+  event   String
+  status  String
+  title   String
+  message String
+  metadata Json?
+  is_read Boolean @default(false)
+
+  user User @relation(fields: [user_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([user_id])
+  @@index([status])
+  @@index([is_read])
   @@index([createdAt])
 }
 
@@ -461,6 +484,7 @@ enum OutboxEventStatus {
   pending
   processing
   sent
+  completed
   failed
 }
 

@@ -79,10 +79,13 @@ export const FilterDeposits: React.FC<TFilterDepositsProps> = ({
               <SelectContent>
                 <SelectItem value="ALL">All Status</SelectItem>
                 <SelectItem value={EDepositStatus.PENDING}>Pending</SelectItem>
-                <SelectItem value={EDepositStatus.CONFIRMED}>
-                  Confirmed
+                <SelectItem value={EDepositStatus.COMPLETED}>
+                  Completed
                 </SelectItem>
                 <SelectItem value={EDepositStatus.FAILED}>Failed</SelectItem>
+                <SelectItem value={EDepositStatus.REJECTED}>
+                  Rejected
+                </SelectItem>
               </SelectContent>
             </Select>
           </Field>

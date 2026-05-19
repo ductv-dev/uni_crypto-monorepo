@@ -34,6 +34,12 @@ export class DepositWithdrawalController {
     return this.depositWithdrawalService.findAll(query);
   }
 
+  @Get('overview')
+  @Permissions(PERMISSION_CODES.READ_DEPOSIT_WITHDRAWALS)
+  getOverview(@Query('type') type: 'deposit' | 'withdraw') {
+    return this.depositWithdrawalService.getOverview(type);
+  }
+
   @Get(':id')
   @Permissions(PERMISSION_CODES.READ_DEPOSIT_WITHDRAWALS)
   findOne(@Param('id') id: string) {

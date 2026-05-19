@@ -1,5 +1,5 @@
 "use client"
-import { useBinanceKline } from "@/hooks/use-market-data"
+import { useMarketKline } from "@/hooks/use-market-data"
 import { Timeframe } from "@/lib/utils/utils"
 import { TTypeChart } from "@/types/type-chart.type"
 import {
@@ -15,6 +15,7 @@ import React, { useEffect, useRef } from "react"
 
 export type ChartProps = {
   type: TTypeChart
+  marketId: string
   symbol: string
   interval?: Timeframe
   colors?: {
@@ -31,6 +32,7 @@ export type ChartProps = {
 
 export const CandlestickChart: React.FC<ChartProps> = ({
   type,
+  marketId,
   symbol,
   interval = "1D",
   colors: {
@@ -57,7 +59,7 @@ export const CandlestickChart: React.FC<ChartProps> = ({
     isLoadingChart,
     errorChart,
     subscribeRealtime,
-  } = useBinanceKline(symbol, interval)
+  } = useMarketKline(marketId, symbol, interval)
 
   // 1. Khởi tạo biểu đồ và nạp data lịch sử
   useEffect(() => {
